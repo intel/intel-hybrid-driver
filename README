@@ -1,0 +1,23 @@
+libva-intel-hybrid-driver
+VA driver for Intel G45 & HD Graphics family
+Copyright (C) 2009-2011 Intel Corporation
+
+License
+-------
+Please read the COPYING file available in this package.
+
+Overview
+--------
+libva-intel-hybrid-driver is the VA-API implementation for Intel G45 chipsets
+and Intel HD Graphics for Intel Core processor family.
+
+Platform definitions:
+HSW: Haswell
+
+Codecs
+------
+Hybrid VP8 Encoder
+
+Requirements
+------------
+libva >= 1.0.16
