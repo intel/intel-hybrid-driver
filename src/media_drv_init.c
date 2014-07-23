@@ -52,19 +52,19 @@ VAProfile profile_table[MEDIA_GEN_MAX_PROFILES] = {
 
 config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
   {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_CQP,
-   VA_DEC_SLICE_MODE_NORMAL}
+   1}
   ,
   {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_CBR,
-   VA_DEC_SLICE_MODE_NORMAL}
+   1}
   ,
   {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_VBR,
-   VA_DEC_SLICE_MODE_NORMAL}
+   1}
   ,
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
-   VA_RC_CQP, VA_DEC_SLICE_MODE_NORMAL}
+   VA_RC_CQP,1}
   ,
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
-   VA_RC_CBR, VA_DEC_SLICE_MODE_NORMAL}
+   VA_RC_CBR, 1}
 };
 
 /*list of supported display attributes */
@@ -1710,7 +1710,6 @@ media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entryp
 
   INT i, j, attr_table_sz;
   UINT rc_method = VA_RC_NONE;
-  UINT dec_slice_mode = VA_DEC_SLICE_MODE_NORMAL;
   struct object_config *obj_config;
   INT configID;
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;;
@@ -1731,13 +1730,8 @@ media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entryp
 		{
 		  rc_method = attrib_list[j].value;
 		}
-	      if (VAConfigAttribDecSliceMode == attrib_list[j].type)
-		{
-		  dec_slice_mode = attrib_list[j].value;
-		}
 	    }
-	  if ((config_attributes_list[i].ratectrl_method == rc_method)
-	      && (config_attributes_list[i].dec_slice_mode == dec_slice_mode))
+	  if (config_attributes_list[i].ratectrl_method == rc_method)
 	    break;
 	}
     }
