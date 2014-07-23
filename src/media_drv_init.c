@@ -2037,12 +2037,9 @@ va_driver_init (VADriverContextP ctx)
   return ret;
 }
 
-VAStatus DLL_EXPORT __vaDriverInit_0_32 (VADriverContextP ctx);
-//VA_DRIVER_INIT_FUNC(VADriverContextP ctx);
-//VAStatus 
-//VA_DRIVER_INIT_FUNC(  VADriverContextP ctx )
+VAStatus DLL_EXPORT __vaDriverInit_0_34 (VADriverContextP ctx);
 VAStatus
-__vaDriverInit_0_32 (VADriverContextP ctx)
+__vaDriverInit_0_34 (VADriverContextP ctx)
 {
   VAStatus ret = VA_STATUS_ERROR_UNKNOWN;
   ret = va_driver_init (ctx);
