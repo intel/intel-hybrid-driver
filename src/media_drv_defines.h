@@ -49,7 +49,7 @@
 #define NUM_SLICES     10
 
 #define MEDIA_GEN_MAX_PROFILES                 16	// VAProfileH264Baseline, VAProfileH264Main,VAProfileH264High,VAProfileH264ConstrainedBaseline VAProfileMPEG2Main, VAProfileMPEG2Simple, VAProfileHEVCMain and VAProfileNone
-#define MEDIA_GEN_MAX_ENTRYPOINTS              4	// VAEntrypointVLD,VAEntrypointEncSlice, VAEntrypointVideoProc and VAEntrypointHybridEnc
+#define MEDIA_GEN_MAX_ENTRYPOINTS              4	// VAEntrypointHybridEnc
 #define MEDIA_GEN_MAX_CONFIG_ATTRIBUTES        46	// VAConfigAttribRTFormat plus VAConfigAttribRateControl
 #define MEDIA_GEN_MAX_IMAGE_FORMATS            1	// NV12 only
 #define MEDIA_GEN_MAX_SUBPIC_FORMATS           4	// no sub-pic blending support, still set to 4 for further implementation

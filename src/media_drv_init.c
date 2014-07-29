@@ -51,15 +51,6 @@ VAProfile profile_table[MEDIA_GEN_MAX_PROFILES] = {
 };
 
 config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
-  {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_CQP,
-   1}
-  ,
-  {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_CBR,
-   1}
-  ,
-  {VAProfileVP8Version0_3, VAEntrypointEncSlice, VA_RC_VBR,
-   1}
-  ,
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
    VA_RC_CQP,1}
   ,
@@ -957,8 +948,7 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
   if (obj_context->codec_type == CODEC_ENC)
     {
 
-      MEDIA_DRV_ASSERT (VAEntrypointEncSlice == obj_config->entrypoint
-			|| VAEntrypointHybridEncSlice ==
+      MEDIA_DRV_ASSERT (VAEntrypointHybridEncSlice ==
 			obj_config->entrypoint);
 
       if (!(obj_context->codec_state.encode.pic_param ||
@@ -1274,8 +1264,7 @@ media_RenderPicture (VADriverContextP ctx,
   obj_config = obj_context->obj_config;
   MEDIA_DRV_ASSERT (obj_config);
 
-  if (VAEntrypointEncSlice == obj_config->entrypoint
-      || VAEntrypointHybridEncSlice == obj_config->entrypoint)
+  if (VAEntrypointHybridEncSlice == obj_config->entrypoint)
     {
       vaStatus =
 	media_encoder_render_picture (ctx, context, buffers, num_buffers);
@@ -1573,8 +1562,7 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
   if (VA_STATUS_SUCCESS == status)
     {
 
-      if ((VAEntrypointEncSlice == obj_config->entrypoint)
-	  || (VAEntrypointHybridEncSlice == obj_config->entrypoint))
+      if (VAEntrypointHybridEncSlice == obj_config->entrypoint)
 	{			/*encode routin only */
 
 	  obj_context->codec_type = CODEC_ENC;
@@ -1795,9 +1783,7 @@ media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypo
   switch (profile)
     {
     case VAProfileVP8Version0_3:
-      entrypoint_list[index++] = VAEntrypointEncSlice;
-      //entrypoint_list[index++] = VAEntrypointVLD;
-      entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
       break;
     default:
       //printf ("Unsupported profile\n");
