@@ -303,3 +303,31 @@ media_drv_dump_bo_buf_to_file_v2 (dri_bo * bo, UINT frame_num,
   dri_bo_unmap (bo);
 
 }
+
+static VAEncMiscParameterType media_drv_va_misc_types[] = {
+  VAEncMiscParameterTypeHRD,
+  VAEncMiscParameterTypeFrameRate,
+  VAEncMiscParameterTypeRateControl,
+  VAEncMiscParameterTypePrivate,
+  VAEncMiscParameterTypeVP8HybridFrameUpdate,
+};
+
+int media_drv_va_misc_type_to_index(VAEncMiscParameterType type)
+{
+  int index;
+
+  for (index = 0; index < ARRAY_ELEMS(media_drv_va_misc_types); index++) {
+    if (media_drv_va_misc_types[index] == type)
+      return index;
+  }
+
+  return -1;
+}
+
+VAEncMiscParameterType media_drv_index_to_va_misc_type(int index)
+{
+  if (index >= ARRAY_ELEMS(media_drv_va_misc_types))
+    return -1000;
+
+  return media_drv_va_misc_types[index];
+}

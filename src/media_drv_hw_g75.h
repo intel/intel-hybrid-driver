@@ -58,6 +58,9 @@ extern const SURFACE_SET_PARAMS surface_set_params_init;
 #define MAX_QP_VP8               128
 #define MAX_QP_VP8_G75                          127
 #define MB_CODE_SIZE_VP8       204
+#define MB_MV_CODE_SIZE_VP8     64
+#define MB_CODE_ALIGNMENT       32
+#define MB_MV_ALIGNMENT         4096
 #define DC_BIAS_SEGMENT_DEFAULT_VAL_VP8                    1500
 
 #define QUAND_INDEX_Y1_DC_VP8                0
@@ -126,6 +129,28 @@ typedef enum _BINDING_TABLE_OFFSET_VP8_MBPAK_G75
   VP8_MBPAK_DEBUG_STREAMOUT_G75 = 12,
   VP8_MBPAK_NUM_SURFACES_G75 = 13
 } BINDING_TABLE_OFFSET_VP8_MBPAK_G75;
+
+typedef enum _BINDING_TABLE_OFFSET_VP8_BRC_INIT_RESET_G75
+{
+  VP8_BRC_INIT_RESET_HISTORY_G75 = 0,
+  VP8_BRC_INIT_RESET_DISTORTION_G75 = 1,
+  VP8_BRC_INIT_RESET_NUM_SURFACES_G75 = 2
+} BINDING_TABLE_OFFSET_VP8_BRC_INIT_RESET_G75;
+
+typedef enum _BINDING_TABLE_OFFSET_VP8_BRC_UPDATE_G75
+{
+  VP8_BRC_UPDATE_HISTORY_G75 = 0,
+  VP8_BRC_UPDATE_PAK_SURFACE_INDEX_G75 = 1,
+  VP8_BRC_UPDATE_MBPAK1_CURBE_WRITE_G75 = 2,
+  VP8_BRC_UPDATE_MBPAK2_CURBE_WRITE_G75 = 3,
+  VP8_BRC_UPDATE_MBENC_CURBE_READ_G75 = 4,
+  VP8_BRC_UPDATE_MBENC_CURBE_WRITE_G75 = 5,
+  VP8_BRC_UPDATE_DISTORTION_SURFACE_G75 = 6,
+  VP8_BRC_UPDATE_CONSTANT_DATA_G75 = 7,
+  VP8_BRC_UPDATE_MBPAK_TABLE_INDEX_G75 = 8,
+  VP8_BRC_UPDATE_SEGMENT_MAP_G75 = 9,
+  VP8_BRC_UPDATE_NUM_SURFACES_G75 = 10
+} BINDING_TABLE_OFFSET_VP8_BRC_UPDATE_G75;
 
 typedef struct _search_path_delta
 {
@@ -3221,7 +3246,335 @@ typedef struct _binding_table_state
 
 VOID media_add_binding_table (MEDIA_GPE_CTX * gpe_ctx);
 VOID media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context);
-void media_interface_setup_mbpak (MEDIA_ENCODER_CTX * encoder_context);
+
+typedef struct _media_curbe_data_brc_init_reset_g75
+{
+  struct {
+    UINT profile_level_max_frame; /* in bytes */
+  } dw0;
+
+  struct {
+    UINT init_buf_full_in_bits;
+  } dw1;
+
+  struct {
+    UINT buf_size_in_bits;
+  } dw2;
+
+  struct {
+    UINT average_bit_rate;
+  } dw3;
+
+  struct {
+    UINT max_bit_rate;
+  } dw4;
+
+  struct {
+    UINT min_bit_rate;
+  } dw5;
+
+  struct {
+    UINT frame_rate_m;
+  } dw6;
+
+  struct {
+    UINT frame_rate_d;
+  } dw7;
+
+  struct {
+    UINT brc_flag:16;
+    UINT number_pframes_in_gop:16;
+  } dw8;
+
+  struct {
+    UINT constant_0:16;
+    UINT frame_width:16; /* in bytes */
+  } dw9;
+
+  struct {
+    UINT frame_height:16; /* in bytes */
+    UINT avbr_accuracy:16;
+  } dw10;
+
+  struct {
+    UINT avbr_convergence:16;
+    UINT min_qp:16;
+  } dw11;
+
+  struct {
+    UINT max_qp:16;
+    UINT level_qp:16;
+  } dw12;
+
+  struct {
+    UINT max_section_pct:16;
+    UINT under_shoot_cbr_pct:16;
+  } dw13;
+
+  struct {
+    UINT vbr_bias_pct:16;
+    UINT min_section_pct:16;
+  } dw14;
+
+  struct {
+    UINT instant_rate_threshold0_pframe:8;
+    UINT instant_rate_threshold1_pframe:8;
+    UINT instant_rate_threshold2_pframe:8;
+    UINT instant_rate_threshold3_pframe:8;
+  } dw15;
+
+  struct {
+    UINT constant_0:8;
+    UINT constant_1:8;
+    UINT constant_2:8;
+    UINT constant_3:8;
+  } dw16;
+
+  struct {
+    UINT instant_rate_threshold0_iframe:8;
+    UINT instant_rate_threshold1_iframe:8;
+    UINT instant_rate_threshold2_iframe:8;
+    UINT instant_rate_threshold3_iframe:8;
+  } dw17;
+
+  struct {
+    UINT deviation_threshold0_pframe:8;      // signed byte
+    UINT deviation_threshold1_pframe:8;      // signed byte
+    UINT deviation_threshold2_pframe:8;      // signed byte
+    UINT deviation_threshold3_pframe:8;      // signed byte
+  } dw18;
+
+  struct {
+    UINT deviation_threshold4_pframe:8;      // signed byte
+    UINT deviation_threshold5_pframe:8;      // signed byte
+    UINT deviation_threshold6_pframe:8;      // signed byte
+    UINT deviation_threshold7_pframe:8;      // signed byte
+  } dw19;
+
+  struct {
+    UINT deviation_threshold0_vbr:8;         // signed byte
+    UINT deviation_threshold1_vbr:8;         // signed byte
+    UINT deviation_threshold2_vbr:8;         // signed byte
+    UINT deviation_threshold3_vbr:8;         // signed byte
+  } dw20;
+
+  struct {
+    UINT deviation_threshold4_vbr:8;         // signed byte
+    UINT deviation_threshold5_vbr:8;         // signed byte
+    UINT deviation_threshold6_vbr:8;         // signed byte
+    UINT deviation_threshold7_vbr:8;         // signed byte
+  } dw21;
+
+  struct {
+    UINT deviation_threshold0_iframe:8;      // signed byte
+    UINT deviation_threshold1_iframe:8;      // signed byte
+    UINT deviation_threshold2_iframe:8;      // signed byte
+    UINT deviation_threshold3_iframe:8;      // signed byte
+  } dw22;
+
+  struct {
+    UINT deviation_threshold4_iframe:8;      // signed byte
+    UINT deviation_threshold5_iframe:8;      // signed byte
+    UINT deviation_threshold6_iframe:8;      // signed byte
+    UINT deviation_threshold7_iframe:8;      // signed byte
+  } dw23;
+
+  struct {
+    UINT initial_qp_iframe:8;
+    UINT initial_qp_pframe:8;
+    UINT pad0:8;
+    UINT pad1:8;
+  } dw24;
+
+  struct {
+    UINT history_buffer_bti;
+  } dw25;
+
+  struct {
+    UINT distortion_buffer_bti;
+  } dw26;
+} MEDIA_CURBE_DATA_BRC_INIT_RESET_G75;
+
+typedef struct _media_curbe_data_brc_update_g75
+{
+  struct {
+    UINT target_size;
+  } dw0;
+
+  struct {
+    UINT frame_number;
+  } dw1;
+
+  struct {
+    UINT picture_header_size:32;
+  } dw2;
+
+  struct {
+    UINT start_global_adjust_frame0:16;
+    UINT start_global_adjust_frame1:16;
+  } dw3;
+
+  struct {
+    UINT start_global_adjust_frame2:16;
+    UINT start_global_adjust_frame3:16;
+  } dw4;
+
+  struct {
+    UINT target_size_flag:8;
+    UINT brc_flag:8;
+    UINT max_num_paks:8;
+    UINT curr_frame_type:8;
+  } dw5;
+
+  struct {
+    UINT reserved0:32;
+  } dw6;
+
+  struct {
+    UINT reserved0:32;
+  } dw7;
+
+  struct {
+    UINT start_global_adjust_mult0:8;
+    UINT start_global_adjust_mult1:8;
+    UINT start_global_adjust_mult2:8;
+    UINT start_global_adjust_mult3:8;
+  } dw8;
+
+  struct {
+    UINT start_global_adjust_mult4:8;
+    UINT start_global_adjust_div0:8;
+    UINT start_global_adjust_div1:8;
+    UINT start_global_adjust_div2:8;
+  } dw9;
+
+  struct {
+    UINT start_global_adjust_div3:8;
+    UINT start_global_adjust_div4:8;
+    UINT qp_threshold0:8;
+    UINT qp_threshold1:8;
+  } dw10;
+
+  struct {
+    UINT qp_threshold2:8;
+    UINT qp_threshold3:8;
+    UINT rate_ratio_threshold0:8;
+    UINT rate_ratio_threshold1:8;
+  } dw11;
+
+  struct {
+    UINT rate_ratio_threshold2:8;
+    UINT rate_ratio_threshold3:8;
+    UINT rate_ratio_threshold4:8;
+    UINT rate_ratio_threshold5:8;
+  } dw12;
+
+  struct {
+    UINT rate_ratio_threshold_qp0:8;
+    UINT rate_ratio_threshold_qp1:8;
+    UINT rate_ratio_threshold_qp2:8;
+    UINT rate_ratio_threshold_qp3:8;
+  } dw13;
+
+  struct {
+    UINT rate_ratio_threshold_qp4:8;
+    UINT rate_ratio_threshold_qp5:8;
+    UINT rate_ratio_threshold_qp6:8;
+    UINT index_of_previous_qp:8;
+  } dw14;
+
+  struct {
+    UINT frame_width_in_mb:8;
+    UINT frame_height_in_mb:8;
+    UINT prev_flag:8;
+    UINT reserved:8;
+  } dw15;
+
+  struct {
+    UINT frame_byte_count:32;
+  } dw16;
+
+  struct {
+    UINT key_frame_qp_seg0:8;
+    UINT key_frame_qp_seg1:8;
+    UINT key_frame_qp_seg2:8;
+    UINT key_frame_qp_seg3:8;
+  } dw17;
+
+  struct {
+    UINT qp_delta_plane0:8;
+    UINT qp_delta_plane1:8;
+    UINT qp_delta_plane2:8;
+    UINT qp_delta_plane3:8;
+  } dw18;
+
+  struct {
+    UINT qp_delta_plane4:8;
+    UINT qp:8;
+    UINT reserved:16;
+  } dw19;
+
+  struct {
+    UINT segmentation_enabled:8;
+    UINT mb_rc:8;
+    UINT brc_method:8;
+    UINT vme_intraprediction:8;
+  } dw20;
+
+  struct {
+    UINT history_buffer_index;
+  } dw21;
+
+  struct {
+    UINT pak_surface_index;
+  } dw22;
+
+  struct {
+    UINT mbpak_curbe1_index;
+  } dw23;
+
+  struct {
+    UINT mbpak_curbe2_index;
+  } dw24;
+
+  struct {
+    UINT mbenc_curbe_input_index;
+  } dw25;
+
+  struct {
+    UINT mbenc_curbe_output_index;
+  } dw26;
+
+  struct {
+    UINT distortion_input_index;
+  } dw27;
+
+  struct {
+    UINT constant_data_input_index;
+  } dw28;
+
+  struct {
+    UINT pak_table_surface_index;
+  } dw29;
+
+  struct {
+    UINT reserved;
+  } dw30;
+
+  struct {
+    UINT reserved;
+  } dw31;
+
+  struct {
+    UINT reserved;
+  } dw32;
+
+  struct {
+    UINT reserved;
+  } dw33;
+} MEDIA_CURBE_DATA_BRC_UPDATE_G75;
+
+void media_interface_setup_mbpak (MEDIA_GPE_CTX *mbpak_gpe_ctx);
 void
 media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 			       struct encode_state *encode_state,
@@ -3249,4 +3602,31 @@ void media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
 void
   media_encode_init_mbenc_constant_buffer_vp8_g75
   (MBENC_CONSTANT_BUFFER_PARAMS_VP8 * params);
+
+void
+media_set_curbe_vp8_brc_init_reset(struct encode_state *encode_state,
+                                   MEDIA_BRC_INIT_RESET_PARAMS_VP8 * params);
+VOID
+media_interface_setup_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context);
+
+VOID
+media_surface_state_vp8_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context,
+                                        struct encode_state *encode_state,
+                                        BRC_INIT_RESET_SURFACE_PARAMS_VP8 *surface_params);
+
+VOID
+media_interface_setup_brc_update (MEDIA_ENCODER_CTX * encoder_context);
+
+VOID
+media_surface_state_vp8_brc_update (MEDIA_ENCODER_CTX * encoder_context,
+                                    struct encode_state *encode_state,
+                                    BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params);
+
+VOID
+media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
+                               MEDIA_BRC_UPDATE_PARAMS_VP8 * params);
+
+VOID
+media_encode_init_brc_update_constant_data_vp8_g75(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
+
 #endif

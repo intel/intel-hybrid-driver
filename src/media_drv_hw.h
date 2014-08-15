@@ -46,7 +46,7 @@ typedef struct _mbenc_constant_buffer_params_vp8
 {
   MEDIA_RESOURCE *mb_mode_cost_luma_buffer;
   MEDIA_RESOURCE *block_mode_cost_buffer;
-
+  MEDIA_RESOURCE *mode_cost_update_surface;
 } MBENC_CONSTANT_BUFFER_PARAMS_VP8;
 
 typedef struct _media_mbpak_curbe_params_vp8
@@ -65,6 +65,63 @@ typedef struct _media_mbenc_curbe_params_vp8
   UINT brc_enabled;
   VOID *curbe_cmd_buff;
 } MEDIA_MBENC_CURBE_PARAMS_VP8;
+
+typedef struct _media_brc_init_reset_params_vp8
+{
+  UINT frame_width;
+  UINT frame_height;
+  UINT avbr_accuracy;
+  UINT avbr_convergence;
+  DOUBLE *brc_init_current_target_buf_full_in_bits;
+  DOUBLE *brc_init_reset_input_bits_per_frame;
+  UINT *brc_init_reset_buf_size_in_bits;
+  BOOL brc_initted;
+  BOOL brc_mb_enabled;
+  UINT frame_rate;
+  UINT rate_control_mode;
+  UINT target_bit_rate;
+  UINT max_bit_rate;
+  UINT min_bit_rate;
+  ULONG init_vbv_buffer_fullness_in_bit;
+  ULONG vbv_buffer_size_in_bit;
+  UINT gop_pic_size;
+  VOID *curbe_cmd_buff;
+} MEDIA_BRC_INIT_RESET_PARAMS_VP8;
+
+typedef struct _MEDIA_FRAME_UPDATE
+{
+  UINT prev_frame_size;
+  BOOL two_prev_frame_flag;
+  UINT16 ref_frame_cost[4];
+  UINT16 intra_mode_cost[4][4];
+  UINT16 inter_mode_cost[4];
+  BYTE intra_non_dc_penalty_16x16[4];
+  BYTE intra_non_dc_penalty_4x4[4];
+} MEDIA_FRAME_UPDATE;
+
+typedef struct _media_brc_distortion_params_vp8
+{
+  UINT frame_width_in_mbs;
+  UINT frame_height_in_mbs;
+  UINT avbr_accuracy;
+  UINT avbr_convergence;
+  UINT hme_enabled;
+  UINT brc_initted;
+  UINT kernel_mode;
+  UINT pic_coding_type;
+  UINT frame_number;
+  DOUBLE *brc_init_current_target_buf_full_in_bits;
+  DOUBLE brc_init_reset_input_bits_per_frame;
+  UINT brc_init_reset_buf_size_in_bits;
+  MEDIA_FRAME_UPDATE *frame_update;
+  VOID *curbe_cmd_buff;
+} MEDIA_BRC_UPDATE_PARAMS_VP8;
+
+typedef struct _brc_update_constant_data_params_vp8
+{
+  MEDIA_RESOURCE *brc_update_constant_data;
+} BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8;
+
 typedef struct surface_set_params
 {
 
@@ -106,6 +163,7 @@ typedef struct mbenc_surface_set_params_vp8
   BOOL kernel_dump;
   BOOL seg_enabled;
   BOOL hme_enabled;
+  BOOL iframe_dist_in_use;
   UINT cacheability_control;
 } MBENC_SURFACE_PARAMS_VP8;
 
@@ -125,6 +183,17 @@ typedef struct scaling_surface_set_params
   UINT output_width;
   UINT output_height;
 } SCALING_SURFACE_PARAMS;
+
+typedef struct brc_init_reset_surface_set_params_vp8
+{
+  UINT cacheability_control;
+} BRC_INIT_RESET_SURFACE_PARAMS_VP8;
+
+typedef struct brc_distortion_surface_set_params_vp8
+{
+  UINT cacheability_control;
+} BRC_UPDATE_SURFACE_PARAMS_VP8;
+
 struct hw_codec_info
 {
   INT max_width;
@@ -168,6 +237,12 @@ typedef struct media_object_walker_params
   UINT frmfield_h_in_mb;
   UINT frm_w_in_mb;
 } MEDIA_OBJ_WALKER_PARAMS;
+
+typedef struct media_object_params
+{
+  BOOL use_scoreboard;
+  UINT interface_offset;
+} MEDIA_OBJECT_PARAMS;
 
 enum MI_SET_PREDICATE_ENABLE
 {

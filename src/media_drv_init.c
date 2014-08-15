@@ -55,6 +55,9 @@ config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
   ,
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
    VA_RC_CBR, 1}
+  ,
+  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
+   VA_RC_VBR, 1}
 };
 
 /*list of supported display attributes */
@@ -1005,6 +1008,8 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
 // MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC(picture_control, pic_control)
 MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (qmatrix, q_matrix)
 MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (iqmatrix, iq_matrix)
+MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (frame_update, frame_update_param)
+
 /* extended buffer */
   MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (sequence_parameter_ext,
 					    seq_param_ext)
@@ -1041,17 +1046,19 @@ media_encoder_render_misc_parameter_buffer (VADriverContextP ctx,
 {
   struct encode_state *encode = &obj_context->codec_state.encode;
   VAEncMiscParameterBuffer *param = NULL;
+  int index;
 
   MEDIA_DRV_ASSERT (obj_buffer->buffer_store->bo == NULL);
   MEDIA_DRV_ASSERT (obj_buffer->buffer_store->buffer);
 
   param = (VAEncMiscParameterBuffer *) obj_buffer->buffer_store->buffer;
+  index = media_drv_va_misc_type_to_index(param->type);
 
-  if (param->type > ARRAY_ELEMS (encode->misc_param))
-    return VA_STATUS_ERROR_INVALID_PARAMETER;
+  if (index == -1)
+    return VA_STATUS_ERROR_UNIMPLEMENTED;
 
-  media_release_buffer_store (&encode->misc_param[param->type]);
-  media_reference_buffer_store (&encode->misc_param[param->type],
+  media_release_buffer_store (&encode->misc_param[index]);
+  media_reference_buffer_store (&encode->misc_param[index],
 				obj_buffer->buffer_store);
 
   return VA_STATUS_SUCCESS;
@@ -1207,16 +1214,12 @@ media_encoder_render_picture (VADriverContextP ctx,
 #endif
 	  break;
 	case VAEncMiscParameterTypeVP8HybridFrameUpdate:
+	  vaStatus = MEDIA_RENDER_ENCODE_BUFFER (frame_update);
 #ifdef DEBUG
 	  printf ("VAEncHackTypeVP8HybridFrameUpdate\n");
 #endif
 	  break;
-	case VAEncMiscParameterTypeVP8HybridFramerate:
-	  /*need to implement this later */
-#ifdef DEBUG
-	  printf ("VAEncHackTypeVP8HybridFrameUpdate\n");
-#endif
-	  break;
+
 	default:
 	  printf
 	    ("media_encoder_render_picture error:VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE obj_buffer->type=%d\n",

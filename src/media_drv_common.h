@@ -29,6 +29,16 @@
 #ifndef _MEDIA__DRIVER_COMMON_H
 #define _MEDIA__DRIVER_COMMON_H
 
+// BRC Flag in BRC Init Kernel
+#define BRC_INIT_CBR                            0x0010
+#define BRC_INIT_VBR                            0x0020
+#define BRC_INIT_AVBR                           0x0040
+#define BRC_INIT_FIELD_PIC                      0x0100
+#define BRC_INIT_ICQ                            0x0200
+#define BRC_INIT_VCM                            0x0400
+#define BRC_INIT_IGNORE_PICTURE_HEADER_SIZE     0x2000
+#define BRC_INIT_DISABLE_MBBRC                  0x8000
+
 UINT SEARCH_PATH_TABLE[2][8][16];
 UINT ME_CURBE_INIT_DATA[30];
 #endif

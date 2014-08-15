@@ -95,6 +95,8 @@
 /* Preversion of the driver */
 #define INTEL_DRIVER_PRE_VERSION 0
 
+#define DOUBLE double
+#define FLOAT float
 #define ULONG unsigned long
 #define DWORD unsigned int
 #define UINT unsigned int
@@ -128,6 +130,10 @@
 #define SCALE_FACTOR_4x    4
 #define SCALE_FACTOR_16x    16
 #define SCALE_FACTOR_32x    32
+
+//BRC
+#define ENCODE_BRC_KBPS                         1000
+#define BRC_IMG_STATE_SIZE_PER_PASS             128
 
 #define WIDTH_IN_MACROBLOCKS(width)      (((width) + (16 - 1)) / 16)
 #define HEIGHT_IN_MACROBLOCKS(height)    (((height) + (16 - 1)) / 16)
@@ -178,8 +184,6 @@
 #define    MBPAK_HYBRID_STATE_P2     2
 
 #define VAEncMiscParameterTypeVP8SegmentMapParams -4
-#define VAEncMiscParameterTypeVP8HybridFrameUpdate  -7
-#define VAEncMiscParameterTypeVP8HybridFramerate -8
 
 #define CACHEABILITY_TYPE_NONE 0
 #define CACHEABILITY_TYPE_LLC 1
@@ -190,13 +194,27 @@
 #define MBENC_ILUMA_START_OFFSET 0
 #define MBENC_ICHROMA_START_OFFSET 1
 #define MBENC_P_START_OFFSET 2
+#define MBENC_I_START_OFFSET 3
+#define MBENC_IFRAME_DIST_OFFSET 4
 
 #define MBPAK_PHASE1_OFFSET 1
 #define MBPAK_PHASE2_OFFSET 0
+
+#define BRC_INIT_OFFSET         0
+#define BRC_RESET_OFFSET        1
+
+#define BRC_UPDATE_OFFSET       0
 
 #define KERNEL_DUMP_SIZE_VP8                (600000 * sizeof(DWORD))
 
 #define LAST_REF_FLAG_VP8					0x1
 #define GOLDEN_REF_FLAG_VP8					0x2
 #define ALT_REF_FLAG_VP8					0x4
+
+#define NUM_BRC_IMG_STATE_READ_BUFFERS          3
+#define NUM_BRC_CONSTANT_DATA_BUFFERS           3
+
+#define BRC_CONSTANTSURFACE_WIDTH_G75           64
+#define BRC_CONSTANTSURFACE_HEIGHT_G75          43
+
 #endif

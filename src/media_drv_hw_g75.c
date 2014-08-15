@@ -27,12 +27,14 @@
  */
 
 #include "media_drv_kernels.h"
+#include "media_drv_hw.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_gpe_utils.h"
 #include "media_drv_defines.h"
 #include "media_drv_common.h"
 #include "media_drv_surface.h"
 #include <va/va_enc_vp8.h>
+#include <math.h>
 
 //#define DEBUG
 struct hw_codec_info gen75_hw_codec_info = {
@@ -108,6 +110,13 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    NULL,
    0},
   {
+   (BYTE *) "VP8_INTRA_DIS_BRC",
+   0,
+   MEDIA_VP8_INTRA_DIS_BRC,
+   MEDIA_VP8_INTRA_DIS_BRC_SZ,
+   NULL,
+   0},
+  {
    (BYTE *) "VP8_HME_P",
    0,
    MEDIA_VP8_HME_P,
@@ -136,14 +145,6 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    MEDIA_VP8_PAK_PHASE1_SZ,
    NULL,
    0},
-  {
-   (BYTE *) "VP8_INTRA_DIS_BRC",
-   0,
-   MEDIA_VP8_INTRA_DIS_BRC,
-   MEDIA_VP8_INTRA_DIS_BRC_SZ,
-   NULL,
-   0},
-
   {
    (BYTE *) "VP8_BRC_INIT",
    0,
@@ -853,16 +854,842 @@ static const UINT16 block_mode_cost_vp8_g75[10][10][10] = {
    }
 };
 
-VOID
-media_interface_setup_mbpak (MEDIA_ENCODER_CTX * encoder_context)
+const BYTE brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75[576] =
 {
-  MBPAK_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
-  MEDIA_GPE_CTX *mbpak_gpe_ctx = &mbpak_ctx->gpe_context;
+  0x01, 0x03, 0x05, 0x07, 0x09, 0x01, 0x02, 0x03, 0x05, 0x07, 0x00, 0x00, 0x01, 0x02, 0x04, 0x00,
+  0x00, 0x00, 0x01, 0x02, 0xff, 0x00, 0x00, 0x00, 0x01, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0xfb, 0xfc,
+  0xfe, 0xff, 0x00, 0xf9, 0xfa, 0xfc, 0xfe, 0xff, 0xf7, 0xf9, 0xfb, 0xfe, 0xff, 0x00, 0x04, 0x1e,
+  0x3c, 0x50, 0x78, 0x8c, 0xc8, 0xff, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x01, 0x02, 0x05, 0x08, 0x0a, 0x01, 0x02, 0x04, 0x06, 0x08, 0x00, 0x01, 0x02, 0x04, 0x06, 0x00,
+  0x00, 0x00, 0x01, 0x02, 0xff, 0x00, 0x00, 0x00, 0x01, 0xfe, 0xff, 0xff, 0x00, 0x00, 0xfd, 0xfe,
+  0xff, 0xff, 0x00, 0xfb, 0xfd, 0xfe, 0xff, 0x00, 0xf9, 0xfa, 0xfc, 0xfe, 0xff, 0x00, 0x04, 0x1e,
+  0x3c, 0x50, 0x78, 0x8c, 0xc8, 0xff, 0x04, 0x05, 0x06, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x01, 0x02, 0x05, 0x08, 0x0a, 0x01, 0x02, 0x04, 0x06, 0x08, 0x00, 0x01, 0x02, 0x04, 0x06, 0x00,
+  0x00, 0x00, 0x01, 0x02, 0xff, 0x00, 0x00, 0x00, 0x01, 0xfe, 0xff, 0xff, 0x00, 0x00, 0xfd, 0xfe,
+  0xff, 0xff, 0x00, 0xfb, 0xfd, 0xfe, 0xff, 0x00, 0xf9, 0xfa, 0xfc, 0xfe, 0xff, 0x00, 0x02, 0x14,
+  0x28, 0x46, 0x82, 0xa0, 0xc8, 0xff, 0x04, 0x05, 0x06, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x06, 0x08, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05,
+  0x07, 0x09, 0xff, 0x00, 0x00, 0x00, 0x00, 0x03, 0x04, 0x06, 0x07, 0xfe, 0xff, 0x00, 0x00, 0x00,
+  0x01, 0x02, 0x03, 0x05, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01, 0x03, 0x05, 0xfc, 0xfe, 0xff,
+  0x00, 0x00, 0x00, 0x01, 0x03, 0x05, 0xfb, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0x01, 0x03, 0x05, 0xfa,
+  0xfc, 0xfe, 0xff, 0x00, 0x00, 0x01, 0x03, 0x05, 0xfa, 0xfc, 0xfe, 0xff, 0x00, 0x00, 0x01, 0x03,
+  0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05, 0x07, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05,
+  0x06, 0x08, 0xff, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05, 0x07, 0x08, 0xfe, 0xff, 0x00, 0x00, 0x00,
+  0x02, 0x04, 0x05, 0x06, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01, 0x04, 0x05, 0xfc, 0xfe, 0xff,
+  0x00, 0x00, 0x00, 0x01, 0x04, 0x05, 0xfc, 0xfe, 0xff, 0xff, 0x00, 0x00, 0x00, 0x04, 0x05, 0xfc,
+  0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01, 0x05, 0xfb, 0xfc, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01,
+  0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05, 0x07, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05,
+  0x06, 0x08, 0xff, 0x00, 0x00, 0x00, 0x00, 0x03, 0x05, 0x07, 0x08, 0xfe, 0xff, 0x00, 0x00, 0x00,
+  0x02, 0x04, 0x05, 0x06, 0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01, 0x04, 0x05, 0xfc, 0xfe, 0xff,
+  0x00, 0x00, 0x00, 0x01, 0x04, 0x05, 0xfc, 0xfe, 0xff, 0xff, 0x00, 0x00, 0x00, 0x04, 0x05, 0xfc,
+  0xfd, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01, 0x05, 0xfb, 0xfc, 0xfe, 0xff, 0x00, 0x00, 0x00, 0x01,
+  0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+const BYTE brc_iframe_cost_table_vp8_g75 [512] = /* 128 * 4 */
+{
+  0x5,
+  0x5,
+  0x8,
+  0x8,
+  0xa,
+  0xa,
+  0xd,
+  0xd,
+  0xd,
+  0xf,
+  0xf,
+  0x19,
+  0x19,
+  0x1a,
+  0x1a,
+  0x1a,
+  0x1b,
+  0x1b,
+  0x1d,
+  0x1d,
+  0x1d,
+  0x1d,
+  0x1e,
+  0x1e,
+  0x1e,
+  0x1e,
+  0x1f,
+  0x1f,
+  0x1f,
+  0x28,
+  0x28,
+  0x29,
+  0x29,
+  0x29,
+  0x29,
+  0x2a,
+  0x2a,
+  0x2b,
+  0x2b,
+  0x2b,
+  0x2b,
+  0x2b,
+  0x2c,
+  0x2c,
+  0x2c,
+  0x2c,
+  0x2d,
+  0x2d,
+  0x2e,
+  0x2e,
+  0x2e,
+  0x2e,
+  0x2e,
+  0x2f,
+  0x2f,
+  0x38,
+  0x38,
+  0x38,
+  0x38,
+  0x38,
+  0x38,
+  0x39,
+  0x39,
+  0x39,
+  0x39,
+  0x39,
+  0x39,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3a,
+  0x3b,
+  0x3b,
+  0x3b,
+  0x3b,
+  0x3b,
+  0x3b,
+  0x3c,
+  0x3c,
+  0x3c,
+  0x3c,
+  0x3c,
+  0x3c,
+  0x3c,
+  0x3d,
+  0x3d,
+  0x3d,
+  0x3d,
+  0x3d,
+  0x3d,
+  0x3e,
+  0x3e,
+  0x3e,
+  0x3e,
+  0x3f,
+  0x3f,
+  0x3f,
+  0x48,
+  0x48,
+  0x48,
+  0x48,
+  0x48,
+  0x48,
+  0x48,
+  0x49,
+  0x49,
+  0x49,
+  0x49,
+  0x49,
+  0x49,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4b,
+  0x4b,
+  0x4b,
+  0x4b,
+  0x4b,
+  0x4c,
+  0x4c,
+  0x4c,
+  0x1f,
+  0x1f,
+  0x2b,
+  0x2b,
+  0x2f,
+  0x2f,
+  0x39,
+  0x39,
+  0x39,
+  0x3b,
+  0x3b,
+  0x3d,
+  0x3d,
+  0x3f,
+  0x3f,
+  0x3f,
+  0x48,
+  0x48,
+  0x49,
+  0x49,
+  0x49,
+  0x49,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4a,
+  0x4b,
+  0x4b,
+  0x4b,
+  0x4c,
+  0x4c,
+  0x4d,
+  0x4d,
+  0x4e,
+  0x4e,
+  0x4f,
+  0x4f,
+  0x58,
+  0x58,
+  0x58,
+  0x58,
+  0x58,
+  0x58,
+  0x58,
+  0x59,
+  0x59,
+  0x59,
+  0x59,
+  0x5a,
+  0x5a,
+  0x5a,
+  0x5a,
+  0x5a,
+  0x5b,
+  0x5b,
+  0x5b,
+  0x5b,
+  0x5c,
+  0x5c,
+  0x5c,
+  0x5c,
+  0x5d,
+  0x5d,
+  0x5d,
+  0x5d,
+  0x5e,
+  0x5e,
+  0x5e,
+  0x5e,
+  0x5f,
+  0x5f,
+  0x5f,
+  0x5f,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x68,
+  0x69,
+  0x69,
+  0x69,
+  0x69,
+  0x69,
+  0x69,
+  0x69,
+  0x69,
+  0x6a,
+  0x6a,
+  0x6a,
+  0x6a,
+  0x6a,
+  0x6a,
+  0x6b,
+  0x6b,
+  0x6b,
+  0x6b,
+  0x6b,
+  0x6c,
+  0x6c,
+  0x6c,
+  0x6c,
+  0x6c,
+  0x6d,
+  0x6d,
+  0x6d,
+  0x6d,
+  0x6e,
+  0x6e,
+  0x6e,
+  0x6f,
+  0x6f,
+  0x6f,
+  0x6f,
+  0x6f,
+  0x78,
+  0x78,
+  0x78,
+  0x78,
+  0x78,
+  0x78,
+  0x79,
+  0x79,
+  0x2,
+  0x2,
+  0x3,
+  0x3,
+  0x4,
+  0x4,
+  0x5,
+  0x5,
+  0x5,
+  0x6,
+  0x6,
+  0x7,
+  0x7,
+  0x8,
+  0x8,
+  0x8,
+  0x9,
+  0x9,
+  0x9,
+  0x9,
+  0x9,
+  0x9,
+  0xa,
+  0xa,
+  0xa,
+  0xa,
+  0xb,
+  0xb,
+  0xb,
+  0xc,
+  0xc,
+  0xd,
+  0xd,
+  0xe,
+  0xe,
+  0xf,
+  0xf,
+  0x10,
+  0x10,
+  0x11,
+  0x11,
+  0x11,
+  0x12,
+  0x12,
+  0x13,
+  0x13,
+  0x14,
+  0x14,
+  0x15,
+  0x15,
+  0x16,
+  0x16,
+  0x16,
+  0x17,
+  0x17,
+  0x18,
+  0x18,
+  0x19,
+  0x19,
+  0x1a,
+  0x1a,
+  0x1a,
+  0x1a,
+  0x1b,
+  0x1b,
+  0x1c,
+  0x1c,
+  0x1d,
+  0x1d,
+  0x1e,
+  0x1e,
+  0x1f,
+  0x1f,
+  0x20,
+  0x20,
+  0x21,
+  0x21,
+  0x22,
+  0x22,
+  0x23,
+  0x23,
+  0x24,
+  0x24,
+  0x24,
+  0x25,
+  0x25,
+  0x26,
+  0x26,
+  0x27,
+  0x27,
+  0x28,
+  0x28,
+  0x29,
+  0x29,
+  0x2a,
+  0x2a,
+  0x2b,
+  0x2b,
+  0x2c,
+  0x2d,
+  0x2e,
+  0x2f,
+  0x2f,
+  0x30,
+  0x31,
+  0x32,
+  0x33,
+  0x34,
+  0x35,
+  0x36,
+  0x37,
+  0x38,
+  0x3a,
+  0x3b,
+  0x3c,
+  0x3d,
+  0x3d,
+  0x3e,
+  0x3f,
+  0x40,
+  0x41,
+  0x42,
+  0x43,
+  0x44,
+  0x46,
+  0x47,
+  0x49,
+  0x4a,
+  0x9,
+  0x9,
+  0xe,
+  0xe,
+  0x12,
+  0x12,
+  0x17,
+  0x17,
+  0x17,
+  0x1b,
+  0x1b,
+  0x20,
+  0x20,
+  0x24,
+  0x24,
+  0x24,
+  0x29,
+  0x29,
+  0x2d,
+  0x2d,
+  0x2d,
+  0x2d,
+  0x32,
+  0x32,
+  0x32,
+  0x32,
+  0x36,
+  0x36,
+  0x36,
+  0x3b,
+  0x3b,
+  0x3f,
+  0x3f,
+  0x44,
+  0x44,
+  0x48,
+  0x48,
+  0x4d,
+  0x4d,
+  0x51,
+  0x51,
+  0x51,
+  0x56,
+  0x56,
+  0x5a,
+  0x5a,
+  0x5f,
+  0x5f,
+  0x63,
+  0x63,
+  0x68,
+  0x68,
+  0x68,
+  0x6c,
+  0x6c,
+  0x71,
+  0x71,
+  0x76,
+  0x76,
+  0x7a,
+  0x7a,
+  0x7f,
+  0x7f,
+  0x83,
+  0x83,
+  0x88,
+  0x88,
+  0x8c,
+  0x8c,
+  0x91,
+  0x91,
+  0x95,
+  0x95,
+  0x9a,
+  0x9a,
+  0x9e,
+  0x9e,
+  0xa3,
+  0xa3,
+  0xa7,
+  0xa7,
+  0xac,
+  0xac,
+  0xac,
+  0xb0,
+  0xb0,
+  0xb5,
+  0xb5,
+  0xb9,
+  0xb9,
+  0xbe,
+  0xbe,
+  0xc2,
+  0xc2,
+  0xc7,
+  0xc7,
+  0xcb,
+  0xd0,
+  0xd4,
+  0xd9,
+  0xdd,
+  0xe2,
+  0xe2,
+  0xe6,
+  0xeb,
+  0xf0,
+  0xf4,
+  0xf9,
+  0xfd,
+  0x2,
+  0x6,
+  0xb,
+  0x14,
+  0x18,
+  0x1d,
+  0x21,
+  0x26,
+  0x2a,
+  0x2f,
+  0x33,
+  0x38,
+  0x3c,
+  0x41,
+  0x45,
+  0x4e,
+  0x53,
+  0x5c,
+  0x61
+};
+
+const UINT brc_pframe_cost_table_vp8_g75[256] =
+{
+  0x06040402,
+  0x06040402,
+  0x06040402,
+  0x06040402,
+  0x0d080805,
+  0x0d080805,
+  0x0d080805,
+  0x0d080805,
+  0x0d080805,
+  0x190b0c07,
+  0x190b0c07,
+  0x190b0c07,
+  0x190b0c07,
+  0x1c0f0f0a,
+  0x1c0f0f0a,
+  0x1c0f0f0a,
+  0x1c0f0f0a,
+  0x1c0f0f0a,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x2819190c,
+  0x291b1b0f,
+  0x291b1b0f,
+  0x291b1b0f,
+  0x291b1b0f,
+  0x291b1b0f,
+  0x2b1d1d18,
+  0x2b1d1d18,
+  0x2b1d1d18,
+  0x2b1d1d18,
+  0x2c1f1f19,
+  0x2c1f1f19,
+  0x2c1f1f19,
+  0x2c1f1f19,
+  0x2e28281b,
+  0x2e28281b,
+  0x2e28281b,
+  0x2e28281b,
+  0x2e28281b,
+  0x2f29291c,
+  0x2f29291c,
+  0x2f29291c,
+  0x2f29291c,
+  0x382a2a1d,
+  0x382a2a1d,
+  0x382a2a1d,
+  0x382a2a1d,
+  0x382a2a1d,
+  0x392b2b1e,
+  0x392b2b1e,
+  0x392b2b1e,
+  0x392b2b1e,
+  0x3a2c2c1f,
+  0x3a2c2c1f,
+  0x3a2c2c1f,
+  0x3a2c2c1f,
+  0x3b2d2d28,
+  0x3b2d2d28,
+  0x3b2d2d28,
+  0x3b2d2d28,
+  0x3b2e2e29,
+  0x3b2e2e29,
+  0x3b2e2e29,
+  0x3b2e2e29,
+  0x3c2f2f29,
+  0x3c2f2f29,
+  0x3c2f2f29,
+  0x3c2f2f29,
+  0x3d38382a,
+  0x3d38382a,
+  0x3d38382a,
+  0x3d38382a,
+  0x3e38382b,
+  0x3e38382b,
+  0x3e38382b,
+  0x3e38382b,
+  0x3f38392b,
+  0x3f38392b,
+  0x3f38392b,
+  0x3f38392b,
+  0x3f38392b,
+  0x3f39392c,
+  0x3f39392c,
+  0x3f39392c,
+  0x3f39392c,
+  0x48393a2c,
+  0x48393a2c,
+  0x48393a2c,
+  0x48393a2c,
+  0x483a3a2d,
+  0x483a3a2d,
+  0x483a3a2d,
+  0x493a3b2e,
+  0x493a3b2e,
+  0x493b3b2e,
+  0x493b3b2e,
+  0x493b3c2f,
+  0x493b3c2f,
+  0x493b3c2f,
+  0x4a3c3c2f,
+  0x4a3c3c2f,
+  0x4a3c3d38,
+  0x4a3c3d38,
+  0x4b3d3d38,
+  0x4b3d3d38,
+  0x4b3d3e38,
+  0x4b3d3e38,
+  0x4b3e3e39,
+  0x4c3e3e39,
+  0x4c3e3e39,
+  0x4c3f3f39,
+  0x4c3f3f39,
+  0x4d3f3f3a,
+  0x4d3f3f3a,
+  0x4d48483a,
+  0x4d48483a,
+  0x4d48483a,
+  0x4d48483a,
+  0x4e48483a,
+  0x4e48483b,
+  0x4e48483b,
+  0x4f48493b,
+  0x4f49493b,
+  0x0b0a0907,
+  0x0b0a0907,
+  0x0b0a0907,
+  0x0b0a0907,
+  0x1b1a190e,
+  0x1b1a190e,
+  0x1b1a190e,
+  0x1b1a190e,
+  0x1b1a190e,
+  0x281f1e1a,
+  0x281f1e1a,
+  0x281f1e1a,
+  0x281f1e1a,
+  0x2b2a291e,
+  0x2b2a291e,
+  0x2b2a291e,
+  0x2b2a291e,
+  0x2b2a291e,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x2d2c2b29,
+  0x382f2e2a,
+  0x382f2e2a,
+  0x382f2e2a,
+  0x382f2e2a,
+  0x382f2e2a,
+  0x3938382c,
+  0x3938382c,
+  0x3938382c,
+  0x3938382c,
+  0x3b3a392e,
+  0x3b3a392e,
+  0x3b3a392e,
+  0x3b3a392e,
+  0x3c3b3a38,
+  0x3c3b3a38,
+  0x3c3b3a38,
+  0x3c3b3a38,
+  0x3c3b3a38,
+  0x3d3c3b38,
+  0x3d3c3b38,
+  0x3d3c3b38,
+  0x3d3c3b38,
+  0x3f3e3c39,
+  0x3f3e3c39,
+  0x3f3e3c39,
+  0x3f3e3c39,
+  0x3f3e3c39,
+  0x483f3e3a,
+  0x483f3e3a,
+  0x483f3e3a,
+  0x483f3e3a,
+  0x48483f3b,
+  0x48483f3b,
+  0x48483f3b,
+  0x48483f3b,
+  0x4948483c,
+  0x4948483c,
+  0x4948483c,
+  0x4948483c,
+  0x4a49483d,
+  0x4a49483d,
+  0x4a49483d,
+  0x4a49483d,
+  0x4a4a493e,
+  0x4a4a493e,
+  0x4a4a493e,
+  0x4a4a493e,
+  0x4b4a493f,
+  0x4b4a493f,
+  0x4b4a493f,
+  0x4b4a493f,
+  0x4c4b4a48,
+  0x4c4b4a48,
+  0x4c4b4a48,
+  0x4c4b4a48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4d4c4b48,
+  0x4e4d4c49,
+  0x4e4d4c49,
+  0x4e4d4c49,
+  0x4e4d4c49,
+  0x4f4d4c49,
+  0x4f4d4c49,
+  0x4f4d4c49,
+  0x4f4e4d4a,
+  0x4f4e4d4a,
+  0x584f4e4a,
+  0x584f4e4a,
+  0x584f4e4b,
+  0x584f4e4b,
+  0x584f4e4b,
+  0x58584f4b,
+  0x58584f4b,
+  0x59584f4c,
+  0x59584f4c,
+  0x5958584c,
+  0x5958584c,
+  0x5959584c,
+  0x5959584c,
+  0x5a59584d,
+  0x5a59594d,
+  0x5a59594d,
+  0x5a5a594e,
+  0x5a5a594e,
+  0x5b5a594e,
+  0x5b5a594e,
+  0x5b5a594f,
+  0x5b5a594f,
+  0x5b5b5a4f,
+  0x5b5b5a4f,
+  0x5c5b5a58,
+  0x5c5b5a58,
+  0x5c5b5a58,
+  0x5d5c5b58,
+  0x5d5c5b58
+};
+
+const UINT16 brc_skip_mv_threshold_table_vp8_g75 [128] =
+{
+  111,  120,  129,  137,  146,  155,  163,  172,  180,  189,  198,  206,  215,  224,  232,  241,
+  249,  258,  267,  275,  284,  293,  301,  310,  318,  327,  336,  344,  353,  362,  370,  379,
+  387,  396,  405,  413,  422,  431,  439,  448,  456,  465,  474,  482,  491,  500,  508,  517,
+  525,  534,  543,  551,  560,  569,  577,  586,  594,  603,  612,  620,  629,  638,  646,  655,
+  663,  672,  681,  689,  698,  707,  715,  724,  733,  741,  750,  758,  767,  776,  784,  793,
+  802,  810,  819,  827,  836,  845,  853,  862,  871,  879,  888,  896,  905,  914,  922,  931,
+  940,  948,  957,  965,  974,  983,  991, 1000, 1009, 1017, 1026, 1034, 1043, 1052, 1060, 1069,
+  1078,1086, 1095, 1103, 1112, 1121, 1129, 1138, 1147, 1155, 1164, 1172, 1181, 1190, 1198, 1208
+};
+
+VOID
+media_interface_setup_mbpak (MEDIA_GPE_CTX *mbpak_gpe_ctx)
+{
   struct gen6_interface_descriptor_data *desc;
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
-  bo = mbpak_ctx->gpe_context.dynamic_state.res.bo;
+  bo = mbpak_gpe_ctx->dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);
   desc_ptr = (BYTE *) bo->virtual + mbpak_gpe_ctx->idrt_offset;
@@ -925,10 +1752,77 @@ media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context)
 }
 
 VOID
+media_interface_setup_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context)
+{
+  BRC_INIT_RESET_CONTEXT *ctx = &encoder_context->brc_init_reset_context;
+  MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
+  struct gen6_interface_descriptor_data *desc;
+  INT i;
+  dri_bo *bo;
+  BYTE *desc_ptr;
+  bo = gpe_ctx->dynamic_state.res.bo;
+  dri_bo_map (bo, 1);
+  MEDIA_DRV_ASSERT (bo->virtual);
+  desc_ptr = (BYTE *) bo->virtual + gpe_ctx->idrt_offset;
+  desc = (struct gen6_interface_descriptor_data *) desc_ptr;
+
+  for (i = 0; i < gpe_ctx->num_kernels; i++) {
+    MEDIA_KERNEL *kernel;
+    kernel = &gpe_ctx->kernels[i];
+    MEDIA_DRV_ASSERT (sizeof (*desc) == 32);
+    /*Setup the descritor table */
+    memset (desc, 0, sizeof (*desc));
+    desc->desc0.kernel_start_pointer = kernel->kernel_offset >> 6;
+    desc->desc2.sampler_count = 0;	/* FIXME: */
+    desc->desc2.sampler_state_pointer = 0;
+    desc->desc3.binding_table_entry_count = 0;	//1; /* FIXME: */
+    desc->desc3.binding_table_pointer = (BINDING_TABLE_OFFSET (0) >> 5);
+    desc->desc4.constant_urb_entry_read_offset = 0;
+    desc->desc4.constant_urb_entry_read_length = (gpe_ctx->curbe_size + 31) >> 5;	//CURBE_URB_ENTRY_LENGTH;
+    desc++;
+  }
+  dri_bo_unmap (bo);
+}
+
+VOID
+media_interface_setup_brc_update (MEDIA_ENCODER_CTX * encoder_context)
+{
+  BRC_UPDATE_CONTEXT *ctx = &encoder_context->brc_update_context;
+  MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
+  struct gen6_interface_descriptor_data *desc;
+  INT i;
+  dri_bo *bo;
+  BYTE *desc_ptr;
+  bo = gpe_ctx->dynamic_state.res.bo;
+  dri_bo_map (bo, 1);
+  MEDIA_DRV_ASSERT (bo->virtual);
+  desc_ptr = (BYTE *) bo->virtual + gpe_ctx->idrt_offset;
+  desc = (struct gen6_interface_descriptor_data *) desc_ptr;
+
+  for (i = 0; i < gpe_ctx->num_kernels; i++)
+  {
+    MEDIA_KERNEL *kernel;
+    kernel = &gpe_ctx->kernels[i];
+    MEDIA_DRV_ASSERT (sizeof (*desc) == 32);
+    /*Setup the descritor table */
+    memset (desc, 0, sizeof (*desc));
+    desc->desc0.kernel_start_pointer = kernel->kernel_offset >> 6;
+    desc->desc2.sampler_count = 0;	/* FIXME: */
+    desc->desc2.sampler_state_pointer = 0;
+    desc->desc3.binding_table_entry_count = 0;	//1; /* FIXME: */
+    desc->desc3.binding_table_pointer = (BINDING_TABLE_OFFSET (0) >> 5);
+    desc->desc4.constant_urb_entry_read_offset = 0;
+    desc->desc4.constant_urb_entry_read_length = (gpe_ctx->curbe_size + 31) >> 5;	//CURBE_URB_ENTRY_LENGTH;
+    desc++;
+  }
+  dri_bo_unmap (bo);
+}
+
+VOID
   media_encode_init_mbenc_constant_buffer_vp8_g75
   (MBENC_CONSTANT_BUFFER_PARAMS_VP8 * params)
 {
-  BYTE *cost_luma_buf, *block_mode_cost;
+  BYTE *cost_luma_buf, *block_mode_cost, *mode_cost_update;
   BOOL status;
   cost_luma_buf =
     (BYTE *) media_map_buffer_obj (params->mb_mode_cost_luma_buffer->bo);
@@ -966,6 +1860,42 @@ VOID
       MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
     }
   media_unmap_buffer_obj (params->block_mode_cost_buffer->bo);
+
+  mode_cost_update =
+    (BYTE *) media_map_buffer_obj (params->mode_cost_update_surface->bo);
+  MEDIA_DRV_ASSERT (mode_cost_update);
+
+  media_drv_memset (mode_cost_update, 64);
+  // params->mode_cost_update_surface->bo_size);
+
+  mode_cost_update[2] = 0x30;
+  mode_cost_update[3] = 0x01;
+
+  mode_cost_update[6] = 0x08;
+  mode_cost_update[7] = 0x13;
+
+  mode_cost_update[8] = 0x3c;
+  mode_cost_update[9] = 0x07;
+  mode_cost_update[10] = 0x65;
+  mode_cost_update[11] = 0x03;
+
+  mode_cost_update[14] = 0xc9;
+  mode_cost_update[15] = 0x0d;
+
+  mode_cost_update[24] = 0x14;
+  mode_cost_update[25] = 0x02;
+  mode_cost_update[26] = 0x62;
+  mode_cost_update[27] = 0x03;
+  mode_cost_update[28] = 0x04;
+  mode_cost_update[29] = 0x02;
+  mode_cost_update[30] = 0x6a;
+
+  mode_cost_update[32] = 0x67;
+  mode_cost_update[33] = 0x09;
+  mode_cost_update[34] = 0x69;
+  mode_cost_update[35] = 0x09;
+
+  media_unmap_buffer_obj (params->mode_cost_update_surface->bo);
 }
 
 VOID
@@ -1542,6 +2472,21 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
     (MEDIA_CURBE_DATA_MBENC_I_G75 *) params->curbe_cmd_buff;
   UINT16 y_quanta_dc_idx, uv_quanta_dc_idx, uv_quanta_ac_idx;
 
+  if (params->updated) {
+      cmd->dw32.mb_enc_per_mb_out_data_surf_bti = 0;
+      cmd->dw33.mb_enc_curr_y_bti = 1;
+      cmd->dw34.mb_enc_curr_uv_bti = 1;	//2
+      cmd->dw35.mb_mode_cost_luma_bti = 3;
+      cmd->dw36.mb_enc_block_mode_cost_bti = 4;
+      cmd->dw37.chroma_recon_surf_bti = 5;
+      cmd->dw38.segmentation_map_bti = 6;
+      cmd->dw39.histogram_bti = 7;
+      cmd->dw40.mb_enc_vme_debug_stream_out_bti = 8;
+      cmd->dw41.vme_bti = 9;
+
+      return;
+  }
+
   media_drv_memset (cmd, sizeof (*cmd));
 
   cmd->dw0.frame_width = (seq_params->frame_width + 15) & (~0xF);	/* kernel require MB boundary aligned dimensions */
@@ -1872,14 +2817,19 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
     uv_quanta_dc_idx < 0 ? 0 : (uv_quanta_dc_idx >
 				MAX_QP_VP8_G75 ? MAX_QP_VP8_G75 :
 				uv_quanta_dc_idx);
-  cmd->dw24.vme_16x16_cost_segment0 =
-    frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][0];
-  cmd->dw25.vme_4x4_cost_segment0 =
-    frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][1];
-  cmd->dw26.vme_16x16_non_dc_penalty_segment0 =
-    frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][2];
-  cmd->dw27.vme_4x4_non_dc_penalty_segment0 =
-    frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][3];
+
+  // if (params->brc_enabled)
+  {
+    cmd->dw24.vme_16x16_cost_segment0 =
+      frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][0];
+    cmd->dw25.vme_4x4_cost_segment0 =
+      frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][1];
+    cmd->dw26.vme_16x16_non_dc_penalty_segment0 =
+      frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][2];
+    cmd->dw27.vme_4x4_non_dc_penalty_segment0 =
+      frame_i_vme_cost_vp8_g75[uv_quanta_dc_idx & 0x7F][3];
+  }
+
   if (segmentation_enabled)
     {
       uv_quanta_dc_idx =
@@ -2037,9 +2987,9 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw1.enable_segmentation = segmentation_enabled;
   cmd->dw1.enable_segmentation_info_update = 0;
   cmd->dw1.multi_reference_qp_check = 1;
-  cmd->dw1.mode_cost_enable_flag = 0;
-  cmd->dw1.hme_coarse_shape = 0;
-  cmd->dw1.all_fractional = 1;
+  cmd->dw1.mode_cost_enable_flag = 1;
+  cmd->dw1.hme_coarse_shape = 2;
+
   //dw2
   cmd->dw2.lambda_intra_segment0 = quant_dc_vp8_g75[qp_seg0];
   cmd->dw2.lambda_inter_segment0 = (quant_dc_vp8_g75[qp_seg0] >> 2);
@@ -2163,7 +3113,7 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw32.intra_16x16_no_dc_penalty_segment0 =
     cost_table_vp8_g75[qp_seg0][5];
 
-  if (params->brc_enabled == TRUE)
+  // if (params->brc_enabled == TRUE)
     {
       cmd->dw30.mv_cost_seg_val = cmd->dw31.mv_cost_seg_val = 0;
       cmd->dw32.intra_16x16_no_dc_penalty_segment0 = 0;
@@ -2183,32 +3133,72 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   //dw34 to dw57
   media_drv_memcpy (&(cmd->dw34), 24 * sizeof (UINT),
 		    (VOID *) mv_ref_cost_context_vp8_g75, 24 * sizeof (UINT));
-  //dw58
-  cmd->dw58.enc_cost_16x16 = 0;
-  cmd->dw58.enc_cost_16x8 = 0x73C;
-  //dw59
-  cmd->dw59.enc_cost_8x8 = 0x365;
-  cmd->dw59.enc_cost_4x4 = 0xDC9;
+
+  if (!params->brc_enabled) {
+    //dw58
+    cmd->dw58.enc_cost_16x16 = 0;
+    cmd->dw58.enc_cost_16x8 = 0x73C;
+    //dw59
+    cmd->dw59.enc_cost_8x8 = 0x365;
+    cmd->dw59.enc_cost_4x4 = 0xDC9;
+  }
+
   //dw60
   cmd->dw60.frame_count_probability_ref_frame_cost_0 = 0x0204;
   cmd->dw60.frame_count_probability_ref_frame_cost_1 = 0x006a;
   //dw61
   cmd->dw61.frame_count_probability_ref_frame_cost_2 = 0x0967;
   cmd->dw61.frame_count_probability_ref_frame_cost_3 = 0x0969;
+
   //dw62
-  cmd->dw62.average_qp_of_last_ref_frame = quant_dc_vp8_g75[qp_seg0];	//0x0f; may have to change this later
-  cmd->dw62.average_qp_of_gold_ref_frame = quant_dc_vp8_g75[qp_seg0];	//0x0f;
-  cmd->dw62.average_qp_of_alt_ref_frame = quant_dc_vp8_g75[qp_seg0];	//0x0f;
+    {
+      MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
+      unsigned int qp;
+
+      if (encode_state->ref_last_frame != NULL &&
+	  encode_state->ref_last_frame->bo != NULL &&
+	  encode_state->ref_last_frame->private_data) {
+	vp8_surface = (MEDIA_ENCODER_VP8_SURFACE *)encode_state->ref_last_frame->private_data;
+	qp = quant_dc_vp8_g75[vp8_surface->qp_index];
+      } else {
+	qp = quant_dc_vp8_g75[qp_seg0];
+      }
+
+      cmd->dw62.average_qp_of_last_ref_frame = qp;
+
+      if (encode_state->ref_gf_frame != NULL &&
+	  encode_state->ref_gf_frame->bo != NULL &&
+	  encode_state->ref_gf_frame->private_data) {
+	vp8_surface = (MEDIA_ENCODER_VP8_SURFACE *)encode_state->ref_gf_frame->private_data;
+	qp = quant_dc_vp8_g75[vp8_surface->qp_index];
+      } else {
+	qp = quant_dc_vp8_g75[qp_seg0];
+      }
+
+      cmd->dw62.average_qp_of_gold_ref_frame = qp;
+
+      if (encode_state->ref_arf_frame != NULL &&
+	  encode_state->ref_arf_frame->bo != NULL &&
+	  encode_state->ref_arf_frame->private_data) {
+	vp8_surface = (MEDIA_ENCODER_VP8_SURFACE *)encode_state->ref_arf_frame->private_data;
+	qp = quant_dc_vp8_g75[vp8_surface->qp_index];
+      } else {
+	qp = quant_dc_vp8_g75[qp_seg0];
+      }
+
+      cmd->dw62.average_qp_of_alt_ref_frame = qp;
+    }
+
   //dw63
   cmd->dw63.intra_4x4_no_dc_penalty_segment0 = cost_table_vp8_g75[qp_seg0][6];
 
   if (params->brc_enabled == TRUE)
-    {
-      cmd->dw62.average_qp_of_last_ref_frame = 0x13;
-      cmd->dw62.average_qp_of_gold_ref_frame = 0x13;
-      cmd->dw62.average_qp_of_alt_ref_frame = 0x13;
-      cmd->dw63.intra_4x4_no_dc_penalty_segment0 = 0;
-    }
+  {
+    cmd->dw62.average_qp_of_last_ref_frame = 0x16;
+    cmd->dw62.average_qp_of_gold_ref_frame = 0x16;
+    cmd->dw62.average_qp_of_alt_ref_frame = 0x16;
+    cmd->dw63.intra_4x4_no_dc_penalty_segment0 = 0;
+  }
 
   if (segmentation_enabled)
     {
@@ -2607,6 +3597,10 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
   //struct object_buffer *obj_buffer;
   BYTE *binding_surface_state_buf = NULL;
   MEDIA_RESOURCE surface_2d;	//={0,0,0};
+
+  if (mbpak_sutface_params->mbpak_phase_type == MBPAK_HYBRID_STATE_P2)
+    mbpak_gpe_ctx = &mbpak_ctx->gpe_context2;
+
   binding_surface_state_buf =
     (BYTE *) media_map_buffer_obj (mbpak_gpe_ctx->
 				   surface_state_binding_table.res.bo);
@@ -2622,12 +3616,9 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
   params.buf_object = surface_2d;
   //params.surface_is_raw = 1;
   params.offset = 0;
+  params.offset = encoder_context->mb_data_offset;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
-  params.size =
-    WIDTH_IN_MACROBLOCKS ((mbpak_sutface_params->orig_frame_width) *
-			  HEIGHT_IN_MACROBLOCKS
-			  (mbpak_sutface_params->orig_frame_height) *
-			  MB_CODE_SIZE_VP8 * sizeof (UINT));
+  params.size = encoder_context->mb_data_in_bytes;
   media_add_surface_state (&params);
   //current pic luma
   params = surface_set_params_init;
@@ -2715,9 +3706,8 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
       params.buf_object = surface_2d;
       //params.surface_is_raw = 1;
       params.offset = encoder_context->mv_offset;
-      params.size =
-	WIDTH_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_width) *
-	HEIGHT_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_height) * 64;
+      params.size = encoder_context->mv_in_bytes;
+
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
       media_add_surface_state (&params);
@@ -2937,6 +3927,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 {
   MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
   MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
+  BRC_INIT_RESET_CONTEXT *brc_init_reset_ctx = &encoder_context->brc_init_reset_context;
   //ME_CONTEXT *me_ctx = &encoder_context->me_context;
   UINT kernel_dump_offset = 0;
   SURFACE_SET_PARAMS params;
@@ -2959,13 +3950,10 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
   obj_surface = encode_state->coded_buf_surface;
   OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
   params.buf_object = surface_2d;
-  params.surface_is_raw = 1;
+  // params.surface_is_raw = 1; // ???
   params.offset = 0;
-  params.size =
-    WIDTH_IN_MACROBLOCKS ((mbenc_sutface_params->orig_frame_width) *
-			  HEIGHT_IN_MACROBLOCKS
-			  (mbenc_sutface_params->orig_frame_height) *
-			  MB_CODE_SIZE_VP8 * sizeof (UINT));
+  params.offset = encoder_context->mb_data_offset;
+  params.size = encoder_context->mb_data_in_bytes;
   params.cacheability_control = mbenc_sutface_params->cacheability_control;
   media_add_surface_state (&params);
 //current pic luma
@@ -3074,13 +4062,72 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.binding_table_offset = BINDING_TABLE_OFFSET (7);
       params.surface_state_offset = SURFACE_STATE_OFFSET (7);
       params.buf_object = mbenc_ctx->histogram_buffer;
-      params.surface_is_raw = 1;
       params.size = mbenc_ctx->histogram_buffer.bo_size;
+
+      if (encoder_context->brc_enabled) {
+	params.buf_object = brc_init_reset_ctx->brc_history;
+	params.size = brc_init_reset_ctx->brc_history.bo_size;
+	assert(params.size == 544);
+      }
+
+      params.surface_is_raw = 1;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
       media_add_surface_state (&params);
       kernel_dump_offset = 8;
+      if (mbenc_sutface_params->iframe_dist_in_use) {
+	MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
 
+	params = surface_set_params_init;
+	params.binding_surface_state.bo =
+	  mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+
+	params.binding_surface_state.buf = binding_surface_state_buf;
+	params.surface_is_2d = 1;
+	params.media_block_raw = 1; /* media block read/write message */
+	params.vert_line_stride_offset = 0;
+	params.vert_line_stride = 0;
+	params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	params.binding_table_offset = BINDING_TABLE_OFFSET (10);
+	params.surface_state_offset = SURFACE_STATE_OFFSET (10);
+	params.surface_2d = &brc_init_reset_ctx->brc_distortion;
+	media_add_surface_state (&params);
+
+	vp8_surface = encode_state->reconstructed_object->private_data;
+
+	if (vp8_surface && vp8_surface->scaled_4x_surface_obj) {
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.surface_is_2d = 1;
+	  params.vert_line_stride_offset = 0;
+	  params.vert_line_stride = 0;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET (11);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET (11);
+	  obj_surface = vp8_surface->scaled_4x_surface_obj;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = mbenc_sutface_params->cacheability_control;
+	  media_add_surface_state (&params);
+
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET (12);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET (12);
+	  obj_surface = vp8_surface->scaled_4x_surface_obj;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.uv_direction = VDIRECTION_FULL_FRAME;
+	  params.cacheability_control = mbenc_sutface_params->cacheability_control;
+	  media_add_surface_state (&params);
+	}
+      }
     }
   else
     {
@@ -3097,10 +4144,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.media_block_raw = 1;
       params.surface_is_raw = 1;
       params.offset = encoder_context->mv_offset;
-      params.size =
-	WIDTH_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_width) *
-	HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_height) * 64;
-
+      params.size = encoder_context->mv_in_bytes;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
       media_add_surface_state (&params);
@@ -3232,8 +4276,15 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.binding_table_offset = BINDING_TABLE_OFFSET (18);
       params.surface_state_offset = SURFACE_STATE_OFFSET (18);
       params.buf_object = mbenc_ctx->histogram_buffer;
-      params.surface_is_raw = 1;
       params.size = mbenc_ctx->histogram_buffer.bo_size;
+
+      if (encoder_context->brc_enabled) {
+	params.buf_object = brc_init_reset_ctx->brc_history;
+	params.size = brc_init_reset_ctx->brc_history.bo_size;
+	assert(params.size = 544);
+      }
+
+      params.surface_is_raw = 1;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
       media_add_surface_state (&params);
@@ -3278,10 +4329,10 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
       params.size =
-	WIDTH_IN_MACROBLOCKS ((mbenc_sutface_params->orig_frame_width) *
-			      HEIGHT_IN_MACROBLOCKS
-			      (mbenc_sutface_params->orig_frame_height) *
-			      /*MB_CODE_SIZE_VP8 */ 32);
+	WIDTH_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_width) *
+			      HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->
+						     orig_frame_height) *
+			      /*MB_CODE_SIZE_VP8 */ 32;
       params.offset = encoder_context->mv_offset;
       media_add_surface_state (&params);
 
@@ -3469,4 +4520,523 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   media_unmap_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.res.
 			  bo);
 #endif
+}
+
+VOID
+media_surface_state_vp8_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context,
+                                        struct encode_state *encode_state,
+                                        BRC_INIT_RESET_SURFACE_PARAMS_VP8 *surface_params)
+{
+  BRC_INIT_RESET_CONTEXT *ctx = &encoder_context->brc_init_reset_context;
+  MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
+  SURFACE_SET_PARAMS params;
+  BYTE *binding_surface_state_buf = NULL;
+
+  binding_surface_state_buf =
+    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
+
+  /* history buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (0);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (0);
+  params.buf_object = ctx->brc_history;
+  params.size = ctx->brc_history.bo_size;
+  params.cacheability_control =
+    surface_params->cacheability_control;
+  assert(params.size == 544);
+  media_add_surface_state (&params);
+
+  /* distortion buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (1);
+  params.surface_2d = &ctx->brc_distortion;
+  media_add_surface_state (&params);
+
+  media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
+}
+
+VOID
+media_set_curbe_vp8_brc_init_reset(struct encode_state *encode_state,
+                                   MEDIA_BRC_INIT_RESET_PARAMS_VP8 * params)
+{
+  DOUBLE input_bits_per_frame, bps_ratio;
+  MEDIA_CURBE_DATA_BRC_INIT_RESET_G75 *cmd =
+    (MEDIA_CURBE_DATA_BRC_INIT_RESET_G75 *)params->curbe_cmd_buff;
+
+  media_drv_memset(cmd, sizeof(MEDIA_CURBE_DATA_BRC_INIT_RESET_G75));
+
+  // profile & level max frame size
+  cmd->dw0.profile_level_max_frame = 25344;
+
+  cmd->dw1.init_buf_full_in_bits = params->init_vbv_buffer_fullness_in_bit;
+  cmd->dw2.buf_size_in_bits = params->vbv_buffer_size_in_bit;
+  cmd->dw3.average_bit_rate = (params->target_bit_rate + ENCODE_BRC_KBPS - 1) / ENCODE_BRC_KBPS * ENCODE_BRC_KBPS;
+  cmd->dw4.max_bit_rate = (params->max_bit_rate + ENCODE_BRC_KBPS - 1) / ENCODE_BRC_KBPS * ENCODE_BRC_KBPS;
+  cmd->dw8.number_pframes_in_gop = params->gop_pic_size - 1;
+  cmd->dw9.frame_width = params->frame_width;
+  cmd->dw10.frame_height = params->frame_height;
+  cmd->dw10.avbr_accuracy = 60;
+
+  if ((params->frame_rate % 100) == 0) {
+    cmd->dw6.frame_rate_m = params->frame_rate / 100;
+    cmd->dw7.frame_rate_d = 1;
+  } else {
+    cmd->dw6.frame_rate_m = params->frame_rate;
+    cmd->dw7.frame_rate_d = 100;
+  }
+
+  params->rate_control_mode = HB_BRC_CBR;
+  if (params->rate_control_mode == HB_BRC_CBR) {
+    cmd->dw4.max_bit_rate = cmd->dw3.average_bit_rate;
+    cmd->dw8.brc_flag = 0x0010;
+  } else if (params->rate_control_mode == HB_BRC_VBR) {
+    if (cmd->dw4.max_bit_rate < cmd->dw3.average_bit_rate)
+    {
+      cmd->dw4.max_bit_rate = 2 * cmd->dw3.average_bit_rate;
+    }
+
+    cmd->dw8.brc_flag = 0x0020;
+  }
+
+  // set dynamic thresholds
+  input_bits_per_frame = ((DOUBLE)(cmd->dw4.max_bit_rate) * (DOUBLE)(cmd->dw7.frame_rate_d) / (DOUBLE)(cmd->dw6.frame_rate_m));
+  bps_ratio = input_bits_per_frame / ((DOUBLE)(cmd->dw2.buf_size_in_bits) / 30);
+  bps_ratio = (bps_ratio < 0.1) ? 0.1 : (bps_ratio > 3.5) ? 3.5 : bps_ratio;
+
+  cmd->dw9.frame_width = params->frame_width;
+  cmd->dw9.constant_0 = 30;
+  cmd->dw10.frame_height = params->frame_height;
+  cmd->dw10.avbr_accuracy = 30;
+  cmd->dw11.avbr_convergence = 150;
+  cmd->dw11.min_qp = 1; // hardcoded to match
+  cmd->dw12.max_qp = 106; // hardcoded to match
+  cmd->dw12.level_qp = 60; // hardcoded to match kernel cmodel
+
+  // dw13-dw14 default 100
+  cmd->dw13.max_section_pct = 100; // hardcoded to match kernel cmodel
+  cmd->dw13.under_shoot_cbr_pct = 100; // hardcoded to match kernel cmodel
+  cmd->dw14.min_section_pct = 100; // hardcoded to match kernel cmodel
+  cmd->dw14.vbr_bias_pct = 100; // hardcoded to match kernel cmodel
+
+  cmd->dw15.instant_rate_threshold0_pframe = 30;
+  cmd->dw15.instant_rate_threshold1_pframe = 50;
+  cmd->dw15.instant_rate_threshold2_pframe = 70;
+  cmd->dw15.instant_rate_threshold3_pframe = 120;
+
+  cmd->dw16.constant_0 = 30;
+  cmd->dw16.constant_1 = 50;
+  cmd->dw16.constant_2 = 70;
+  cmd->dw16.constant_3 = 120;
+
+  cmd->dw17.instant_rate_threshold0_iframe = 30;
+  cmd->dw17.instant_rate_threshold1_iframe = 50;
+  cmd->dw17.instant_rate_threshold2_iframe = 90;
+  cmd->dw17.instant_rate_threshold3_iframe = 115;
+  cmd->dw18.deviation_threshold0_pframe = (UINT)(-50 * pow(0.9, bps_ratio));
+  cmd->dw18.deviation_threshold1_pframe = (UINT)(-50 * pow(0.66, bps_ratio));
+  cmd->dw18.deviation_threshold2_pframe = (UINT)(-50 * pow(0.46, bps_ratio));
+  cmd->dw18.deviation_threshold3_pframe = (UINT)(-50 * pow(0.3, bps_ratio));
+  cmd->dw19.deviation_threshold4_pframe = (UINT)(50 * pow(0.3, bps_ratio));
+  cmd->dw19.deviation_threshold5_pframe = (UINT)(50 * pow(0.46, bps_ratio));
+  cmd->dw19.deviation_threshold6_pframe = (UINT)(50 * pow(0.7, bps_ratio));
+  cmd->dw19.deviation_threshold7_pframe = (UINT)(50 * pow(0.9, bps_ratio));
+  cmd->dw20.deviation_threshold0_vbr = (UINT)(-50 * pow(0.9, bps_ratio));
+  cmd->dw20.deviation_threshold1_vbr = (UINT)(-50 * pow(0.7, bps_ratio));
+  cmd->dw20.deviation_threshold2_vbr = (UINT)(-50 * pow(0.5, bps_ratio));
+  cmd->dw20.deviation_threshold3_vbr = (UINT)(-50 * pow(0.3, bps_ratio));
+  cmd->dw21.deviation_threshold4_vbr = (UINT)(100 * pow(0.4, bps_ratio));
+  cmd->dw21.deviation_threshold5_vbr = (UINT)(100 * pow(0.5, bps_ratio));
+  cmd->dw21.deviation_threshold6_vbr = (UINT)(100 * pow(0.75, bps_ratio));
+  cmd->dw21.deviation_threshold7_vbr = (UINT)(100 * pow(0.9, bps_ratio));
+  cmd->dw22.deviation_threshold0_iframe = (UINT)(-50 * pow(0.8, bps_ratio));
+  cmd->dw22.deviation_threshold1_iframe = (UINT)(-50 * pow(0.6, bps_ratio));
+  cmd->dw22.deviation_threshold2_iframe = (UINT)(-50 * pow(0.34, bps_ratio));
+  cmd->dw22.deviation_threshold3_iframe = (UINT)(-50 * pow(0.2, bps_ratio));
+  cmd->dw23.deviation_threshold4_iframe = (UINT)(50 * pow(0.2, bps_ratio));
+  cmd->dw23.deviation_threshold5_iframe = (UINT)(50 * pow(0.4, bps_ratio));
+  cmd->dw23.deviation_threshold6_iframe = (UINT)(50 * pow(0.66, bps_ratio));
+  cmd->dw23.deviation_threshold7_iframe = (UINT)(50 * pow(0.9, bps_ratio));
+
+  cmd->dw24.initial_qp_iframe = 0;
+  cmd->dw24.initial_qp_pframe = 0;
+
+  if (!params->brc_initted) {
+    *params->brc_init_current_target_buf_full_in_bits = cmd->dw1.init_buf_full_in_bits;
+  }
+
+  *params->brc_init_reset_buf_size_in_bits = cmd->dw2.buf_size_in_bits;
+  *params->brc_init_reset_input_bits_per_frame = input_bits_per_frame;
+
+  cmd->dw25.history_buffer_bti = VP8_BRC_INIT_RESET_HISTORY_G75;
+  cmd->dw26.distortion_buffer_bti = VP8_BRC_INIT_RESET_DISTORTION_G75;
+}
+
+VOID
+media_surface_state_vp8_brc_update (MEDIA_ENCODER_CTX * encoder_context,
+                                    struct encode_state *encode_state,
+                                    BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params)
+{
+  BRC_UPDATE_CONTEXT *ctx = &encoder_context->brc_update_context;
+  MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
+  SURFACE_SET_PARAMS params;
+  BYTE *binding_surface_state_buf = NULL;
+  BRC_INIT_RESET_CONTEXT *brc_init_reset_ctx = &encoder_context->brc_init_reset_context;
+  struct object_surface *obj_surface;
+  MEDIA_RESOURCE surface_2d;
+  MBPAK_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
+  MEDIA_GPE_CTX *mbpak_gpe_ctx;
+  MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
+  MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
+
+  binding_surface_state_buf =
+    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
+
+  /* 0 BRC history buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (0); /* ??? 1 ? */
+  params.surface_state_offset = SURFACE_STATE_OFFSET (0);
+  params.buf_object = brc_init_reset_ctx->brc_history;
+  params.size = brc_init_reset_ctx->brc_history.bo_size;
+  params.cacheability_control =
+    surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 1 Coded buffer (MB data) buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (1);
+  obj_surface = encode_state->coded_buf_surface;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.buf_object = surface_2d;
+  params.offset = 0;
+  params.size = 8 * sizeof(UINT);
+  params.cacheability_control = surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 2 MBPAK Curbe1 surface */
+  mbpak_gpe_ctx = &mbpak_ctx->gpe_context;
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (2);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (2);
+  params.buf_object = mbpak_gpe_ctx->dynamic_state.res;
+  params.size = sizeof(MEDIA_CURBE_DATA_MBPAK_P1_G75);
+  params.cacheability_control = surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 3 MBPAK Curbe2 surface */
+  mbpak_gpe_ctx = &mbpak_ctx->gpe_context2;
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (3);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (3);
+  params.buf_object = mbpak_gpe_ctx->dynamic_state.res;
+  params.size = sizeof(MEDIA_CURBE_DATA_MBPAK_P2_G75);
+  params.cacheability_control = surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 4 MBENC Curbe read surface */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (4);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (4);
+  params.buf_object = mbenc_gpe_ctx->dynamic_state.res;
+  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G75), sizeof(MEDIA_CURBE_DATA_MBENC_I_G75)), 64);
+  params.cacheability_control = surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 5 MBENC Curbe write surface */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (5);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (5);
+  params.buf_object = mbenc_gpe_ctx->dynamic_state.res;
+  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G75), sizeof(MEDIA_CURBE_DATA_MBENC_I_G75)), 64);
+  params.cacheability_control = surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 6 BRC Distortion data buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 1; /* media block read/write message */
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (6);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (6);
+  params.surface_2d = &brc_init_reset_ctx->brc_distortion;
+  media_add_surface_state (&params);
+
+  /* 7 BRC Constant buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (7);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (7);
+  params.buf_object = brc_init_reset_ctx->brc_constant_data;
+  params.size = 2880;
+  params.cacheability_control =
+    surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* 8 MBPAK table buffer */
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (8);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (8);
+  params.buf_object = brc_init_reset_ctx->brc_pak_qp_input_table;
+  params.size = 160 * 18 * sizeof(UINT16);
+  params.cacheability_control =
+    surface_params->cacheability_control;
+  media_add_surface_state (&params);
+
+  /* TODO: need to add per segmentation map later here */
+
+  media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
+}
+
+VOID
+media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
+                               MEDIA_BRC_UPDATE_PARAMS_VP8 * params)
+{
+  MEDIA_CURBE_DATA_BRC_UPDATE_G75 *cmd =
+    (MEDIA_CURBE_DATA_BRC_UPDATE_G75 *)params->curbe_cmd_buff;
+  VAEncPictureParameterBufferVP8 *pic_params =
+    (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
+  VAQMatrixBufferVP8 *quant_params =
+    (VAQMatrixBufferVP8 *) encode_state->q_matrix->buffer;
+
+  memset (cmd, 0, sizeof (*cmd));
+
+  cmd->dw0.target_size = (UINT)(*params->brc_init_current_target_buf_full_in_bits); // 500000 bits
+
+  cmd->dw1.frame_number = params->frame_number;
+  cmd->dw2.picture_header_size = 0; // matching kernel value
+  cmd->dw5.target_size_flag= 0;
+
+  if (*params->brc_init_current_target_buf_full_in_bits > (DOUBLE)params->brc_init_reset_buf_size_in_bits) {
+    *params->brc_init_current_target_buf_full_in_bits -= (DOUBLE)params->brc_init_reset_buf_size_in_bits;
+    cmd->dw5.target_size_flag = 1;
+  }
+
+  cmd->dw3.start_global_adjust_frame0 = 10;
+  cmd->dw3.start_global_adjust_frame1 = 50;
+
+  cmd->dw4.start_global_adjust_frame2 = 100;
+  cmd->dw4.start_global_adjust_frame3 = 150;
+
+  cmd->dw5.curr_frame_type = (params->pic_coding_type == FRAME_TYPE_I) ? 2 : 0;
+  cmd->dw5.brc_flag = 16;
+  cmd->dw5.max_num_paks = 4;
+
+  cmd->dw8.start_global_adjust_mult0 = 1;
+  cmd->dw8.start_global_adjust_mult1 = 1;
+  cmd->dw8.start_global_adjust_mult2 = 3;
+  cmd->dw8.start_global_adjust_mult3 = 2;
+
+  cmd->dw9.start_global_adjust_div0 = 40;
+  cmd->dw9.start_global_adjust_div1 = 5;
+  cmd->dw9.start_global_adjust_div2 = 5;
+  cmd->dw9.start_global_adjust_mult4 = 1;
+
+  cmd->dw10.start_global_adjust_div3 = 3;
+  cmd->dw10.start_global_adjust_div4 = 1;
+  cmd->dw10.qp_threshold0 = 20; // 7;
+  cmd->dw10.qp_threshold1 = 40; // 18;
+
+  cmd->dw11.qp_threshold2 = 60; // 25;
+  cmd->dw11.qp_threshold3 = 90; // 37;
+  cmd->dw11.rate_ratio_threshold0 = 40;
+  cmd->dw11.rate_ratio_threshold1 = 75;
+
+  cmd->dw12.rate_ratio_threshold2 = 97;
+  cmd->dw12.rate_ratio_threshold3 = 103;
+  cmd->dw12.rate_ratio_threshold4 = 125;
+  cmd->dw12.rate_ratio_threshold5 = 160;
+
+  cmd->dw13.rate_ratio_threshold_qp0 = -3;
+  cmd->dw13.rate_ratio_threshold_qp1 = -2;
+  cmd->dw13.rate_ratio_threshold_qp2 = -1;
+  cmd->dw13.rate_ratio_threshold_qp3 = 0;
+
+  cmd->dw14.rate_ratio_threshold_qp4 = 1;
+  cmd->dw14.rate_ratio_threshold_qp5 = 2;
+  cmd->dw14.rate_ratio_threshold_qp6 = 3;
+  cmd->dw14.index_of_previous_qp = 0;
+
+  *params->brc_init_current_target_buf_full_in_bits += params->brc_init_reset_input_bits_per_frame;
+
+  cmd->dw15.frame_width_in_mb = params->frame_width_in_mbs;
+  cmd->dw15.frame_height_in_mb = params->frame_height_in_mbs;
+  cmd->dw15.prev_flag = !params->frame_update->two_prev_frame_flag;
+
+  cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size;
+
+  if (params->frame_update->prev_frame_size != 0)
+    cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size - 12;
+
+  if (params->frame_number == 2)
+    cmd->dw16.frame_byte_count -= 32;
+
+  if (params->frame_update->two_prev_frame_flag && params->frame_number == 1)
+    cmd->dw16.frame_byte_count = 0;
+
+  cmd->dw17.key_frame_qp_seg0 = quant_params->quantization_index[0];
+  cmd->dw17.key_frame_qp_seg1 = quant_params->quantization_index[1];
+  cmd->dw17.key_frame_qp_seg2 = quant_params->quantization_index[2];
+  cmd->dw17.key_frame_qp_seg3 = quant_params->quantization_index[3];
+
+  cmd->dw18.qp_delta_plane0 = quant_params->quantization_index_delta[0];
+  cmd->dw18.qp_delta_plane1 = quant_params->quantization_index_delta[4];
+  cmd->dw18.qp_delta_plane2 = quant_params->quantization_index_delta[3];
+  cmd->dw18.qp_delta_plane3 = quant_params->quantization_index_delta[2];
+
+  cmd->dw19.qp = 0;
+  cmd->dw19.qp_delta_plane4 = quant_params->quantization_index_delta[1];
+  cmd->dw19.reserved = 9;
+
+  if (params->frame_number == 1) {
+    cmd->dw19.qp = 0x17;
+    cmd->dw19.reserved = 144;
+  } else if (params->frame_number == 2) {
+    cmd->dw19.qp = 0x16;
+  } else if (params->frame_number == 3) {
+    cmd->dw19.qp = 0x1b;
+  } else if (params->frame_number == 4) {
+    cmd->dw19.qp = 0x22;
+  }
+
+  cmd->dw20.segmentation_enabled = pic_params->pic_flags.bits.segmentation_enabled;
+  cmd->dw20.brc_method = 1;
+  cmd->dw20.mb_rc = 0;
+
+  cmd->dw20.vme_intraprediction = (params->kernel_mode == PERFORMANCE_MODE) ? 1 : 0;
+  cmd->dw21.history_buffer_index = VP8_BRC_UPDATE_HISTORY_G75;
+  cmd->dw22.pak_surface_index = VP8_BRC_UPDATE_PAK_SURFACE_INDEX_G75;
+  cmd->dw23.mbpak_curbe1_index = VP8_BRC_UPDATE_MBPAK1_CURBE_WRITE_G75;
+  cmd->dw24.mbpak_curbe2_index = VP8_BRC_UPDATE_MBPAK2_CURBE_WRITE_G75;
+  cmd->dw25.mbenc_curbe_input_index = VP8_BRC_UPDATE_MBENC_CURBE_READ_G75;
+  cmd->dw26.mbenc_curbe_output_index = VP8_BRC_UPDATE_MBENC_CURBE_WRITE_G75;
+  cmd->dw27.distortion_input_index = VP8_BRC_UPDATE_DISTORTION_SURFACE_G75;
+  cmd->dw28.constant_data_input_index = VP8_BRC_UPDATE_CONSTANT_DATA_G75;
+  cmd->dw29.pak_table_surface_index = VP8_BRC_UPDATE_MBPAK_TABLE_INDEX_G75;
+}
+
+VOID
+media_encode_init_brc_update_constant_data_vp8_g75(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params)
+{
+  BYTE *pbuffer;
+  BOOL status;
+
+  pbuffer =
+    (BYTE *) media_map_buffer_obj (params->brc_update_constant_data->bo);
+  MEDIA_DRV_ASSERT (pbuffer);
+
+  media_drv_memset (pbuffer, 2880);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75),
+			     (VOID *) brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75,
+			     sizeof (brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (brc_iframe_cost_table_vp8_g75),
+			     (VOID *) brc_iframe_cost_table_vp8_g75,
+			     sizeof (brc_iframe_cost_table_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(brc_iframe_cost_table_vp8_g75);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (brc_pframe_cost_table_vp8_g75),
+			     (VOID *) brc_pframe_cost_table_vp8_g75,
+			     sizeof (brc_pframe_cost_table_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(brc_pframe_cost_table_vp8_g75);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (quant_dc_vp8_g75),
+			     (VOID *) quant_dc_vp8_g75,
+			     sizeof (quant_dc_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(quant_dc_vp8_g75);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (quant_ac_vp8_g75),
+			     (VOID *) quant_ac_vp8_g75,
+			     sizeof (quant_ac_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(quant_ac_vp8_g75);
+
+  status = media_drv_memcpy (pbuffer,
+			     sizeof (brc_skip_mv_threshold_table_vp8_g75),
+			     (VOID *) brc_skip_mv_threshold_table_vp8_g75,
+			     sizeof (brc_skip_mv_threshold_table_vp8_g75));
+
+  if (status != TRUE) {
+    media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+    MEDIA_DRV_ASSERT ("media_drv_memcpy failed");
+  }
+
+  pbuffer += sizeof(brc_skip_mv_threshold_table_vp8_g75);
+
+  media_unmap_buffer_obj (params->brc_update_constant_data->bo);
 }

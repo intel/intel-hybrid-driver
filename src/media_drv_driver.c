@@ -32,6 +32,7 @@
 #include "media_drv_driver.h"
 #include "media_drv_gpe_utils.h"
 #include "media_drv_util.h"
+#include "media_drv_hw.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_hw_g7.h"
 #include "object_heap.h"
@@ -255,6 +256,8 @@ media_destroy_context (struct object_heap *heap, struct object_base *obj)
 				  pic_param_ext);
       media_release_buffer_store (&obj_context->codec_state.encode.
 				  seq_param_ext);
+      media_release_buffer_store (&obj_context->codec_state.
+				  encode.frame_update_param);
 
       for (i = 0;
 	   i <
