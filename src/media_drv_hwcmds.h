@@ -91,6 +91,10 @@
 #define CMD_MEDIA_OBJECT_WALKER_LEN 17
 #define CMD_MEDIA_OBJECT_WALKER                 CMD(2, 1, 3)
 
+//MEDIA_OBJECT
+#define CMD_MEDIA_OBJECT_LEN                    6
+#define CMD_MEDIA_OBJECT                        CMD(2, 1, 0)
+
 //MI STORE DATA IMM
 #define CMD_MI_STORE_DATA_IMM   (CMD_MI | (1<<28))
 
@@ -135,4 +139,8 @@ STATUS mediadrv_gen_state_base_address_cmd (MEDIA_BATCH_BUFFER * batch,
 STATUS mediadrv_gen_pipeline_select_cmd (MEDIA_BATCH_BUFFER * batch);
 STATUS mediadrv_gen_pipe_ctrl_cmd (MEDIA_BATCH_BUFFER * batch,
 				   PIPE_CONTROL_PARAMS * params);
+
+STATUS
+media_object_cmd (MEDIA_BATCH_BUFFER *batch,
+                  MEDIA_OBJECT_PARAMS *params);
 #endif

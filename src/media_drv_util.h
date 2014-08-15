@@ -65,4 +65,7 @@ media_guess_surface_format (VADriverContextP ctx,
 			    VASurfaceID surface,
 			    UINT * fourcc, UINT * is_tiled);
 VOID media_drv_memset (VOID * dest_ptr, size_t len);
+int media_drv_va_misc_type_to_index(VAEncMiscParameterType type);
+VAEncMiscParameterType media_drv_index_to_va_misc_type(int index);
+
 #endif

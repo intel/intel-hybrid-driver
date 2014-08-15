@@ -49,7 +49,7 @@ media_gpe_load_kernels (VADriverContextP ctx,
   for (i = 0; i < num_kernels; i++)
     {
       kernel = &gpe_context->kernels[i];
-      kernel_size += kernel->size;
+      kernel_size += ALIGN(kernel->size, 64);
     }
   media_allocate_resource (&instruction_state->buff_obj,
 			   i965->drv_data.bufmgr,
@@ -80,7 +80,7 @@ media_gpe_load_kernels (VADriverContextP ctx,
 	  media_drv_memcpy ((UINT *) (kernel_ptr + kernel_offset),
 			    (kernel_size - end_offset), kernel->bin,
 			    kernel->size);
-	  end_offset = kernel_offset + kernel->size;
+	  end_offset = kernel_offset + ALIGN(kernel->size, 64);
 	}
     }
   instruction_state->end_offset = end_offset;

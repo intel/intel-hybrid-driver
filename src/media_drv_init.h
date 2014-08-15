@@ -126,6 +126,7 @@ struct encode_state
   BOOL me_16x_enabled;
   BOOL hme_done;
   BOOL me_16x_done;
+  struct buffer_store *frame_update_param;
 };
 
 
@@ -210,6 +211,10 @@ VOID media_destroy_image (struct object_heap *heap, struct object_base *obj);
 VAStatus
 media_DestroySurfaces (VADriverContextP ctx,
 		       VASurfaceID * surface_list, INT num_surfaces);
+VAStatus
+media_CreateSurfaces (VADriverContextP ctx,
+		      INT width, INT height, INT format, INT num_surfaces, VASurfaceID * surfaces);
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -284,6 +284,24 @@ media_object_walker_cmd (MEDIA_BATCH_BUFFER * batch,
 }
 
 STATUS
+media_object_cmd (MEDIA_BATCH_BUFFER *batch,
+                  MEDIA_OBJECT_PARAMS *params)
+{
+  STATUS status = SUCCESS;
+
+  BEGIN_BATCH (batch, CMD_MEDIA_OBJECT_LEN);
+  OUT_BATCH (batch, CMD_MEDIA_OBJECT | (CMD_MEDIA_OBJECT_LEN - 2));
+  OUT_BATCH (batch, params->interface_offset);
+  OUT_BATCH (batch, 0);
+  OUT_BATCH (batch, 0);
+  OUT_BATCH (batch, 0);
+  OUT_BATCH (batch, 0);
+  ADVANCE_BATCH (batch);
+
+  return status;
+}
+
+STATUS
 mediadrv_mi_store_data_imm_cmd (MEDIA_BATCH_BUFFER * batch,
 				MI_STORE_DATA_IMM_PARAMS * params)
 {
