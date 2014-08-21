@@ -984,9 +984,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, scaling_gpe_ctx);
 #endif
-#if 0
-  media_batchbuffer_flush (batch);
-#endif
+  media_batchbuffer_submit (batch);
 }
 
 VOID
@@ -1079,7 +1077,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbpak_gpe_ctx);
 #endif
-  media_batchbuffer_flush (batch);
+  media_batchbuffer_submit (batch);
 
 }
 
@@ -1243,7 +1241,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbenc_gpe_ctx);
 #endif
-  media_batchbuffer_flush (batch);
+  media_batchbuffer_submit (batch);
 }
 
 VOID
@@ -1321,10 +1319,7 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
     (me_16x) ? encoder_context->
     down_scaled_width_mb16x : encoder_context->down_scaled_width_mb4x;
   media_object_walker_cmd (batch, &media_obj_walker_params);
-#if 0
-  media_batchbuffer_flush (batch);
-#endif
-
+  media_batchbuffer_submit (batch);
 }
 
 VAStatus

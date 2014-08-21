@@ -63,6 +63,27 @@ media_batchbuffer_reset (MEDIA_BATCH_BUFFER * batch, INT buffer_size)
   batch->cmd_ptr = batch->map;
   batch->atomic = 0;
 }
+VOID
+media_batchbuffer_submit (MEDIA_BATCH_BUFFER * batch)
+{
+  UINT used = batch->cmd_ptr - batch->map;
+  if (used == 0)
+    {
+      return;
+    }
+  if ((used & 4) == 0)
+    {
+      *(UINT *) batch->cmd_ptr = 0;
+      batch->cmd_ptr += 4;
+    }
+
+  *(UINT *) batch->cmd_ptr = MI_BATCH_BUFFER_END;
+  batch->cmd_ptr += 4;
+  dri_bo_unmap (batch->buffer);
+  used = batch->cmd_ptr - batch->map;
+  drm_intel_bo_mrb_exec (batch->buffer, used, 0, 0, 0, batch->flag);
+  media_batchbuffer_free (batch);
+}
 
 VOID
 media_batchbuffer_flush (MEDIA_BATCH_BUFFER * batch)

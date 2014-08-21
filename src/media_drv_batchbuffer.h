@@ -101,6 +101,7 @@ media_allocate_resource (MEDIA_RESOURCE * res, dri_bufmgr * bufmgr,
 			 const BYTE * name, UINT size, UINT align);
 VOID *media_map_buffer_obj (dri_bo * bo);
 BOOL media_unmap_buffer_obj (dri_bo * bo);
+VOID media_batchbuffer_submit (MEDIA_BATCH_BUFFER * batch);
 VOID media_batchbuffer_flush (MEDIA_BATCH_BUFFER * batch);
 VOID media_batchbuffer_free (MEDIA_BATCH_BUFFER * batch);
 #endif
