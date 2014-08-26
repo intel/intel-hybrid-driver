@@ -51,18 +51,18 @@ typedef enum _MEDIA_DRV_STATUS_
   UNKNOW_STATUS
 } MEDIA_DRV_STATUS;
 BOOL
-media_drv_memcpy (VOID *dst_ptr, size_t dst_len,const VOID *src_ptr,
+media_drv_memcpy (VOID * dst_ptr, size_t dst_len, const VOID * src_ptr,
 		  size_t src_len);
 
 VOID media_drv_mutex_init (MEDIA_DRV_MUTEX * mutex);
 VOID media_drv_mutex_destroy (MEDIA_DRV_MUTEX * mutex);
 INT media_get_sampling_from_fourcc (UINT fourcc);
 VOID *media_drv_alloc_memory ( /*size_t */ UINT size);
-VOID media_drv_free_memory (VOID *ptr);
+VOID media_drv_free_memory (VOID * ptr);
 INT get_sampling_from_fourcc (UINT fourcc);
 VOID
 media_guess_surface_format (VADriverContextP ctx,
 			    VASurfaceID surface,
-			    UINT *fourcc, UINT *is_tiled);
-VOID media_drv_memset (VOID *dest_ptr, size_t len);
+			    UINT * fourcc, UINT * is_tiled);
+VOID media_drv_memset (VOID * dest_ptr, size_t len);
 #endif

@@ -33,6 +33,7 @@
 #include "media_drv_gpe_utils.h"
 #include "media_drv_util.h"
 #include "media_drv_hw_g75.h"
+#include "media_drv_hw_g7.h"
 #include "object_heap.h"
 
 BOOL
@@ -57,7 +58,7 @@ media_drv_bufmgr_destroy (MEDIA_DRV_CONTEXT * drv_ctx)
 }
 
 static VOID
-media_driver_get_revid (INT *value)
+media_driver_get_revid (INT * value)
 {
 #define PCI_REVID       8
   FILE *fp;
@@ -82,7 +83,7 @@ media_driver_get_revid (INT *value)
 }
 
 BOOL
-media_drv_get_param (MEDIA_DRV_CONTEXT * drv_ctx, INT param, INT *value)
+media_drv_get_param (MEDIA_DRV_CONTEXT * drv_ctx, INT param, INT * value)
 {
   struct drm_i915_getparam gp;
 
@@ -155,6 +156,8 @@ media_driver_data_init (VADriverContextP ctx)
   drv_ctx = ctx->pDriverData;
   if (IS_HASWELL (drv_ctx->drv_data.device_id))
     drv_ctx->codec_info = &gen75_hw_codec_info;
+  else if (IS_GEN7 (drv_ctx->drv_data.device_id))
+    drv_ctx->codec_info = &gen7_hw_codec_info;
   else
     return false;
 
@@ -197,7 +200,7 @@ err_config_heap:
 }
 
 VOID
-media_release_buffer_store (struct buffer_store **ptr)
+media_release_buffer_store (struct buffer_store ** ptr)
 {
   struct buffer_store *buffer_store = *ptr;
 
@@ -240,45 +243,45 @@ media_destroy_context (struct object_heap *heap, struct object_base *obj)
       media_release_buffer_store (&obj_context->codec_state.encode.seq_param);
 
       for (i = 0; i < obj_context->codec_state.encode.num_slice_params; i++)
-	media_release_buffer_store (&obj_context->codec_state.
-				    encode.slice_params[i]);
+	media_release_buffer_store (&obj_context->codec_state.encode.
+				    slice_params[i]);
 
       media_drv_free_memory (obj_context->codec_state.encode.slice_params);
 
-      MEDIA_DRV_ASSERT (obj_context->codec_state.
-			encode.num_slice_params_ext <=
+      MEDIA_DRV_ASSERT (obj_context->codec_state.encode.
+			num_slice_params_ext <=
 			obj_context->codec_state.encode.max_slice_params_ext);
-      media_release_buffer_store (&obj_context->codec_state.
-				  encode.pic_param_ext);
-      media_release_buffer_store (&obj_context->codec_state.
-				  encode.seq_param_ext);
+      media_release_buffer_store (&obj_context->codec_state.encode.
+				  pic_param_ext);
+      media_release_buffer_store (&obj_context->codec_state.encode.
+				  seq_param_ext);
 
       for (i = 0;
 	   i <
 	   ARRAY_ELEMS (obj_context->codec_state.encode.packed_header_param);
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.
-				    encode.packed_header_param[i]);
+	media_release_buffer_store (&obj_context->codec_state.encode.
+				    packed_header_param[i]);
 
       for (i = 0;
 	   i <
 	   ARRAY_ELEMS (obj_context->codec_state.encode.packed_header_data);
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.
-				    encode.packed_header_data[i]);
+	media_release_buffer_store (&obj_context->codec_state.encode.
+				    packed_header_data[i]);
 
       for (i = 0;
 	   i < ARRAY_ELEMS (obj_context->codec_state.encode.misc_param); i++)
-	media_release_buffer_store (&obj_context->codec_state.
-				    encode.misc_param[i]);
+	media_release_buffer_store (&obj_context->codec_state.encode.
+				    misc_param[i]);
 
       for (i = 0; i < obj_context->codec_state.encode.num_slice_params_ext;
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.
-				    encode.slice_params_ext[i]);
+	media_release_buffer_store (&obj_context->codec_state.encode.
+				    slice_params_ext[i]);
 
-      media_drv_free_memory (obj_context->codec_state.
-			     encode.slice_params_ext);
+      media_drv_free_memory (obj_context->codec_state.encode.
+			     slice_params_ext);
     }
 
   media_drv_free_memory (obj_context->render_targets);
@@ -293,7 +296,7 @@ media_destroy_config (struct object_heap *heap, struct object_base *obj)
 
 static VOID
 media_destroy_heap (struct object_heap *heap,
-		    VOID(*func) (struct object_heap * heap,
+		    VOID (*func) (struct object_heap * heap,
 				  struct object_base * object))
 {
   struct object_base *object;

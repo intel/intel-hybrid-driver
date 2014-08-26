@@ -73,49 +73,49 @@ const SURFACE_SET_PARAMS surface_set_params_init = {
   0,				//cacheability_control
   0,				// binding_table_offset
   0,				//surface_state_offset
-  {NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 0,0,0},	// binding_surface_state
+  {NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0},	// binding_surface_state
   NULL,				//surface_2d
-  {NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 0,0,0} //buf_object             
+  {NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 0, 0, 0}	//buf_object             
 };
 
 MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
   {
-   (BYTE *)"VP8_MBENC_I",
+   (BYTE *) "VP8_MBENC_I",
    0,
    MEDIA_VP8_MBENC_I,
    MEDIA_VP8_MBENC_I_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_MBENC_ICHROMA",
+   (BYTE *) "VP8_MBENC_ICHROMA",
    0,
    MEDIA_VP8_MBENC_ICHROMA,
    MEDIA_VP8_MBENC_ICHROMA_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_MBENC_FRM_P",
+   (BYTE *) "VP8_MBENC_FRM_P",
    0,
    MEDIA_VP8_MBENC_FRM_P,
    MEDIA_VP8_MBENC_FRM_P_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_MBENC_ILuma",
+   (BYTE *) "VP8_MBENC_ILuma",
    0,
    MEDIA_VP8_MBENC_ILuma,
    MEDIA_VP8_MBENC_ILuma_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_HME_P",
+   (BYTE *) "VP8_HME_P",
    0,
    MEDIA_VP8_HME_P,
    MEDIA_VP8_HME_P_SZ,
    NULL,
    0},
   {
-  (BYTE *)"VP8_HME_DOWNSCALE",
+   (BYTE *) "VP8_HME_DOWNSCALE",
    0,
    MEDIA_VP8_HME_DOWNSCALE,
    MEDIA_VP8_HME_DOWNSCALE_SZ,
@@ -123,21 +123,21 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    0},
 
   {
-   (BYTE *)"VP8_PAK_PHASE2",
+   (BYTE *) "VP8_PAK_PHASE2",
    0,
    MEDIA_VP8_PAK_PHASE2,
    MEDIA_VP8_PAK_PHASE2_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_PAK_PHASE1",
+   (BYTE *) "VP8_PAK_PHASE1",
    0,
    MEDIA_VP8_PAK_PHASE1,
    MEDIA_VP8_PAK_PHASE1_SZ,
    NULL,
    0},
   {
-   (BYTE *)"VP8_INTRA_DIS_BRC",
+   (BYTE *) "VP8_INTRA_DIS_BRC",
    0,
    MEDIA_VP8_INTRA_DIS_BRC,
    MEDIA_VP8_INTRA_DIS_BRC_SZ,
@@ -145,7 +145,7 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    0},
 
   {
-   (BYTE *)"VP8_BRC_INIT",
+   (BYTE *) "VP8_BRC_INIT",
    0,
    MEDIA_VP8_BRC_INIT,
    MEDIA_VP8_BRC_INIT_SZ,
@@ -153,7 +153,7 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    0},
 
   {
-   (BYTE *)"VP8_BRC_RESET",
+   (BYTE *) "VP8_BRC_RESET",
    0,
    MEDIA_VP8_BRC_RESET,
    MEDIA_VP8_BRC_RESET_SZ,
@@ -161,7 +161,7 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
    0},
 
   {
-   (BYTE *)"VP8_BRC_UPDATE",
+   (BYTE *) "VP8_BRC_UPDATE",
    0,
    MEDIA_VP8_BRC_UPDATE,
    MEDIA_VP8_BRC_UPDATE_SZ,
@@ -172,7 +172,7 @@ MEDIA_KERNEL media_hybrid_vp8_kernels[] = {
 
 const SURFACE_STATE_ADV_G7 SURFACE_STATE_ADV_INIT_G7 = {
   //dw0
-   {0},
+  {0},
   {
 //dw1
    0,
@@ -203,11 +203,11 @@ const SURFACE_STATE_ADV_G7 SURFACE_STATE_ADV_INIT_G7 = {
    0,
    0},
 //dw5
-   {0},
- //dw6
-   {0},
+  {0},
+  //dw6
+  {0},
 //dw7
-   {0}
+  {0}
 };
 
 const SURFACE_STATE_G7 SURFACE_STATE_INIT_G7 = {
@@ -310,7 +310,7 @@ const UINT16 quant_ac_vp8_g75[MAX_QP_VP8] = {
   155, 158, 161, 164, 167, 170, 173, 177, 181, 185, 189, 193, 197, 201, 205,
   209,
   213, 217, 221, 225, 229, 234, 239, 245, 249, 254, 259, 264, 269, 274, 279,
-    284
+  284
 };
 
 const UINT16 quant_dc2_vp8_g75[MAX_QP_VP8] = {
@@ -325,7 +325,7 @@ const UINT16 quant_dc2_vp8_g75[MAX_QP_VP8] = {
   182, 186, 190, 192, 196, 200, 202, 204, 208, 212, 216, 220, 224, 228, 232,
   236,
   244, 248, 252, 256, 260, 264, 268, 272, 276, 280, 286, 290, 296, 302, 308,
-    314
+  314
 };
 
 const UINT16 quant_ac2_vp8_g75[MAX_QP_VP8] = {
@@ -340,7 +340,7 @@ const UINT16 quant_ac2_vp8_g75[MAX_QP_VP8] = {
   240, 244, 249, 254, 258, 263, 268, 274, 280, 286, 292, 299, 305, 311, 317,
   323,
   330, 336, 342, 348, 354, 362, 370, 379, 385, 393, 401, 409, 416, 424, 432,
-    440
+  440
 };
 
 const UINT16 quant_dc_uv_vp8_g75[MAX_QP_VP8] = {
@@ -352,7 +352,7 @@ const UINT16 quant_dc_uv_vp8_g75[MAX_QP_VP8] = {
   75, 76, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
   91, 93, 95, 96, 98, 100, 101, 102, 104, 106, 108, 110, 112, 114, 116, 118,
   122, 124, 126, 128, 130, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132,
-    132
+  132
 };
 
 const BYTE frame_i_vme_cost_vp8_g75[128][4] = {
@@ -896,7 +896,7 @@ media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context)
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
-
+  UINT samplet_offset;
   bo = mbenc_ctx->gpe_context.dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);
@@ -911,8 +911,10 @@ media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context)
       /*Setup the descritor table */
       memset (desc, 0, sizeof (*desc));
       desc->desc0.kernel_start_pointer = kernel->kernel_offset >> 6;
-      desc->desc2.sampler_count = 0;	/* FIXME: */
-      desc->desc2.sampler_state_pointer = 0;
+      desc->desc2.sampler_count = 4;	/* FIXME: */
+      desc->desc2.sampler_state_pointer =
+	(mbenc_gpe_ctx->sampler_offset +
+	 (i * mbenc_gpe_ctx->sampler_size)) >> 5;;
       desc->desc3.binding_table_entry_count = 0;	//1; /* FIXME: */
       desc->desc3.binding_table_pointer = (BINDING_TABLE_OFFSET (0) >> 5);
       desc->desc4.constant_urb_entry_read_offset = 0;
@@ -1564,7 +1566,7 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 			       y_quanta_dc_idx);
   cmd->dw2.lambda_seg_0 =
     (UINT16) ((quant_dc_vp8_g75[y_quanta_dc_idx] *
-	      quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
+	       quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
 
   if (segmentation_enabled)
     {
@@ -1577,7 +1579,7 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 				   y_quanta_dc_idx);
       cmd->dw2.lambda_seg_1 =
 	(UINT16) ((quant_dc_vp8_g75[y_quanta_dc_idx] *
-		  quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
+		   quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
 
       y_quanta_dc_idx =
 	quant_params->quantization_index[2] +
@@ -1588,7 +1590,7 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 				   y_quanta_dc_idx);
       cmd->dw3.lambda_seg_2 =
 	(UINT16) ((quant_dc_vp8_g75[y_quanta_dc_idx] *
-		  quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
+		   quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
 
       y_quanta_dc_idx =
 	quant_params->quantization_index[3] +
@@ -1599,7 +1601,7 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 				   y_quanta_dc_idx);
       cmd->dw3.lambda_seg_3 =
 	(UINT16) ((quant_dc_vp8_g75[y_quanta_dc_idx] *
-		  quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
+		   quant_dc_vp8_g75[y_quanta_dc_idx]) / 4);
     }
 
   cmd->dw4.all_dc_bias_segment_0 = DC_BIAS_SEGMENT_DEFAULT_VAL_VP8;
@@ -1659,14 +1661,14 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw8.chroma_ac_de_quant_segment0 = quant_ac_vp8_g75[uv_quanta_ac_idx];
   cmd->dw10.chroma_ac0_threshold0_segment0 =
     (UINT16) ((((((1) << 16) -
-		1) * 1.0 / ((1 << 16) / quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-	       ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) * (1 << 13) +
-	      3400) / 2217.0);
+		 1) * 1.0 / ((1 << 16) / quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+	       (1 << 13) + 3400) / 2217.0);
   cmd->dw10.chroma_ac0_threshold1_segment0 =
     (UINT16) ((((((2) << 16) -
-		1) * 1.0 / ((1 << 16) / quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-	       ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) * (1 << 13) +
-	      3400) / 2217.0);
+		 1) * 1.0 / ((1 << 16) / quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+	       (1 << 13) + 3400) / 2217.0);
   if (segmentation_enabled)
     {
       uv_quanta_ac_idx =
@@ -1680,16 +1682,16 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 	quant_ac_vp8_g75[uv_quanta_ac_idx];
       cmd->dw10.chroma_ac0_threshold0_segment0 =
 	(UINT16) ((((((1) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
       cmd->dw10.chroma_ac0_threshold1_segment0 =
 	(UINT16) ((((((2) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
 
       uv_quanta_ac_idx =
 	quant_params->quantization_index[2] +
@@ -1702,16 +1704,16 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 	quant_ac_vp8_g75[uv_quanta_ac_idx];
       cmd->dw12.chroma_ac0_threshold0_segment2 =
 	(UINT16) ((((((1) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
       cmd->dw12.chroma_ac0_threshold1_segment2 =
 	(UINT16) ((((((2) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
 
       uv_quanta_ac_idx =
 	quant_params->quantization_index[3] +
@@ -1724,16 +1726,16 @@ media_set_curbe_i_vp8_mbenc (struct encode_state *encode_state,
 	quant_ac_vp8_g75[uv_quanta_ac_idx];
       cmd->dw13.chroma_ac0_threshold0_segment3 =
 	(UINT16) ((((((1) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
       cmd->dw13.chroma_ac0_threshold1_segment3 =
 	(UINT16) ((((((2) << 16) -
-		    1) * 1.0 / ((1 << 16) /
-				quant_ac_vp8_g75[uv_quanta_ac_idx]) -
-		   ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
-		  (1 << 13) + 3400) / 2217.0);
+		     1) * 1.0 / ((1 << 16) /
+				 quant_ac_vp8_g75[uv_quanta_ac_idx]) -
+		    ((48 * quant_ac_vp8_g75[uv_quanta_ac_idx]) >> 7)) *
+		   (1 << 13) + 3400) / 2217.0);
     }
 
   uv_quanta_dc_idx =
@@ -2067,8 +2069,8 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw6.reference_frame_sign_bias_2 =
     pic_params->pic_flags.bits.sign_bias_alternate;
   cmd->dw6.reference_frame_sign_bias_1 =
-    pic_params->pic_flags.bits.sign_bias_golden ^ pic_params->pic_flags.bits.
-    sign_bias_alternate;
+    pic_params->pic_flags.bits.sign_bias_golden ^ pic_params->pic_flags.
+    bits.sign_bias_alternate;
   cmd->dw6.reference_frame_sign_bias_0 = 0;
   //dw7
   cmd->dw7.raw_dist_threshold = 0;	//kernel is currently setting it to 0
@@ -2295,8 +2297,8 @@ media_set_curbe_vp8_me (VP8_ME_CURBE_PARAMS * params)
   media_drv_memcpy (cmd, sizeof (MEDIA_CURBE_DATA_ME), ME_CURBE_INIT_DATA,
 		    sizeof (MEDIA_CURBE_DATA_ME));
   me_mode =
-    params->me_16x_enabled ? (params->
-			      me_16x ? ME16x_BEFORE_ME4x : ME4x_AFTER_ME16x) :
+    params->
+    me_16x_enabled ? (params->me_16x ? ME16x_BEFORE_ME4x : ME4x_AFTER_ME16x) :
     ME4x_ONLY;
   scale_factor = (me_mode == ME16x_BEFORE_ME4x) ? 16 : 4;
   cmd->dw1.max_num_mvs = 0x10;
@@ -2344,15 +2346,15 @@ media_add_binding_table (MEDIA_GPE_CTX * gpe_ctx)
   BYTE *binding_surface_state_buf = NULL;
   UINT i;
   binding_surface_state_buf =
-    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.res.
-				   bo);
+    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.
+				   res.bo);
   media_drv_memset (binding_surface_state_buf,
 		    gpe_ctx->surface_state_binding_table.res.bo->size);
 
   for (i = 0; i < LAST_BINDING_TABLE_ENTRIES; i++)
     {
       *((UINT *) ((BYTE *) binding_surface_state_buf +
-			  BINDING_TABLE_OFFSET (i))) =
+		  BINDING_TABLE_OFFSET (i))) =
 	SURFACE_STATE_OFFSET (i); /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
 
     }
@@ -2361,7 +2363,7 @@ media_add_binding_table (MEDIA_GPE_CTX * gpe_ctx)
 }
 
 static VOID
-media_gpe_set_surface_tiling_g7 (SURFACE_STATE_G7 * cmd,UINT tiling)
+media_gpe_set_surface_tiling_g7 (SURFACE_STATE_G7 * cmd, UINT tiling)
 {
   switch (tiling)
     {
@@ -2381,8 +2383,7 @@ media_gpe_set_surface_tiling_g7 (SURFACE_STATE_G7 * cmd,UINT tiling)
 }
 
 static VOID
-media_gpe_set_surface_tiling_adv_g7 (SURFACE_STATE_ADV_G7 * cmd,
-				     UINT tiling)
+media_gpe_set_surface_tiling_adv_g7 (SURFACE_STATE_ADV_G7 * cmd, UINT tiling)
 {
   switch (tiling)
     {
@@ -2403,7 +2404,7 @@ media_gpe_set_surface_tiling_adv_g7 (SURFACE_STATE_ADV_G7 * cmd,
 
 VOID
 media_set_surface_state_adv (SURFACE_STATE_ADV_G7 * cmd,
-			   SURFACE_SET_PARAMS * params, INT format)
+			     SURFACE_SET_PARAMS * params, INT format)
 {
   cmd->ss0.surface_base_address = params->surface_2d->bo->offset;
   cmd->ss1.cbcr_pixel_offset_v_direction = params->uv_direction;
@@ -2445,10 +2446,9 @@ media_set_surface_state_buffer_surface (SURFACE_STATE_G7 * cmd,
 VOID
 media_set_surface_state_2d_surface (SURFACE_STATE_G7 * cmd,
 				    SURFACE_SET_PARAMS * params, INT format,
-				    UINT width,UINT height,
+				    UINT width, UINT height,
 				    UINT offset,
-				    UINT cbcr_offset,
-				    UINT y_offset)
+				    UINT cbcr_offset, UINT y_offset)
 {
   cmd->dw0.vert_line_stride_offset = params->vert_line_stride_offset;
   cmd->dw0.vert_line_stride = params->vert_line_stride;
@@ -2483,7 +2483,6 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 	(params->media_block_raw) ? ((params->surface_2d->width +
 				      0x3) >> 2) : params->surface_2d->width;
       height = params->surface_2d->height;
-
       media_set_surface_state_2d_surface (cmd, params, params->format, width,
 					  height, 0, 0, 0);
 
@@ -2494,7 +2493,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 			 params->surface_2d->bo);
 
       *((UINT *) ((CHAR *) params->binding_surface_state.buf +
-			  params->binding_table_offset)) =
+		  params->binding_table_offset)) =
 	params->surface_state_offset /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
     }
   else if (params->surface_is_uv_2d)
@@ -2514,7 +2513,6 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 	}
       else
 	tile_alignment = 1;
-
       width =
 	(params->media_block_raw) ? ((params->surface_2d->width +
 				      0x3) >> 2) : params->surface_2d->width;
@@ -2522,8 +2520,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
       y_offset = (params->surface_2d->y_cb_offset % tile_alignment) >> 1;
       cbcr_offset =
 	ALIGN_FLOOR ( /*params->surface_2d->height */ params->surface_2d->
-		     y_cb_offset,
-		     tile_alignment) * /*params->surface_2d->width */
+		     y_cb_offset, tile_alignment) *	/*params->surface_2d->width */
 	params->surface_2d->pitch;
       //cbcr_offset = params->surface_2d->y_cb_offset;    
       media_set_surface_state_2d_surface (cmd, params,
@@ -2538,7 +2535,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 			 params->surface_2d->bo);
 
       *((UINT *) ((CHAR *) params->binding_surface_state.buf +
-			  params->binding_table_offset)) =
+		  params->binding_table_offset)) =
 	params->surface_state_offset /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
     }
   else if (params->advance_state)
@@ -2556,9 +2553,8 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 			 params->surface_state_offset +
 			 offsetof (SURFACE_STATE_ADV_G7, ss0),
 			 params->surface_2d->bo);
-
       *((UINT *) ((CHAR *) params->binding_surface_state.buf +
-			  params->binding_table_offset)) =
+		  params->binding_table_offset)) =
 	params->surface_state_offset /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
     }
   else
@@ -2569,6 +2565,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 			      params->surface_state_offset);
       *cmd = SURFACE_STATE_INIT_G7;
       MEDIA_DRV_ASSERT (params->buf_object.bo);
+
       if (params->surface_is_raw)
 	{
 	  format = STATE_SURFACEFORMAT_RAW;
@@ -2581,7 +2578,6 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 	}
 
       media_set_surface_state_buffer_surface (cmd, params, format, pitch);
-
       dri_bo_emit_reloc (params->binding_surface_state.bo,
 			 I915_GEM_DOMAIN_RENDER,
 			 0 /* I915_GEM_DOMAIN_RENDER */ ,
@@ -2591,7 +2587,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 			 params->buf_object.bo);
 
       *((UINT *) ((CHAR *) params->binding_surface_state.buf +
-			  params->binding_table_offset)) =
+		  params->binding_table_offset)) =
 	params->surface_state_offset /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
     }
 
@@ -2612,8 +2608,8 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
   BYTE *binding_surface_state_buf = NULL;
   MEDIA_RESOURCE surface_2d;	//={0,0,0};
   binding_surface_state_buf =
-    (BYTE *) media_map_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.
-				   res.bo);
+    (BYTE *) media_map_buffer_obj (mbpak_gpe_ctx->
+				   surface_state_binding_table.res.bo);
   //coded data buffer
   params = surface_set_params_init;
   params.binding_surface_state.bo =
@@ -2634,7 +2630,6 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 			  MB_CODE_SIZE_VP8 * sizeof (UINT));
   media_add_surface_state (&params);
   //current pic luma
-
   params = surface_set_params_init;
   params.binding_surface_state.bo =
     mbpak_gpe_ctx->surface_state_binding_table.res.bo;
@@ -2671,7 +2666,6 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
   media_add_surface_state (&params);
 
   //current reconstructed picture luma
-
   params = surface_set_params_init;
   params.binding_surface_state.bo =
     mbpak_gpe_ctx->surface_state_binding_table.res.bo;
@@ -2767,6 +2761,7 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 	    mbpak_sutface_params->cacheability_control;
 	  media_add_surface_state (&params);
 	}
+
       //goldeb ref
       if (encode_state->ref_gf_frame != NULL
 	  && encode_state->ref_gf_frame->bo != NULL)
@@ -2806,6 +2801,7 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 	  media_add_surface_state (&params);
 
 	}
+
       //alterbate ref
       if (encode_state->ref_arf_frame != NULL
 	  && encode_state->ref_arf_frame->bo != NULL)
@@ -2849,7 +2845,6 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
     }
   else
     {
-
       //row buffer y
       params = surface_set_params_init;
       params.binding_surface_state.bo =
@@ -2911,6 +2906,7 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 
   if (mbpak_sutface_params->kernel_dump)
     {
+
       params = surface_set_params_init;
       params.binding_surface_state.bo =
 	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
@@ -2929,6 +2925,7 @@ media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,
 
     }
   media_unmap_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.res.bo);
+
 }
 
 
@@ -2949,8 +2946,8 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
   MEDIA_RESOURCE surface_2d;
   //MEDIA_RESOURCE *obj_buffer_res;
   binding_surface_state_buf =
-    (BYTE *) media_map_buffer_obj (mbenc_gpe_ctx->surface_state_binding_table.
-				   res.bo);
+    (BYTE *) media_map_buffer_obj (mbenc_gpe_ctx->
+				   surface_state_binding_table.res.bo);
   //media_drv_memset(binding_surface_state_buf,mbenc_gpe_ctx->surface_state_binding_table.res.bo->size);
   //coded data buffer
   params = surface_set_params_init;
@@ -3100,7 +3097,9 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.media_block_raw = 1;
       params.surface_is_raw = 1;
       params.offset = encoder_context->mv_offset;
-      params.size = WIDTH_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_width) * HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_height) * 64;
+      params.size =
+	WIDTH_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_width) *
+	HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_height) * 64;
 
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
@@ -3225,20 +3224,6 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 	  //need to add per segmentation map later here
 	}
 
-#if 0
-      //Inter Prediction Distortion Surface
-      params = surface_set_params_init;
-      params.binding_surface_state.bo =
-	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
-      params.binding_surface_state.buf = binding_surface_state_buf;
-      params.surface_is_2d = 1;
-      params.format = STATE_SURFACEFORMAT_R8_UNORM;
-      params.binding_table_offset = BINDING_TABLE_OFFSET (17);
-      params.surface_state_offset = SURFACE_STATE_OFFSET (17);
-      params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
-      media_add_surface_state (&params);
-#endif
-
       //Histogram Surface
       params = surface_set_params_init;
       params.binding_surface_state.bo =
@@ -3294,8 +3279,8 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 	mbenc_sutface_params->cacheability_control;
       params.size =
 	WIDTH_IN_MACROBLOCKS ((mbenc_sutface_params->orig_frame_width) *
-			      HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->
-						     orig_frame_height) *
+			      HEIGHT_IN_MACROBLOCKS
+			      (mbenc_sutface_params->orig_frame_height) *
 			      /*MB_CODE_SIZE_VP8 */ 32);
       params.offset = encoder_context->mv_offset;
       media_add_surface_state (&params);
@@ -3321,8 +3306,8 @@ media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
   //me_sutface_params->me_surface_state_binding_table->res.bo;
   binding_surface_state_buf =
     (CHAR *)
-    media_map_buffer_obj (me_sutface_params->me_surface_state_binding_table->
-			  res.bo);
+    media_map_buffer_obj (me_sutface_params->
+			  me_surface_state_binding_table->res.bo);
   if (me_sutface_params->me_16x_in_use)
     {
       mv_data_surface = &me_ctx->mv_data_surface_16x_me;
@@ -3427,8 +3412,8 @@ media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
   media_add_surface_state (&params);
 
 
-  media_unmap_buffer_obj (me_sutface_params->
-			  me_surface_state_binding_table->res.bo);
+  media_unmap_buffer_obj (me_sutface_params->me_surface_state_binding_table->
+			  res.bo);
 #endif
 }
 
@@ -3443,8 +3428,8 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   BYTE *binding_surface_state_buf = NULL;
   binding_surface_state_buf =
     (CHAR *)
-    media_map_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.res.
-			  bo);
+    media_map_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.
+			  res.bo);
   //input buffer
   params = surface_set_params_init;
   params.binding_surface_state.bo =
@@ -3481,7 +3466,7 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
     ALIGN (scaling_sutface_params->output_height, 16);
   media_add_surface_state (&params);
 
-  media_unmap_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.
-			  res.bo);
+  media_unmap_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.res.
+			  bo);
 #endif
 }

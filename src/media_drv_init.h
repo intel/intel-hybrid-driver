@@ -217,8 +217,8 @@ extern "C"
 #endif
   __attribute__ ((visibility ("default"))) VAStatus
     hybridQueryBufferAttributes (VADisplay dpy, VAContextID context,
-				 VABufferType bufferType, VOID *outputData,
-				 UINT *outputDataLen);
+				 VABufferType bufferType, VOID * outputData,
+				 UINT * outputDataLen);
 
 #ifdef __cplusplus
 }

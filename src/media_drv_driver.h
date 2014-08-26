@@ -34,6 +34,20 @@
 #include "media_drv_init.h"
 #include "va_backend_compat.h"
 
+
+#define PCI_CHIP_IVYBRIDGE_GT1          0x0152	/* Desktop */
+#define PCI_CHIP_IVYBRIDGE_GT2          0x0162
+#define PCI_CHIP_IVYBRIDGE_M_GT1        0x0156	/* Mobile */
+#define PCI_CHIP_IVYBRIDGE_M_GT2        0x0166
+#define PCI_CHIP_IVYBRIDGE_S_GT1        0x015a	/* Server */
+#define PCI_CHIP_IVYBRIDGE_S_GT2        0x016a
+#define PCI_CHIP_BAYTRAIL_M_1           0x0F31
+#define PCI_CHIP_BAYTRAIL_M_2           0x0F32
+#define PCI_CHIP_BAYTRAIL_M_3           0x0F33
+#define PCI_CHIP_BAYTRAIL_M_4           0x0157
+#define PCI_CHIP_BAYTRAIL_D             0x0155
+
+
 #define CONFIG_ID_OFFSET                0x01000000
 #define CONTEXT_ID_OFFSET               0x02000000
 #define SURFACE_ID_OFFSET               0x04000000
@@ -103,6 +117,28 @@
 #define PCI_CHIP_HASWELL_CRW_E_GT1              0x0D0E	/* Reserved */
 #define PCI_CHIP_HASWELL_CRW_E_GT2              0x0D1E
 #define PCI_CHIP_HASWELL_CRW_E_GT3              0x0D2E
+
+#define IS_BAYTRAIL_M1(devid)    (devid == PCI_CHIP_BAYTRAIL_M_1)
+#define IS_BAYTRAIL_M2(devid)    (devid == PCI_CHIP_BAYTRAIL_M_2)
+#define IS_BAYTRAIL_M3(devid)    (devid == PCI_CHIP_BAYTRAIL_M_3)
+#define IS_BAYTRAIL_D(devid)     (devid == PCI_CHIP_BAYTRAIL_D)
+#define IS_BAYTRAIL(devid)       (IS_BAYTRAIL_M1(devid) || \
+                                  IS_BAYTRAIL_M2(devid) || \
+                                  IS_BAYTRAIL_M3(devid) || \
+                                  IS_BAYTRAIL_D(devid) )
+
+#define IS_IVB_GT1(devid)       (devid == PCI_CHIP_IVYBRIDGE_GT1 ||     \
+                                 devid == PCI_CHIP_IVYBRIDGE_M_GT1 ||   \
+                                 devid == PCI_CHIP_IVYBRIDGE_S_GT1)
+
+#define IS_IVB_GT2(devid)       (devid == PCI_CHIP_IVYBRIDGE_GT2 ||     \
+                                 devid == PCI_CHIP_IVYBRIDGE_M_GT2 ||   \
+                                 devid == PCI_CHIP_IVYBRIDGE_S_GT2)
+
+#define IS_IVYBRIDGE(devid)     (IS_IVB_GT1(devid) ||   \
+                                 IS_IVB_GT2(devid) ||   \
+                                 IS_BAYTRAIL(devid) )
+
 #define IS_HSW_GT1(devid)   	(devid == PCI_CHIP_HASWELL_GT1		|| \
                                  devid == PCI_CHIP_HASWELL_M_GT1	|| \
                                  devid == PCI_CHIP_HASWELL_S_GT1	|| \
@@ -174,6 +210,8 @@
 
 #define IS_GEN75(devid)          (IS_HASWELL(devid))
 
+#define IS_GEN7(devid)          (IS_IVYBRIDGE(devid) || \
+                                 IS_HASWELL(devid))
 struct region
 {
   INT x;

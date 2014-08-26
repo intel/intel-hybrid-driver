@@ -52,7 +52,7 @@ VAProfile profile_table[MEDIA_GEN_MAX_PROFILES] = {
 
 config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
-   VA_RC_CQP,1}
+   VA_RC_CQP, 1}
   ,
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
    VA_RC_CBR, 1}
@@ -152,8 +152,7 @@ VAStatus
 media_QueryVideoProcFilterCaps (VADriverContextP ctx,
 				VAContextID context,
 				VAProcFilterType type,
-				VOID *filter_caps,
-				UINT *num_filter_caps)
+				VOID * filter_caps, UINT * num_filter_caps)
 {
   return VA_STATUS_SUCCESS;
 }
@@ -161,8 +160,7 @@ media_QueryVideoProcFilterCaps (VADriverContextP ctx,
 VAStatus
 media_QueryVideoProcFilters (VADriverContextP ctx,
 			     VAContextID context,
-			     VAProcFilterType * filters,
-			     UINT *num_filters)
+			     VAProcFilterType * filters, UINT * num_filters)
 {
   return VA_STATUS_SUCCESS;
 }
@@ -175,8 +173,7 @@ media_CreateSurfaces2 (VADriverContextP ctx,
 		       UINT height,
 		       VASurfaceID * surfaces,
 		       UINT num_surfaces,
-		       VASurfaceAttrib * attrib_list,
-		       UINT num_attribs)
+		       VASurfaceAttrib * attrib_list, UINT num_attribs)
 {
   //VAStatus vaStatus = VA_STATUS_SUCCESS;
   INT i = 0;
@@ -237,8 +234,8 @@ media_CreateSurfaces2 (VADriverContextP ctx,
 				VAGenericValueTypeInteger);
 	      MEDIA_DRV_ASSERT (attrib_list[i].value.value.p);
 	      memory_attibute =
-		(VASurfaceAttribExternalBuffers *) attrib_list[i].value.value.
-		p;
+		(VASurfaceAttribExternalBuffers *) attrib_list[i].value.
+		value.p;
 
 	      break;
 
@@ -287,7 +284,7 @@ VAStatus
 media_QuerySurfaceAttributes (VADriverContextP ctx,
 			      VAConfigID config,
 			      VASurfaceAttrib * attrib_list,
-			      UINT *num_attribs)
+			      UINT * num_attribs)
 {
   return VA_STATUS_SUCCESS;
 }
@@ -295,8 +292,7 @@ media_QuerySurfaceAttributes (VADriverContextP ctx,
 static VAStatus
 media_GetSurfaceAttributes (VADriverContextP ctx,
 			    VAConfigID config,
-			    VASurfaceAttrib * attrib_list,
-			    UINT num_attribs)
+			    VASurfaceAttrib * attrib_list, UINT num_attribs)
 {
   return VA_STATUS_SUCCESS;
 }
@@ -313,15 +309,15 @@ media_UnlockSurface (VADriverContextP ctx,	/* in */
 static VAStatus
 media_LockSurface (VADriverContextP ctx,	/* in */
 		   VASurfaceID surface,	/* in */
-		   UINT *fourcc,	/* out */
-		   UINT *luma_stride,	/* out */
-		   UINT *chroma_u_stride,	/* out */
-		   UINT *chroma_v_stride,	/* out */
-		   UINT *luma_offset,	/* out */
-		   UINT *chroma_u_offset,	/* out */
-		   UINT *chroma_v_offset,	/* out */
-		   UINT *buffer_name,	/* out */
-		   VOID **buffer	/* out */
+		   UINT * fourcc,	/* out */
+		   UINT * luma_stride,	/* out */
+		   UINT * chroma_u_stride,	/* out */
+		   UINT * chroma_v_stride,	/* out */
+		   UINT * luma_offset,	/* out */
+		   UINT * chroma_u_offset,	/* out */
+		   UINT * chroma_v_offset,	/* out */
+		   UINT * buffer_name,	/* out */
+		   VOID ** buffer	/* out */
   )
 {
 
@@ -332,8 +328,8 @@ static VAStatus
 media_BufferInfo (VADriverContextP ctx,	/* in */
 		  VABufferID buf_id,	/* in */
 		  VABufferType * type,	/* out */
-		  UINT *size,	/* out */
-		  UINT *num_elements	/* out */
+		  UINT * size,	/* out */
+		  UINT * num_elements	/* out */
   )
 {
   MEDIA_DRV_CONTEXT *drv_ctx = NULL;
@@ -373,7 +369,7 @@ media_GetDisplayAttributes (VADriverContextP ctx, VADisplayAttribute * attribs,	
 
 VAStatus
 media_QueryDisplayAttributes (VADriverContextP ctx, VADisplayAttribute * attribs,	/* out */
-			      INT *num_attribs_ptr	/* out */
+			      INT * num_attribs_ptr	/* out */
   )
 {
   return VA_STATUS_SUCCESS;
@@ -392,8 +388,7 @@ VAStatus
 media_AssociateSubpicture (VADriverContextP ctx, VASubpictureID subpicture, VASurfaceID * target_surfaces, INT num_surfaces, INT16 src_x,	/* upper left offset in subpicture */
 			   INT16 src_y, UINT16 src_width, UINT16 src_height, INT16 dest_x,	/* upper left offset in surface */
 			   INT16 dest_y,
-			   UINT16 dest_width,
-			   UINT16 dest_height,
+			   UINT16 dest_width, UINT16 dest_height,
 			   /*
 			    * whether to enable chroma-keying or global-alpha
 			    * see VA_SUBPICTURE_XXX values
@@ -416,8 +411,7 @@ VAStatus
 media_SetSubpictureChromakey (VADriverContextP ctx,
 			      VASubpictureID subpicture,
 			      UINT chromakey_min,
-			      UINT chromakey_max,
-			      UINT chromakey_mask)
+			      UINT chromakey_max, UINT chromakey_mask)
 {
   /* TODO */
   return VA_STATUS_ERROR_UNIMPLEMENTED;
@@ -447,8 +441,8 @@ media_CreateSubpicture (VADriverContextP ctx, VAImageID image, VASubpictureID * 
 
 VAStatus
 media_QuerySubpictureFormats (VADriverContextP ctx, VAImageFormat * format_list,	/* out */
-			      UINT *flags,	/* out */
-			      UINT *num_formats)	/* out */
+			      UINT * flags,	/* out */
+			      UINT * num_formats)	/* out */
 {
   return VA_STATUS_SUCCESS;
 }
@@ -460,16 +454,15 @@ media_PutImage (VADriverContextP ctx,
 		INT src_x,
 		INT src_y,
 		UINT src_width,
-                UINT src_height,
-		INT dest_x,
-		INT dest_y, UINT dest_width, UINT dest_height)
+		UINT src_height,
+		INT dest_x, INT dest_y, UINT dest_width, UINT dest_height)
 {
   return VA_STATUS_SUCCESS;
 }
 
 VAStatus
 media_GetImage (VADriverContextP ctx, VASurfaceID surface, INT x,	/* coordinates of the upper left source pixel */
-	       INT y, UINT width,	/* width and height of the region */
+		INT y, UINT width,	/* width and height of the region */
 		UINT height, VAImageID image)
 {
 
@@ -477,8 +470,7 @@ media_GetImage (VADriverContextP ctx, VASurfaceID surface, INT x,	/* coordinates
 }
 
 VAStatus
-media_SetImagePalette (VADriverContextP ctx,
-		       VAImageID image, BYTE *palette)
+media_SetImagePalette (VADriverContextP ctx, VAImageID image, BYTE * palette)
 {
   return VA_STATUS_SUCCESS;
 }
@@ -491,8 +483,8 @@ media_CreateImage (VADriverContextP ctx, VAImageFormat * format, INT width, INT 
 }
 
 VOID
-media_reference_buffer_store (struct buffer_store **ptr,
-			      struct buffer_store *buffer_store)
+media_reference_buffer_store (struct buffer_store ** ptr,
+			      struct buffer_store * buffer_store)
 {
   MEDIA_DRV_ASSERT (*ptr == NULL);
 
@@ -505,7 +497,7 @@ media_reference_buffer_store (struct buffer_store **ptr,
 
 VAStatus
 media_create_buffer (MEDIA_DRV_CONTEXT * drv_ctx, VABufferType type,
-		     UINT size, UINT num_elements, VOID *data,
+		     UINT size, UINT num_elements, VOID * data,
 		     dri_bo * store_bo, VABufferID * buf_id)
 {
   INT bufferID;
@@ -597,7 +589,7 @@ media_create_buffer_internal (VADriverContextP ctx,
 			      VABufferType type,
 			      UINT size,
 			      UINT num_elements,
-			      VOID *data,
+			      VOID * data,
 			      dri_bo * store_bo, VABufferID * buf_id)
 {
   MEDIA_DRV_CONTEXT *drv_ctx;
@@ -606,7 +598,7 @@ media_create_buffer_internal (VADriverContextP ctx,
   MEDIA_DRV_ASSERT (ctx);
   drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
   MEDIA_DRV_ASSERT (drv_ctx);
-  switch ((INT)type)
+  switch ((INT) type)
     {
     case VAPictureParameterBufferType:
     case VAIQMatrixBufferType:
@@ -650,7 +642,7 @@ media_CreateBuffer (VADriverContextP ctx, VAContextID context,	/* in */
 		    VABufferType type,	/* in */
 		    UINT size,	/* in */
 		    UINT num_elements,	/* in */
-		    VOID *data,	/* in */
+		    VOID * data,	/* in */
 		    VABufferID * buf_id)	/* out */
 {
 
@@ -661,7 +653,7 @@ media_CreateBuffer (VADriverContextP ctx, VAContextID context,	/* in */
 }
 
 VOID
-media_destroy_image (struct object_heap *heap, struct object_base *obj)
+media_destroy_image (struct object_heap * heap, struct object_base * obj)
 {
   object_heap_free (heap, obj);
 }
@@ -876,14 +868,14 @@ error:
 
 VAStatus
 media_QueryImageFormats (VADriverContextP ctx, VAImageFormat * format_list,	/* out */
-			 INT *num_formats)	/* out */
+			 INT * num_formats)	/* out */
 {
   return VA_STATUS_SUCCESS;
 }
 
 VAStatus
-media_PutSurface (VADriverContextP ctx, VASurfaceID surface, VOID *draw,	/* X Drawable */
-		  INT16 srcx, INT16 srcy, UINT16 srcw, UINT16 srch, INT16 destx,INT16 desty, UINT16 destw, UINT16 desth, VARectangle * cliprects,	/* client supplied clip list */
+media_PutSurface (VADriverContextP ctx, VASurfaceID surface, VOID * draw,	/* X Drawable */
+		  INT16 srcx, INT16 srcy, UINT16 srcw, UINT16 srch, INT16 destx, INT16 desty, UINT16 destw, UINT16 desth, VARectangle * cliprects,	/* client supplied clip list */
 		  UINT number_cliprects,	/* number of clip rects in the clip list */
 		  UINT flags)	/* de-interlacing flags */
 {
@@ -895,6 +887,7 @@ media_QuerySurfaceStatus (VADriverContextP ctx, VASurfaceID render_target, VASur
 {
   MEDIA_DRV_CONTEXT *drv_ctx;
   MEDIA_DRV_ASSERT (ctx);
+  MEDIA_DRV_ASSERT (ctx->pDriverData);
   drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
   struct object_surface *obj_surface = SURFACE (render_target);
   MEDIA_DRV_ASSERT (obj_surface);
@@ -948,8 +941,7 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
   if (obj_context->codec_type == CODEC_ENC)
     {
 
-      MEDIA_DRV_ASSERT (VAEntrypointHybridEncSlice ==
-			obj_config->entrypoint);
+      MEDIA_DRV_ASSERT (VAEntrypointHybridEncSlice == obj_config->entrypoint);
 
       if (!(obj_context->codec_state.encode.pic_param ||
 	    obj_context->codec_state.encode.pic_param_ext))
@@ -1144,7 +1136,7 @@ media_encoder_render_picture (VADriverContextP ctx,
 
       if (!obj_buffer)
 	return VA_STATUS_ERROR_INVALID_BUFFER;
-      switch ((INT)obj_buffer->type)
+      switch ((INT) obj_buffer->type)
 	{
 	case VAIQMatrixBufferType:
 	case VAQMatrixBufferType:
@@ -1166,8 +1158,8 @@ media_encoder_render_picture (VADriverContextP ctx,
 	  {
 	    struct encode_state *encode = &obj_context->codec_state.encode;
 	    VAEncPackedHeaderParameterBuffer *param =
-	      (VAEncPackedHeaderParameterBuffer *) obj_buffer->buffer_store->
-	      buffer;
+	      (VAEncPackedHeaderParameterBuffer *) obj_buffer->
+	      buffer_store->buffer;
 	    encode->last_packed_header_type = param->type;
 
 	    vaStatus =
@@ -1175,8 +1167,7 @@ media_encoder_render_picture (VADriverContextP ctx,
 								   obj_context,
 								   obj_buffer,
 								   media_va_enc_packed_type_to_idx
-								   (encode->
-								    last_packed_header_type));
+								   (encode->last_packed_header_type));
 	    break;
 	  }
 
@@ -1202,8 +1193,7 @@ media_encoder_render_picture (VADriverContextP ctx,
 							      obj_context,
 							      obj_buffer,
 							      media_va_enc_packed_type_to_idx
-							      (encode->
-							       last_packed_header_type));
+							      (encode->last_packed_header_type));
 	    break;
 	  }
 
@@ -1314,32 +1304,32 @@ media_BeginPicture (VADriverContextP ctx,
 
       for (i = 0; i < obj_context->codec_state.encode.num_slice_params; i++)
 	{
-	  media_release_buffer_store (&obj_context->codec_state.encode.
-				      slice_params[i]);
+	  media_release_buffer_store (&obj_context->codec_state.
+				      encode.slice_params[i]);
 	}
       obj_context->codec_state.encode.num_slice_params = 0;
       /* ext */
-      media_release_buffer_store (&obj_context->codec_state.encode.
-				  pic_param_ext);
+      media_release_buffer_store (&obj_context->codec_state.
+				  encode.pic_param_ext);
 
       for (i = 0;
 	   i <
 	   ARRAY_ELEMS (obj_context->codec_state.encode.packed_header_param);
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.encode.
-				    packed_header_param[i]);
+	media_release_buffer_store (&obj_context->codec_state.
+				    encode.packed_header_param[i]);
 
       for (i = 0;
 	   i <
 	   ARRAY_ELEMS (obj_context->codec_state.encode.packed_header_data);
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.encode.
-				    packed_header_data[i]);
+	media_release_buffer_store (&obj_context->codec_state.
+				    encode.packed_header_data[i]);
 
       for (i = 0; i < obj_context->codec_state.encode.num_slice_params_ext;
 	   i++)
-	media_release_buffer_store (&obj_context->codec_state.encode.
-				    slice_params_ext[i]);
+	media_release_buffer_store (&obj_context->codec_state.
+				    encode.slice_params_ext[i]);
 
       obj_context->codec_state.encode.num_slice_params_ext = 0;
       obj_context->codec_state.encode.current_render_target = render_target;	/*This is input new frame */
@@ -1391,7 +1381,7 @@ media_UnmapBuffer (VADriverContextP ctx, VABufferID buf_id)
 
 VAStatus
 media_MapBuffer (VADriverContextP ctx, VABufferID buf_id,	/* in */
-		 VOID **pbuf)	/* out */
+		 VOID ** pbuf)	/* out */
 {
   MEDIA_DRV_CONTEXT *drv_ctx;
   struct object_buffer *obj_buffer;
@@ -1411,8 +1401,8 @@ media_MapBuffer (VADriverContextP ctx, VABufferID buf_id,	/* in */
 
   if (NULL != obj_buffer->buffer_store->bo)
     {
-       UINT tiling, swizzle;
-
+      UINT tiling, swizzle;
+      drm_intel_bo_wait_rendering (obj_buffer->buffer_store->bo);
       dri_bo_get_tiling (obj_buffer->buffer_store->bo, &tiling, &swizzle);
 
       if (tiling != I915_TILING_NONE)
@@ -1422,11 +1412,11 @@ media_MapBuffer (VADriverContextP ctx, VABufferID buf_id,	/* in */
 
       MEDIA_DRV_ASSERT (obj_buffer->buffer_store->bo->virtual);
       *pbuf = obj_buffer->buffer_store->bo->virtual;
-      if (obj_buffer->type == VAEncCodedBufferType)
-	{
+      /*if (obj_buffer->type == VAEncCodedBufferType)
+         {
 
-	}
-
+         }
+       */
       status = VA_STATUS_SUCCESS;
     }
   else if (NULL != obj_buffer->buffer_store->buffer)
@@ -1439,7 +1429,7 @@ media_MapBuffer (VADriverContextP ctx, VABufferID buf_id,	/* in */
 
 VAStatus
 media_BufferSetNumElements (VADriverContextP ctx, VABufferID buf_id,	/* in */
-			     UINT num_elements)	/* in */
+			    UINT num_elements)	/* in */
 {
   return VA_STATUS_SUCCESS;
 }
@@ -1448,7 +1438,7 @@ VAStatus
 hybridQueryBufferAttributes (VADisplay dpy,
 			     VAContextID context,
 			     VABufferType bufferType,
-			     VOID *outputData, UINT *outputDataLen)
+			     VOID * outputData, UINT * outputDataLen)
 {
   //VAStatus                 vaStatus;
   VADriverContextP ctx;
@@ -1572,10 +1562,10 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
 	    VA_INVALID_ID;
 	  obj_context->codec_state.encode.max_slice_params = NUM_SLICES;
 	  obj_context->codec_state.encode.slice_params =
-	    media_drv_alloc_memory (obj_context->codec_state.encode.
-				    max_slice_params *
-				    sizeof (*obj_context->codec_state.encode.
-					    slice_params));
+	    media_drv_alloc_memory (obj_context->codec_state.
+				    encode.max_slice_params *
+				    sizeof (*obj_context->codec_state.
+					    encode.slice_params));
 
 	  obj_context->hw_context =
 	    media_enc_context_init (ctx, obj_config, picture_width,
@@ -1598,7 +1588,7 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
 
 VAStatus
 media_DestroySurfaces (VADriverContextP ctx,
-		       VASurfaceID * surface_list, INT  num_surfaces)
+		       VASurfaceID * surface_list, INT num_surfaces)
 {
   INT i;
   MEDIA_DRV_CONTEXT *drv_ctx;
@@ -1753,7 +1743,7 @@ VAStatus
 media_QueryConfigAttributes (VADriverContextP ctx, VAConfigID config_id, VAProfile * profile,	/* out */
 			     VAEntrypoint * entrypoint,	/* out */
 			     VAConfigAttrib * attrib_list,	/* out */
-			     INT *num_attribs)	/* out */
+			     INT * num_attribs)	/* out */
 {
 
   return VA_STATUS_SUCCESS;
@@ -1761,7 +1751,7 @@ media_QueryConfigAttributes (VADriverContextP ctx, VAConfigID config_id, VAProfi
 
 VAStatus
 media_QueryConfigProfiles (VADriverContextP ctx, VAProfile * profile_list,	/* out */
-			   INT *num_profiles)	/* out */
+			   INT * num_profiles)	/* out */
 {
   BOOL retval = true;
   MEDIA_DRV_ASSERT (profile_list);
@@ -1777,13 +1767,13 @@ media_QueryConfigProfiles (VADriverContextP ctx, VAProfile * profile_list,	/* ou
 
 VAStatus
 media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypoint * entrypoint_list,	/* out */
-			      INT *num_entrypoints)	/* out */
+			      INT * num_entrypoints)	/* out */
 {
   INT index = 0;
   switch (profile)
     {
     case VAProfileVP8Version0_3:
-        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+      entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
       break;
     default:
       //printf ("Unsupported profile\n");

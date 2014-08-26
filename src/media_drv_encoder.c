@@ -44,7 +44,6 @@
 #include "media_drv_hwcmds.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_driver.h"
-
 VOID
 media_free_resource_me (ME_CONTEXT * me_context)
 {
@@ -159,7 +158,7 @@ media_scaling_context_destroy (MEDIA_ENCODER_CTX * encoder_context)
 }
 
 static VOID
-media_encoder_context_destroy (VOID *hw_context)
+media_encoder_context_destroy (VOID * hw_context)
 {
   MEDIA_ENCODER_CTX *encoder_context = (MEDIA_ENCODER_CTX *) hw_context;
   media_scaling_context_destroy (encoder_context);
@@ -221,297 +220,6 @@ gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context)
   gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y7 = 0;
 }
 
-static VOID
-media_encoder_context_params_init (MEDIA_DRV_CONTEXT * drv_ctx,
-				   MEDIA_ENCODER_CTX * encoder_context)
-{
-  if (IS_HSW_GT1 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->walker_mode = SINGLE_MODE;
-    }
-  else if (IS_HSW_GT2 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->walker_mode = DUAL_MODE;
-    }
-  else if (IS_HSW_GT3 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->walker_mode = QUAD_MODE;
-    }
-
-  encoder_context->kernel_mode = 0;
-  encoder_context->frame_num = 0;
-  encoder_context->use_hw_scoreboard = 1;
-  encoder_context->scaling_enabled = 0;
-  encoder_context->me_16x_supported = 0;
-  encoder_context->hme_supported = 0;
-  encoder_context->kernel_dump_enable = 0;
-
-  if (encoder_context->hme_supported == 1)
-    {
-      encoder_context->scaling_enabled = 1;
-      encoder_context->me_16x_supported = 1;
-    }
-  encoder_context->mbenc_chroma_kernel = TRUE;
-  encoder_context->mbenc_curbe_set_brc_update = FALSE;
-  encoder_context->frame_width = encoder_context->picture_width;
-  encoder_context->frame_height = encoder_context->picture_height;
-
-  encoder_context->picture_width_in_mbs =
-    (UINT) WIDTH_IN_MACROBLOCKS (encoder_context->picture_width);
-  encoder_context->picture_height_in_mbs =
-    (UINT) HEIGHT_IN_MACROBLOCKS (encoder_context->picture_height);
-  encoder_context->down_scaled_width_mb4x =
-    WIDTH_IN_MACROBLOCKS (encoder_context->picture_width / SCALE_FACTOR_4x);
-  encoder_context->down_scaled_height_mb4x =
-    HEIGHT_IN_MACROBLOCKS (encoder_context->picture_height / SCALE_FACTOR_4x);
-  encoder_context->down_scaled_width_mb16x =
-    WIDTH_IN_MACROBLOCKS (encoder_context->picture_width / SCALE_FACTOR_16x);
-  encoder_context->down_scaled_height_mb16x =
-    HEIGHT_IN_MACROBLOCKS (encoder_context->picture_height /
-			   SCALE_FACTOR_16x);
-  encoder_context->down_scaled_width_mb32x =
-    WIDTH_IN_MACROBLOCKS (encoder_context->picture_width / SCALE_FACTOR_32x);
-  encoder_context->down_scaled_height_mb32x =
-    HEIGHT_IN_MACROBLOCKS (encoder_context->picture_height /
-			   SCALE_FACTOR_32x);
-}
-
-VOID
-media_alloc_resource_mbpak (VADriverContextP ctx,
-			    MEDIA_ENCODER_CTX * encoder_context)
-{
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  MBPAK_CONTEXT *mbpak_context = &encoder_context->mbpak_context;
-  /*UINT pic_w_h_in_mb =
-    (encoder_context->picture_width_in_mbs *
-     ((encoder_context->picture_height_in_mbs + 1) >> 1)) * 2;*/
-  //row buffer y
-  mbpak_context->row_buffer_y.surface_array_spacing = 0x1;
-  mbpak_context->row_buffer_y.tiling = I915_TILING_NONE;
-  mbpak_context->row_buffer_y.bo_size =
-    encoder_context->picture_width_in_mbs * 16;
-  media_allocate_resource (&mbpak_context->row_buffer_y,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "row_buffer y",
-			   mbpak_context->row_buffer_y.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbpak_context->row_buffer_y.bo);
-
-  //row buffer uv
-  mbpak_context->row_buffer_uv.surface_array_spacing = 0x1;
-  mbpak_context->row_buffer_uv.tiling = I915_TILING_NONE;
-  mbpak_context->row_buffer_uv.bo_size =
-    encoder_context->picture_width_in_mbs * 16;
-  media_allocate_resource (&mbpak_context->row_buffer_uv,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "row_buffer uv",
-			   mbpak_context->row_buffer_uv.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbpak_context->row_buffer_uv.bo);
-
-  //column buffer y
-  mbpak_context->column_buffer_y.surface_array_spacing = 0x1;
-  mbpak_context->column_buffer_y.tiling = I915_TILING_NONE;
-  mbpak_context->column_buffer_y.bo_size =
-    encoder_context->picture_height_in_mbs * 16;
-  media_allocate_resource (&mbpak_context->column_buffer_y,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "column buffer y",
-			   mbpak_context->column_buffer_y.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbpak_context->column_buffer_y.bo);
-
-  //column buffer uv
-  mbpak_context->column_buffer_uv.surface_array_spacing = 0x1;
-  mbpak_context->column_buffer_uv.tiling = I915_TILING_NONE;
-  mbpak_context->column_buffer_uv.bo_size =
-    encoder_context->picture_height_in_mbs * 16;
-  media_allocate_resource (&mbpak_context->column_buffer_uv,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "column buffer uv",
-			   mbpak_context->column_buffer_uv.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbpak_context->column_buffer_uv.bo);
-
-  mbpak_context->kernel_dump_buffer.surface_array_spacing = 0x1;
-  mbpak_context->kernel_dump_buffer.tiling = I915_TILING_NONE;
-  mbpak_context->kernel_dump_buffer.bo_size = KERNEL_DUMP_SIZE_VP8;	//pic_w_h_in_mb;
-  media_allocate_resource (&mbpak_context->kernel_dump_buffer,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"kernel dump buffer mbpak",
-			   mbpak_context->kernel_dump_buffer.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbpak_context->kernel_dump_buffer.bo);
-}
-
-VOID
-media_alloc_resource_mbenc (VADriverContextP ctx,
-			    MEDIA_ENCODER_CTX * encoder_context)
-{
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  MBENC_CONTEXT *mbenc_context = &encoder_context->mbenc_context;
-  UINT sz = 0;
-  UINT pic_w_h_in_mb;
-  UINT num_of_mb_blocks =
-    encoder_context->picture_width_in_mbs *
-    encoder_context->picture_height_in_mbs;
-  pic_w_h_in_mb = num_of_mb_blocks;	/*(encoder_context->picture_width_in_mbs *
-					   ((encoder_context->picture_height_in_mbs + 1) >> 1)) * 2; */
-  if (encoder_context->brc_enabled)
-    {
-      encoder_context->mv_offset =
-	ALIGN (((pic_w_h_in_mb + 0) * MB_CODE_SIZE_VP8 * 4), 0x1000);
-    }
-  else
-    {
-      encoder_context->mv_offset =
-	ALIGN ((pic_w_h_in_mb * MB_CODE_SIZE_VP8 * 4), 0x1000);
-    }
-  mbenc_context->mb_mode_cost_luma_buffer.width =
-    ALIGN ((sizeof (UINT) * 10), 64);
-  mbenc_context->mb_mode_cost_luma_buffer.height = 1;
-  mbenc_context->mb_mode_cost_luma_buffer.surface_array_spacing = 0x1;
-  mbenc_context->mb_mode_cost_luma_buffer.tiling = I915_TILING_NONE;
-  mbenc_context->mb_mode_cost_luma_buffer.pitch =
-    mbenc_context->mb_mode_cost_luma_buffer.width;
-
-  media_allocate_resource (&mbenc_context->mb_mode_cost_luma_buffer,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"mb mode cost luma buffer", 0x1000, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->mb_mode_cost_luma_buffer.bo);
-
-  mbenc_context->block_mode_cost_buffer.width =
-    ALIGN ((sizeof (UINT16)) * 10 * 10 * 10, 64);
-  mbenc_context->block_mode_cost_buffer.height = 1;
-  mbenc_context->block_mode_cost_buffer.surface_array_spacing = 0x1;
-  mbenc_context->block_mode_cost_buffer.tiling = I915_TILING_NONE;
-  mbenc_context->block_mode_cost_buffer.pitch =
-    mbenc_context->block_mode_cost_buffer.width;
-  media_allocate_resource (&mbenc_context->block_mode_cost_buffer,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "block mode cost buffer",
-			   0x1000, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->block_mode_cost_buffer.bo);
-
-  mbenc_context->chroma_reconst_buffer.width = 64;
-  mbenc_context->chroma_reconst_buffer.height = num_of_mb_blocks;
-  mbenc_context->chroma_reconst_buffer.surface_array_spacing = 0x1;
-  mbenc_context->chroma_reconst_buffer.tiling = I915_TILING_NONE;
-  mbenc_context->chroma_reconst_buffer.pitch =
-    mbenc_context->chroma_reconst_buffer.width;
-  sz =
-    mbenc_context->chroma_reconst_buffer.width *
-    mbenc_context->chroma_reconst_buffer.height;
-  media_allocate_resource (&mbenc_context->chroma_reconst_buffer,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "chrome reconst buffer",
-			   sz, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->chroma_reconst_buffer.bo);
-
-
-  mbenc_context->histogram_buffer.surface_array_spacing = 0x1;
-  mbenc_context->histogram_buffer.tiling = I915_TILING_NONE;
-  mbenc_context->histogram_buffer.bo_size = HISTOGRAM_SIZE;
-  media_allocate_resource (&mbenc_context->histogram_buffer,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "histogram buffer",
-			   HISTOGRAM_SIZE, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->histogram_buffer.bo);
-
-  mbenc_context->kernel_dump_buffer.surface_array_spacing = 0x1;
-  mbenc_context->kernel_dump_buffer.tiling = I915_TILING_NONE;
-  mbenc_context->kernel_dump_buffer.bo_size = KERNEL_DUMP_SIZE_VP8;	// pic_w_h_in_mb;
-  media_allocate_resource (&mbenc_context->kernel_dump_buffer,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "kernel dump buffer",
-			   mbenc_context->kernel_dump_buffer.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->kernel_dump_buffer.bo);
-
-  mbenc_context->ref_frm_count_surface.surface_array_spacing = 0x1;
-  mbenc_context->ref_frm_count_surface.tiling = I915_TILING_NONE;
-  mbenc_context->ref_frm_count_surface.bo_size = 32;
-  media_allocate_resource (&mbenc_context->ref_frm_count_surface,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"reference frame mb count surface",
-			   mbenc_context->ref_frm_count_surface.bo_size,
-			   4096);
-  MEDIA_DRV_ASSERT (mbenc_context->ref_frm_count_surface.bo);
-
-  mbenc_context->pred_mv_data_surface.surface_array_spacing = 0x1;
-  mbenc_context->pred_mv_data_surface.tiling = I915_TILING_NONE;
-  mbenc_context->pred_mv_data_surface.bo_size =
-    4 * encoder_context->picture_width_in_mbs *
-    encoder_context->picture_height_in_mbs * sizeof (UINT);
-  media_allocate_resource (&mbenc_context->pred_mv_data_surface,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "pred mv data surface",
-			   mbenc_context->pred_mv_data_surface.bo_size, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->pred_mv_data_surface.bo);
-
-  mbenc_context->mode_cost_update_surface.surface_array_spacing = 0x1;
-  mbenc_context->mode_cost_update_surface.tiling = I915_TILING_NONE;
-  mbenc_context->mode_cost_update_surface.bo_size =
-    16 * sizeof (UINT);
-  media_allocate_resource (&mbenc_context->mode_cost_update_surface,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"mode cost update surface",
-			   mbenc_context->mode_cost_update_surface.bo_size,
-			   4096);
-  MEDIA_DRV_ASSERT (mbenc_context->mode_cost_update_surface.bo);
-
-  mbenc_context->pred_mb_quant_data_surface.surface_array_spacing = 0x1;
-  mbenc_context->pred_mb_quant_data_surface.tiling = I915_TILING_NONE;
-  mbenc_context->pred_mb_quant_data_surface.width =
-    ALIGN ((encoder_context->picture_width_in_mbs * 4), 64);
-  mbenc_context->pred_mb_quant_data_surface.height =
-    encoder_context->picture_height_in_mbs;
-  mbenc_context->pred_mb_quant_data_surface.pitch =
-    mbenc_context->pred_mb_quant_data_surface.width;
-  sz =
-    mbenc_context->pred_mb_quant_data_surface.width *
-    mbenc_context->pred_mb_quant_data_surface.height;
-  media_allocate_resource (&mbenc_context->pred_mb_quant_data_surface,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"pred mb quant data surface", sz, 4096);
-  MEDIA_DRV_ASSERT (mbenc_context->pred_mb_quant_data_surface.bo);
-}
-
-VOID
-media_alloc_resource_me (VADriverContextP ctx,
-			 MEDIA_ENCODER_CTX * encoder_context)
-{
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  ME_CONTEXT *me_context = &encoder_context->me_context;
-
-  me_context->mv_data_surface_4x_me.width =
-    ALIGN ((encoder_context->down_scaled_width_mb4x * 32), 64);
-  me_context->mv_data_surface_4x_me.height =
-    encoder_context->down_scaled_height_mb4x * 4;
-  me_context->mv_data_surface_4x_me.surface_array_spacing = 0x1;
-  me_context->mv_data_surface_4x_me.tiling = I915_TILING_NONE;
-  me_context->mv_data_surface_4x_me.pitch =
-    me_context->mv_data_surface_4x_me.width;
-  media_allocate_resource (&me_context->mv_data_surface_4x_me,
-			   drv_ctx->drv_data.bufmgr,(const BYTE*) "mv data surface 4x_me",
-			   (me_context->mv_data_surface_4x_me.width *
-			    me_context->mv_data_surface_4x_me.height), 4096);
-  MEDIA_DRV_ASSERT (me_context->mv_data_surface_4x_me.bo);
-
-
-  me_context->mv_distortion_surface_4x_me.width =
-    ALIGN ((encoder_context->down_scaled_width_mb4x * 8), 64);
-  me_context->mv_distortion_surface_4x_me.height =
-    ALIGN ((encoder_context->down_scaled_height_mb4x * 4), 64);
-  me_context->mv_distortion_surface_4x_me.surface_array_spacing = 0x1;
-  me_context->mv_distortion_surface_4x_me.tiling = I915_TILING_NONE;
-  me_context->mv_distortion_surface_4x_me.pitch =
-    ALIGN ((me_context->mv_distortion_surface_4x_me.width * 8), 64);
-  media_allocate_resource (&me_context->mv_distortion_surface_4x_me,
-			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE*)"mv distortion surface 4x_me", 0x1000, 4096);
-  MEDIA_DRV_ASSERT (me_context->mv_distortion_surface_4x_me.bo);
-
-  me_context->mv_data_surface_16x_me.width =
-    ALIGN ((encoder_context->down_scaled_width_mb16x * 32), 64);
-  me_context->mv_data_surface_16x_me.height =
-    encoder_context->down_scaled_height_mb16x * 4;
-  me_context->mv_data_surface_16x_me.surface_array_spacing = 0x1;
-  me_context->mv_data_surface_16x_me.tiling = I915_TILING_NONE;
-  me_context->mv_data_surface_16x_me.pitch =
-    me_context->mv_data_surface_16x_me.width;
-  media_allocate_resource (&me_context->mv_data_surface_16x_me,
-			   drv_ctx->drv_data.bufmgr, (const BYTE*)"mv data surface 16x_me",
-			   0x1000, 4096);
-  MEDIA_DRV_ASSERT (me_context->mv_data_surface_16x_me.bo);
-
-}
-
 VOID
 media_generic_gpe_context_init (VADriverContextP ctx,
 				MEDIA_GPE_CTX * gpe_context,
@@ -533,175 +241,6 @@ media_generic_gpe_context_init (VADriverContextP ctx,
   media_gpe_context_init (ctx, gpe_context);
 }
 
-VOID
-media_mbpak_context_init (VADriverContextP ctx,
-			  MEDIA_ENCODER_CTX * encoder_context)
-{
-  MBPAK_CONTEXT *mbpak_context = &encoder_context->mbpak_context;
-  MEDIA_GPE_CTX *gpe_context = &mbpak_context->gpe_context;
-  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe.length = /* 0xc0; */ CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;
-  gpe_context->vfe_state.num_urb_entries = 16;	//64;
-  gpe_context->vfe_state.gpgpu_mode = 0;
-  gpe_context->vfe_state.urb_entry_size = 120;	//16;
-  gpe_context->vfe_state.curbe_allocation_size = CURBE_ALLOCATION_SIZE - 1;
-  gpe_context_vfe_scoreboardinit (gpe_context);
-  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels[6], 2);
-
-  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	// * MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;	//0xco
-  gpe_context->sampler_size = 0;
-  media_gpe_context_init (ctx, gpe_context);
-  media_interface_setup_mbpak (encoder_context);
-  media_alloc_resource_mbpak (ctx, encoder_context);
-  return;
-}
-
-VOID
-media_mbenc_context_init (VADriverContextP ctx,
-			  MEDIA_ENCODER_CTX * encoder_context)
-{
-  MBENC_CONTEXT *mbenc_context = &encoder_context->mbenc_context;
-  MEDIA_GPE_CTX *gpe_context = &mbenc_context->gpe_context;
-  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;
-  gpe_context->vfe_state.num_urb_entries = 16;	//64;
-  gpe_context->vfe_state.gpgpu_mode = 0;
-  gpe_context->vfe_state.urb_entry_size = 120;	//121;    //16;
-  gpe_context->vfe_state.curbe_allocation_size = CURBE_ALLOCATION_SIZE - 1;
-  gpe_context_vfe_scoreboardinit (gpe_context);
-  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels[0], 3);
-  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	//* MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->sampler_size = 0;
-  media_gpe_context_init (ctx, gpe_context);
-  media_interface_setup_mbenc (encoder_context);
-  media_alloc_resource_mbenc (ctx, encoder_context);
-  return;
-}
-
-VOID
-media_me_context_init (VADriverContextP ctx,
-		       MEDIA_ENCODER_CTX * encoder_context)
-{
-  ME_CONTEXT *me_context = &encoder_context->me_context;
-  MEDIA_GPE_CTX *gpe_context = &me_context->gpe_context;
-
-  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;
-  gpe_context->vfe_state.num_urb_entries = 16;	//64;
-  gpe_context->vfe_state.gpgpu_mode = 0;
-  gpe_context->vfe_state.urb_entry_size = 121;	//16;
-  gpe_context->vfe_state.curbe_allocation_size = CURBE_ALLOCATION_SIZE - 1;
-  gpe_context_vfe_scoreboardinit (gpe_context);
-  /*media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels[3], 1); */
-#if 0
-  gpe_context->surface_state_binding_table.res.bo_size =
-    (SURFACE_STATE_PADDED_SIZE +
-     sizeof (UINT)) * MAX_MEDIA_SURFACES_GEN6;
-  gpe_context->surface_state_binding_table.table_name = "binding table me";
-#endif
-  gpe_context->idrt_size =
-    sizeof (struct media_interface_descriptor_data) * MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->sampler_size = 0;
-  media_gpe_context_init (ctx, gpe_context);
-
-  media_alloc_resource_me (ctx, encoder_context);
-}
-
-VOID
-media_alloc_resource_scaling (VADriverContextP ctx,
-			      MEDIA_ENCODER_CTX * encoder_context)
-{
-  UINT down_scaled_width4x, downscaled_height_4x;
-  UINT down_scaled_width16x, downscaled_height_16x;
-  UINT down_scaled_width32x, downscaled_height_32x;
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  SCALING_CONTEXT *scaling_context = &encoder_context->scaling_context;
-  down_scaled_width4x = encoder_context->frame_width / 4;
-  downscaled_height_4x = encoder_context->frame_height / 4;
-  down_scaled_width4x = ALIGN (down_scaled_width4x, 16);
-  downscaled_height_4x = (downscaled_height_4x + 1) >> 1;
-  downscaled_height_4x = 2 * ALIGN (downscaled_height_4x, 32);
-
-  scaling_context->scaled_4x_surface.width = down_scaled_width4x;
-  scaling_context->scaled_4x_surface.height = downscaled_height_4x;
-  scaling_context->scaled_4x_surface.surface_array_spacing = 0x1;
-  scaling_context->scaled_4x_surface.tiling = I915_TILING_NONE;
-  scaling_context->scaled_4x_surface.pitch = 0x80;	//hardcoded..need to fix this later
-  media_allocate_resource (&scaling_context->scaled_4x_surface,
-			   drv_ctx->drv_data.bufmgr, (const BYTE*)"scaled surface 4x",
-			   0x1000, 4096);
-  MEDIA_DRV_ASSERT (scaling_context->scaled_4x_surface.bo);
-
-  down_scaled_width16x = encoder_context->frame_width / 16;
-  downscaled_height_16x = encoder_context->frame_height / 16;
-  down_scaled_width16x = ALIGN (down_scaled_width16x, 16);
-  downscaled_height_16x = (downscaled_height_16x + 1) >> 1;
-  downscaled_height_16x = 2 * ALIGN (downscaled_height_16x, 32);
-
-  scaling_context->scaled_16x_surface.width = down_scaled_width16x;
-  scaling_context->scaled_16x_surface.height = downscaled_height_16x;
-  scaling_context->scaled_16x_surface.surface_array_spacing = 0x1;
-  scaling_context->scaled_16x_surface.tiling = I915_TILING_NONE;
-  scaling_context->scaled_16x_surface.pitch = 0x80;	//hardcoded..need to fix this later
-  media_allocate_resource (&scaling_context->scaled_16x_surface,
-			   drv_ctx->drv_data.bufmgr, (const BYTE*)"scaled surface 16x",
-			   0x1000, 4096);
-  MEDIA_DRV_ASSERT (scaling_context->scaled_16x_surface.bo);
-
-  down_scaled_width32x = encoder_context->frame_width / 32;
-  downscaled_height_32x = encoder_context->frame_height / 32;
-  down_scaled_width32x = ALIGN (down_scaled_width32x, 16);
-  downscaled_height_32x = (downscaled_height_32x + 1) >> 1;
-  downscaled_height_32x = 2 * ALIGN (downscaled_height_32x, 32);
-
-  scaling_context->scaled_32x_surface.width = down_scaled_width32x;
-  scaling_context->scaled_32x_surface.height = downscaled_height_32x;
-  scaling_context->scaled_32x_surface.surface_array_spacing = 0x1;
-  scaling_context->scaled_32x_surface.tiling = I915_TILING_NONE;
-  scaling_context->scaled_32x_surface.pitch = 0x80;	//hardcoded..need to fix this later
-  media_allocate_resource (&scaling_context->scaled_32x_surface,
-			   drv_ctx->drv_data.bufmgr, (const BYTE*)"scaled surface 32x",
-			   0x1000, 4096);
-  MEDIA_DRV_ASSERT (scaling_context->scaled_32x_surface.bo);
-
-}
-
-VOID
-media_scaling_context_init (VADriverContextP ctx,
-			    MEDIA_ENCODER_CTX * encoder_context)
-{
-  SCALING_CONTEXT *scaling_context = &encoder_context->scaling_context;
-  MEDIA_GPE_CTX *gpe_context = &scaling_context->gpe_context;
-
-  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;
-  gpe_context->vfe_state.num_urb_entries = 16;	//64;
-  gpe_context->vfe_state.gpgpu_mode = 0;
-  gpe_context->vfe_state.urb_entry_size = 121;	//16;
-  gpe_context->vfe_state.curbe_allocation_size = CURBE_ALLOCATION_SIZE - 1;
-  gpe_context_vfe_scoreboardinit (gpe_context);
-
-  /*media_gpe_load_kernels (ctx, gpe_context, media_hybrid_vp8_kernels, 1); */
-#if 0
-  gpe_context->surface_state_binding_table.res.bo_size =
-    (SURFACE_STATE_PADDED_SIZE +
-     sizeof (UINT)) * MAX_MEDIA_SURFACES_GEN6;
-#endif
-  gpe_context->idrt_size =
-    sizeof (struct media_interface_descriptor_data) * MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->sampler_size = 0;
-  media_gpe_context_init (ctx, gpe_context);
-  media_alloc_resource_scaling (ctx, encoder_context);
-}
-
 BOOL
 media_encoder_init (VADriverContextP ctx, MEDIA_ENCODER_CTX * encoder_context)
 {
@@ -710,21 +249,13 @@ media_encoder_init (VADriverContextP ctx, MEDIA_ENCODER_CTX * encoder_context)
   switch (encoder_context->codec)
     {
     case CODEC_VP8:
-      //kernel_list = media_hybrid_vp8_kernels;
-      num_of_kernels =
-	sizeof (media_hybrid_vp8_kernels) / sizeof (MEDIA_KERNEL);
+      media_encoder_init_vp8 (ctx, encoder_context);
       break;
     default:
       /* never get here */
       MEDIA_DRV_ASSERT (0);
       break;
     }
-  encoder_context->num_of_kernels = num_of_kernels;
-  media_encoder_context_params_init (drv_ctx, encoder_context);
-  media_scaling_context_init (ctx, encoder_context);
-  media_me_context_init (ctx, encoder_context);
-  media_mbenc_context_init (ctx, encoder_context);
-  media_mbpak_context_init (ctx, encoder_context);
   return SUCCESS;
 }
 
@@ -799,8 +330,10 @@ media_drv_generic_kernel_cmds (VADriverContextP ctx,
   pipe_ctrl_params.flush_mode = FLUSH_READ_CACHE;
   mediadrv_gen_pipe_ctrl_cmd (batch, &pipe_ctrl_params);
 
+#if 0
 #ifdef STATUS_REPORT
   media_drv_status_report (ctx, batch, gpe_context);
+#endif
 #endif
   mediadrv_gen_pipeline_select_cmd (batch);
 
@@ -903,7 +436,6 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   VAEncPictureParameterBufferVP8 *pic_param =
     (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
   pic_coding_type = pic_param->pic_flags.bits.frame_type;
-
   if (!phase_16x)
     scaling_gpe_ctx->surface_state_binding_table =
       scaling_ctx->surface_state_binding_table_scaling;
@@ -981,10 +513,13 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   walker_params.me_in_use = TRUE;	//no dependency dispatch order for Scaling kernel
 
   media_drv_add_predicate_media_obj_wallker_cmd (ctx, batch, &walker_params);
+#if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, scaling_gpe_ctx);
 #endif
+#endif
   media_batchbuffer_submit (batch);
+
 }
 
 VOID
@@ -1001,7 +536,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
   MBPAK_SURFACE_PARAMS_VP8 sutface_params;
   MEDIA_OBJ_WALKER_PARAMS media_obj_walker_params;
   GENERIC_KERNEL_PARAMS kernel_params;
-  //UINT phase;
+  /*UINT phase; */
   if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
     {
       mbpak_gpe_ctx->surface_state_binding_table =
@@ -1009,7 +544,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
       kernel_params.idrt_kernel_offset = MBPAK_PHASE1_OFFSET;
       gpe_context_vfe_scoreboardinit (mbpak_gpe_ctx);
 #ifdef DEBUG
-    //  phase = 1;
+      //phase = 1;
 #endif
     }
   else
@@ -1028,7 +563,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
     media_map_buffer_obj (mbpak_gpe_ctx->dynamic_state.res.bo);
   curbe_params.updated = 0;
   curbe_params.pak_phase_type = pak_phase_type;
-  media_set_curbe_vp8_mbpak (encode_state, &curbe_params);
+  encoder_context->set_curbe_vp8_mbpak (encode_state, &curbe_params);
   media_unmap_buffer_obj (mbpak_gpe_ctx->dynamic_state.res.bo);
 
   media_drv_memset (&sutface_params, sizeof (sutface_params));
@@ -1040,8 +575,8 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
   sutface_params.kernel_dump = 1;
   sutface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
   media_add_binding_table (&mbpak_ctx->gpe_context);
-  media_surface_state_vp8_mbpak (encoder_context, encode_state,
-				 &sutface_params);
+  encoder_context->surface_state_vp8_mbpak (encoder_context, encode_state,
+					    &sutface_params);
 
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   //kernel_params.idrt_kernel_offset=0;
@@ -1074,11 +609,12 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
     }
 
   media_object_walker_cmd (batch, &media_obj_walker_params);
+#if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbpak_gpe_ctx);
 #endif
+#endif
   media_batchbuffer_submit (batch);
-
 }
 
 VOID
@@ -1100,8 +636,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   MBENC_SURFACE_PARAMS_VP8 mbenc_sutface_params;
   MEDIA_OBJ_WALKER_PARAMS media_obj_walker_params;
   GENERIC_KERNEL_PARAMS kernel_params;
-  UINT /*phase,*/ ref_frame_flag_final, ref_frame_flag;
-  
+  UINT /*phase, */ ref_frame_flag_final, ref_frame_flag;
   if (mbenc_phase_2 == FALSE)
     {
       mbenc_gpe_ctx->surface_state_binding_table =
@@ -1110,14 +645,18 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 	kernel_params.idrt_kernel_offset = MBENC_ILUMA_START_OFFSET;
       else
 	kernel_params.idrt_kernel_offset = MBENC_P_START_OFFSET;
-      /*phase = 2;*/
+#ifdef DEBUG
+      //phase = 2;
+#endif
     }
   else
     {
       mbenc_gpe_ctx->surface_state_binding_table =
 	mbenc_ctx->surface_state_binding_table_mbenc_p2;
       kernel_params.idrt_kernel_offset = MBENC_ICHROMA_START_OFFSET;
-     /* phase = 1;*/
+#ifdef DEBUG
+      //phase = 1;
+#endif
     }
 
   if (mbenc_phase_2 == FALSE)
@@ -1166,9 +705,8 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 	  break;
 	default:
 	  ref_frame_flag_final =
-	    (ref_frame_flag & encoder_context->
-	     ref_frame_ctrl) ? (ref_frame_flag & encoder_context->
-				ref_frame_ctrl) : 0x1;
+	    (ref_frame_flag & encoder_context->ref_frame_ctrl)
+	    ? (ref_frame_flag & encoder_context->ref_frame_ctrl) : 0x1;
 	}
       encoder_context->ref_frame_ctrl = ref_frame_flag_final;
       curbe_params.ref_frame_ctrl = encoder_context->ref_frame_ctrl;
@@ -1177,8 +715,8 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 	{
 	  buf = media_map_buffer_obj (mbenc_gpe_ctx->dynamic_state.res.bo);
 	  curbe_params.curbe_cmd_buff = buf;
-	  media_set_curbe_i_vp8_mbenc (encode_state, &curbe_params);
-
+	  encoder_context->set_curbe_i_vp8_mbenc (encode_state,
+						  &curbe_params);
 	  media_unmap_buffer_obj (mbenc_gpe_ctx->dynamic_state.res.bo);
 	  const_buff_params.mb_mode_cost_luma_buffer =
 	    &mbenc_ctx->mb_mode_cost_luma_buffer;
@@ -1193,7 +731,8 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 	  buf = media_map_buffer_obj (mbenc_gpe_ctx->dynamic_state.res.bo);
 	  curbe_params.curbe_cmd_buff = buf;
 	  media_drv_memset (buf, mbenc_gpe_ctx->curbe.length);
-	  media_set_curbe_p_vp8_mbenc (encode_state, &curbe_params);
+	  encoder_context->set_curbe_p_vp8_mbenc (encode_state,
+						  &curbe_params);
 	  media_unmap_buffer_obj (mbenc_gpe_ctx->dynamic_state.res.bo);
 	}
     }
@@ -1206,8 +745,8 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   mbenc_sutface_params.kernel_dump = 1;
   media_add_binding_table (&mbenc_ctx->gpe_context);
 
-  media_surface_state_vp8_mbenc (encoder_context, encode_state,
-				 &mbenc_sutface_params);
+  encoder_context->surface_state_vp8_mbenc (encoder_context, encode_state,
+					    &mbenc_sutface_params);
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   media_drv_generic_kernel_cmds (ctx, encoder_context, batch, mbenc_gpe_ctx,
 				 &kernel_params);
@@ -1238,8 +777,10 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
     : (UINT) encoder_context->picture_width_in_mbs;
 
   media_object_walker_cmd (batch, &media_obj_walker_params);
+#if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbenc_gpe_ctx);
+#endif
 #endif
   media_batchbuffer_submit (batch);
 }
@@ -1264,7 +805,6 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
     (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
   UINT pic_coding_type = pic_param->pic_flags.bits.frame_type;
   GENERIC_KERNEL_PARAMS kernel_params;
-
   if (me_phase)
     {
       me_gpe_ctx->surface_state_binding_table =
@@ -1316,8 +856,8 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
     me_16x ? encoder_context->down_scaled_frame_field_height_mb16x :
     encoder_context->down_scaled_frame_field_height_mb4x;
   media_obj_walker_params.frm_w_in_mb =
-    (me_16x) ? encoder_context->
-    down_scaled_width_mb16x : encoder_context->down_scaled_width_mb4x;
+    (me_16x) ? encoder_context->down_scaled_width_mb16x : encoder_context->
+    down_scaled_width_mb4x;
   media_object_walker_cmd (batch, &media_obj_walker_params);
   media_batchbuffer_submit (batch);
 }
@@ -1333,7 +873,7 @@ media_encode_kernel_functions (VADriverContextP ctx,
 
   scaling_params.scaling_16x_en = 0;
   scaling_params.scaling_32x_en = 0;
-
+#if 0
   if (encoder_context->scaling_enabled == 1)
     {
       mediadrv_gen_encode_scaling (ctx, encoder_context, encode_state,
@@ -1355,7 +895,7 @@ media_encode_kernel_functions (VADriverContextP ctx,
       mediadrv_gen_encode_me (ctx, encoder_context, encode_state, TRUE);
     }
 
-
+#endif
   mediadrv_gen_encode_mbenc (ctx, encoder_context, encode_state, FALSE,
 			     FALSE);
 
@@ -1366,6 +906,7 @@ media_encode_kernel_functions (VADriverContextP ctx,
       mediadrv_gen_encode_mbenc (ctx, encoder_context, encode_state, TRUE,
 				 FALSE);
     }
+
   //PAK 
   if (encoder_context->pic_coding_type == FRAME_TYPE_P)
     {
@@ -1374,11 +915,12 @@ media_encode_kernel_functions (VADriverContextP ctx,
     }
   mediadrv_gen_encode_mbpak (ctx, encoder_context, encode_state,
 			     MBPAK_HYBRID_STATE_P2);
+
   return status;
 }
 
 VOID
-media_encode_mb_layout_vp8 (MEDIA_ENCODER_CTX * encoder_context, VOID *data,
+media_encode_mb_layout_vp8 (MEDIA_ENCODER_CTX * encoder_context, VOID * data,
 			    UINT * data_size)
 {
 
@@ -1437,111 +979,6 @@ media_verify_input_params (struct encode_state *encode_state)
 	  pic_param->ref_arf_frame);
   printf ("media_drv_encoder_initialize:pic_param->coded_buf=%x\n",
 	  pic_param->coded_buf);
-  printf
-    ("media_drv_encoder_initialize:pic_param->ref_flags.bits.force_kf=%x\n",
-     pic_param->ref_flags.bits.force_kf);
-  printf
-    ("media_drv_encoder_initialize:pic_param->ref_flags.bits.no_ref_last=%x\n",
-     pic_param->ref_flags.bits.no_ref_last);
-  printf
-    ("media_drv_encoder_initialize:pic_param->ref_flags.bits.no_ref_gf=%x\n",
-     pic_param->ref_flags.bits.no_ref_gf);
-  printf
-    ("media_drv_encoder_initialize:pic_param->ref_flags.bits.no_ref_arf=%x\n",
-     pic_param->ref_flags.bits.no_ref_arf);
-  printf
-    ("media_drv_encoder_initialize:pic_param->ref_flags.bits.temporal_id=%x\n",
-     pic_param->ref_flags.bits.temporal_id);
-
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.bits.frame_type=%x\n",
-     pic_param->pic_flags.bits.frame_type);
-  printf ("media_drv_encoder_initialize:pic_param->pic_flags.version=%x\n",
-	  pic_param->pic_flags.bits.version);
-  printf ("media_drv_encoder_initialize:pic_param->pic_flags.show_frame=%x\n",
-	  pic_param->pic_flags.bits.show_frame);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.color_space=%x\n",
-     pic_param->pic_flags.bits.color_space);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.recon_filter_type=%x\n",
-     pic_param->pic_flags.bits.recon_filter_type);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.loop_filter_type=%x\n",
-     pic_param->pic_flags.bits.loop_filter_type);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.auto_partitions=%x\n",
-     pic_param->pic_flags.bits.auto_partitions);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.num_token_partitions=%x\n",
-     pic_param->pic_flags.bits.num_token_partitions);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.clamping_type=%x\n",
-     pic_param->pic_flags.bits.clamping_type);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.segmentation_enabled=%x\n",
-     pic_param->pic_flags.bits.segmentation_enabled);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.update_mb_segmentation_map=%x\n",
-     pic_param->pic_flags.bits.update_mb_segmentation_map);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.update_segment_feature_data=%x\n",
-     pic_param->pic_flags.bits.update_segment_feature_data);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.loop_filter_adj_enable=%x\n",
-     pic_param->pic_flags.bits.loop_filter_adj_enable);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.refresh_entropy_probs=%x\n",
-     pic_param->pic_flags.bits.refresh_entropy_probs);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.refresh_golden_frame=%x\n",
-     pic_param->pic_flags.bits.refresh_golden_frame);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.refresh_alternate_frame=%x\n",
-     pic_param->pic_flags.bits.refresh_alternate_frame);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.refresh_last=%x\n",
-     pic_param->pic_flags.bits.refresh_last);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.copy_buffer_to_golden=%x\n",
-     pic_param->pic_flags.bits.copy_buffer_to_golden);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.copy_buffer_to_alternate=%x\n",
-     pic_param->pic_flags.bits.copy_buffer_to_alternate);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.sign_bias_golden=%x\n",
-     pic_param->pic_flags.bits.sign_bias_golden);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.sign_bias_alternate=%x\n",
-     pic_param->pic_flags.bits.sign_bias_alternate);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.mb_no_coeff_skip=%x\n",
-     pic_param->pic_flags.bits.mb_no_coeff_skip);
-  printf
-    ("media_drv_encoder_initialize:pic_param->pic_flags.forced_lf_adjustment=%x\n",
-     pic_param->pic_flags.bits.forced_lf_adjustment);
-
-  printf ("media_drv_encoder_initialize:pic_param->sharpness_level=%x\n",
-	  pic_param->sharpness_level);
-  printf ("media_drv_encoder_initialize:pic_param->clamp_qindex_high=%x\n",
-	  pic_param->clamp_qindex_high);
-  printf ("media_drv_encoder_initialize:pic_param->clamp_qindex_low=%x\n",
-	  pic_param->clamp_qindex_low);
-
-  //qmatrix
-  printf ("quant_params=%x\n", quant_params);
-  for (i = 0; i < 4; i++)
-    {
-      printf ("quant_params->quantization_index[%d]=%d\n", i,
-	      quant_params->quantization_index[i]);
-    }
-
-  for (i = 0; i < 5; i++)
-    {
-      printf ("quant_params->quantization_index_delta[%d]= %d\n", i,
-	      quant_params->quantization_index_delta[i]);
-    }
-
 #endif
 }
 
@@ -1624,16 +1061,21 @@ media_get_pic_params_vp8_encode (VADriverContextP ctx,
     }
   else
     {
-      encoder_context->ref_frame_ctrl =
-	(!pic_param->ref_flags.
-	 bits.no_ref_last) | ((!pic_param->ref_flags.
-			       bits.no_ref_gf) << 1) | ((!pic_param->
-							 ref_flags.
-							 bits.no_ref_arf) <<
-							2);
+      if (encoder_context->disable_multi_ref == 0)
+	{
+	  encoder_context->ref_frame_ctrl =
+	    (!pic_param->ref_flags.bits.
+	     no_ref_last) | ((!pic_param->ref_flags.bits.
+			      no_ref_gf) << 1) | ((!pic_param->ref_flags.bits.
+						   no_ref_arf) << 2);
+	}
+      else
+	{
+	  //FIXME:multired ref frame is not enabled for BYT now.
+	  encoder_context->ref_frame_ctrl = 1;
+	}
     }
   //hybrid 
-
   obj_surface = SURFACE (pic_param->coded_buf);
   MEDIA_DRV_ASSERT (obj_surface && obj_surface->bo);
   if (!obj_surface || !obj_surface->bo)
@@ -1753,13 +1195,13 @@ media_alloc_binding_surface_state (MEDIA_DRV_CONTEXT * drv_ctx,
 				   surface_state_binding_table)
 {
   surface_state_binding_table->res.bo_size =
-    (SURFACE_STATE_PADDED_SIZE +
-     sizeof (UINT)) * MAX_MEDIA_SURFACES_GEN6;
+    (SURFACE_STATE_PADDED_SIZE + sizeof (UINT)) * MAX_MEDIA_SURFACES_GEN6;
   //surface_state_binding_table->table_name = "binding table me";
   media_allocate_resource (&surface_state_binding_table->res,
 			   drv_ctx->drv_data.bufmgr,
 			   /*"surface state & binding table" */
-			   (const BYTE*)surface_state_binding_table->table_name,
+			   (const BYTE *) surface_state_binding_table->
+			   table_name,
 			   surface_state_binding_table->res.bo_size, 4096);
   MEDIA_DRV_ASSERT (surface_state_binding_table->res.bo);
 }
@@ -1834,20 +1276,18 @@ media_kernel_dinit (VADriverContextP ctx,
 VOID
 media_mbpak_kernel_pic_resource_init (VADriverContextP ctx,
 				      MEDIA_ENCODER_CTX * encoder_context,
-				      struct encode_state *encode_state)
+				      struct encode_state * encode_state)
 {
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   MBPAK_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
   mbpak_ctx->surface_state_binding_table_mbpak_p1.table_name =
     "surface state binding table mbpak p1";
   media_alloc_binding_surface_state (drv_ctx,
-				     &mbpak_ctx->
-				     surface_state_binding_table_mbpak_p1);
+				     &mbpak_ctx->surface_state_binding_table_mbpak_p1);
   mbpak_ctx->surface_state_binding_table_mbpak_p2.table_name =
     "surface state binding table mbpak p2";
   media_alloc_binding_surface_state (drv_ctx,
-				     &mbpak_ctx->
-				     surface_state_binding_table_mbpak_p2);
+				     &mbpak_ctx->surface_state_binding_table_mbpak_p2);
 }
 
 VOID
@@ -1860,15 +1300,14 @@ media_mbenc_kernel_pic_resource_init (VADriverContextP ctx,
   mbenc_ctx->surface_state_binding_table_mbenc_p1.table_name =
     "surface state binding table mbenc p1";
   media_alloc_binding_surface_state (drv_ctx,
-				     &mbenc_ctx->
-				     surface_state_binding_table_mbenc_p1);
+				     &mbenc_ctx->surface_state_binding_table_mbenc_p1);
   mbenc_ctx->surface_state_binding_table_mbenc_p2.table_name =
     "surface state binding table mbenc p2";
   media_alloc_binding_surface_state (drv_ctx,
-				     &mbenc_ctx->
-				     surface_state_binding_table_mbenc_p2);
+				     &mbenc_ctx->surface_state_binding_table_mbenc_p2);
 
 }
+
 VOID
 media_me_kernel_pic_resource_init (VADriverContextP ctx,
 				   MEDIA_ENCODER_CTX * encoder_context,
@@ -1879,14 +1318,13 @@ media_me_kernel_pic_resource_init (VADriverContextP ctx,
   me_ctx->surface_state_binding_table_4x_me.table_name =
     "surface state binding table 4x me";
   media_alloc_binding_surface_state (drv_ctx,
-				     &me_ctx->
-				     surface_state_binding_table_4x_me);
+				     &me_ctx->surface_state_binding_table_4x_me);
   me_ctx->surface_state_binding_table_16x_me.table_name =
     "surface state binding table 16x me";
   media_alloc_binding_surface_state (drv_ctx,
-				     &me_ctx->
-				     surface_state_binding_table_16x_me);
+				     &me_ctx->surface_state_binding_table_16x_me);
 }
+
 VOID
 media_scaling_kernel_pic_resource_init (VADriverContextP ctx,
 					MEDIA_ENCODER_CTX * encoder_context,
@@ -1897,13 +1335,11 @@ media_scaling_kernel_pic_resource_init (VADriverContextP ctx,
   scaling_ctx->surface_state_binding_table_scaling.table_name =
     "surface state binding table scaling";
   media_alloc_binding_surface_state (drv_ctx,
-				     &scaling_ctx->
-				     surface_state_binding_table_scaling);
+				     &scaling_ctx->surface_state_binding_table_scaling);
   scaling_ctx->surface_state_binding_table_scaling_16x.table_name =
     "surface state binding table scaling 16x";
   media_alloc_binding_surface_state (drv_ctx,
-				     &scaling_ctx->
-				     surface_state_binding_table_scaling_16x);
+				     &scaling_ctx->surface_state_binding_table_scaling_16x);
 }
 
 static VAStatus
@@ -1953,6 +1389,9 @@ media_encoder_picture (VADriverContextP ctx,
   MEDIA_ENCODER_CTX *encoder_context = (MEDIA_ENCODER_CTX *) hw_context;
   struct encode_state *encode_state = &codec_state->encode;
   VAStatus status = VA_STATUS_SUCCESS;
+#ifdef DEBUG
+  printf ("media_encoder_picture\n");
+#endif
   status =
     media_encoder_picture_init (ctx, profile, encoder_context, encode_state);
 #if 0
@@ -1971,6 +1410,7 @@ media_encoder_picture (VADriverContextP ctx,
   if (status != VA_STATUS_SUCCESS)
     return status;
 #endif
+
   encoder_context->frame_num = encoder_context->frame_num + 1;
   return status;
 }

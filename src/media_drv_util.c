@@ -31,7 +31,7 @@
 #include "media_drv_driver.h"
 #include "media_drv_defines.h"
 BOOL
-media_drv_memcpy (VOID *dst_ptr, size_t dst_len,const VOID *src_ptr,
+media_drv_memcpy (VOID * dst_ptr, size_t dst_len, const VOID * src_ptr,
 		  size_t src_len)
 {
   if (((dst_ptr == NULL) || (src_ptr == NULL)) || (dst_len < src_len))
@@ -48,7 +48,7 @@ media_drv_memcpy (VOID *dst_ptr, size_t dst_len,const VOID *src_ptr,
 }
 
 VOID
-media_drv_memset (VOID *dest_ptr, size_t len)
+media_drv_memset (VOID * dest_ptr, size_t len)
 {
   if (dest_ptr != NULL)
     {
@@ -70,7 +70,7 @@ media_drv_alloc_memory ( /*size_t */ UINT size)
 }
 
 VOID
-media_drv_free_memory (VOID *ptr)
+media_drv_free_memory (VOID * ptr)
 {
   if (ptr != NULL)
     {
@@ -124,7 +124,7 @@ media_drv_mutex_unlock (MEDIA_DRV_MUTEX * mutex)
 VOID
 media_guess_surface_format (VADriverContextP ctx,
 			    VASurfaceID surface,
-			    UINT *fourcc, UINT *is_tiled)
+			    UINT * fourcc, UINT * is_tiled)
 {
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
   struct object_context *obj_context = NULL;
@@ -149,7 +149,8 @@ media_guess_surface_format (VADriverContextP ctx,
   if (!obj_config)
     return;
 
-  if (IS_HASWELL (drv_ctx->drv_data.device_id))
+  if (IS_HASWELL (drv_ctx->drv_data.device_id)
+      || IS_IVYBRIDGE (drv_ctx->drv_data.device_id))
     {
       *fourcc = VA_FOURCC ('N', 'V', '1', '2');
       *is_tiled = 1;
@@ -264,7 +265,8 @@ media_get_sampling_from_fourcc (UINT fourcc)
   return surface_sampling;
 }
 
-VOID media_drv_dump_buf_to_file (CHAR *filename, UINT *ptr, UINT size)
+VOID
+media_drv_dump_buf_to_file (CHAR * filename, UINT * ptr, UINT size)
 {
   FILE *fp;
 
@@ -273,7 +275,8 @@ VOID media_drv_dump_buf_to_file (CHAR *filename, UINT *ptr, UINT size)
   fclose (fp);
 }
 
-VOID media_drv_dump_bo_buf_to_file (CHAR *filename, dri_bo * bo)
+VOID
+media_drv_dump_bo_buf_to_file (CHAR * filename, dri_bo * bo)
 {
   FILE *fp;
   dri_bo_map (bo, 1);
@@ -284,8 +287,9 @@ VOID media_drv_dump_bo_buf_to_file (CHAR *filename, dri_bo * bo)
 
 }
 
-VOID media_drv_dump_bo_buf_to_file_v2 (dri_bo * bo, UINT frame_num,
-				  CHAR *func_name, CHAR *buf_name,
+VOID
+media_drv_dump_bo_buf_to_file_v2 (dri_bo * bo, UINT frame_num,
+				  CHAR * func_name, CHAR * buf_name,
 				  UINT phase)
 {
   FILE *fp;

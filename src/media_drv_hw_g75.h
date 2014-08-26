@@ -34,7 +34,21 @@
 #define NUM_OF_VP8_KERNELS 12
 extern MEDIA_KERNEL media_hybrid_vp8_kernels[NUM_OF_VP8_KERNELS];
 extern struct hw_codec_info gen75_hw_codec_info;
-
+extern const BYTE rasterscan_48x40_vp8_g75[56];
+extern const UINT new_mv_skip_threshold_VP8_g75[128];
+extern const BYTE diamond_vp8_g75[56];
+extern const UINT16 mv_ref_cost_context_vp8_g75[6][4][2];
+extern const BYTE fullspiral_48x40_vp8_g75[56];
+extern const UINT single_su_vp8_g75[14];
+extern const UINT cost_table_vp8_g75[128][7];
+extern const UINT new_mv_skip_threshold_VP8_g75[128];
+extern const UINT16 quant_dc_vp8_g75[];
+extern const UINT16 quant_ac_vp8_g75[];
+extern const BYTE frame_i_vme_cost_vp8_g75[128][4];
+extern const UINT16 quant_dc2_vp8_g75[];
+extern const UINT16 quant_ac2_vp8_g75[];
+extern const UINT16 quant_dc_uv_vp8_g75[];
+extern const SURFACE_SET_PARAMS surface_set_params_init;
 #define HSW_SCS_ZERO                      0
 #define HSW_SCS_ONE                       1
 #define HSW_SCS_RED                       4
@@ -74,7 +88,7 @@ extern struct hw_codec_info gen75_hw_codec_info;
      surface_2d.cb_cr_pitch=obj_surface->cb_cr_pitch; \
      surface_2d.x_cb_offset=obj_surface->x_cb_offset; \
      surface_2d.y_cb_offset=obj_surface->y_cb_offset; \
-  } 
+  }
 
 typedef enum _BINDING_TABLE_OFFSET_VP8_ME_G75
 {
@@ -3059,7 +3073,7 @@ typedef struct _media_curbe_data_mbenc_p_g75
 } MEDIA_CURBE_DATA_MBENC_P_G75;
 typedef struct surface_state_g7
 {
- /*union {*/
+  /*union { */
   struct
   {
     unsigned int cube_pos_z:1;
@@ -3082,11 +3096,11 @@ typedef struct surface_state_g7
     unsigned int min_mag_state_not_eq:1;
     unsigned int surface_array:1;
     unsigned int surface_type:3;	   /**< BRW_SURFACE_1D/2D/3D/CUBE */
-  /*};
-  struct {
-      unsigned int val;
-     };*/
-    } dw0;
+    /*};
+       struct {
+       unsigned int val;
+       }; */
+  } dw0;
 /*union {*/
   struct
   {
@@ -3153,7 +3167,7 @@ typedef struct surface_state_g7
  struct {
    unsigned int val;
     };*/
-}dw5;
+  } dw5;
 
 /*union {*/
   struct
@@ -3205,10 +3219,8 @@ typedef struct _binding_table_state
 
 } BINDING_TABLE_STATE;
 
-VOID
-media_add_binding_table (MEDIA_GPE_CTX * gpe_ctx);
-VOID
-media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context);
+VOID media_add_binding_table (MEDIA_GPE_CTX * gpe_ctx);
+VOID media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context);
 void media_interface_setup_mbpak (MEDIA_ENCODER_CTX * encoder_context);
 void
 media_surface_state_vp8_mbpak (MEDIA_ENCODER_CTX * encoder_context,

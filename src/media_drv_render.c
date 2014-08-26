@@ -42,6 +42,14 @@ enum
 static const UINT sf_kernel_static_gen7[][4] = {
 };
 
+static const uint32_t ps_kernel_static_gen7[][4] = {
+#include "shaders/render/exa_wm_src_affine.g7b"
+#include "shaders/render/exa_wm_src_sample_planar.g7b"
+#include "shaders/render/exa_wm_yuv_color_balance.g7b"
+#include "shaders/render/exa_wm_yuv_rgb.g7b"
+#include "shaders/render/exa_wm_write.g7b"
+};
+
 /* Programs for Haswell */
 static const UINT ps_kernel_static_gen7_haswell[][4] = {
 #include "shaders/render/exa_wm_src_affine.g7b"
@@ -55,6 +63,30 @@ static const UINT ps_subpic_kernel_static_gen7[][4] = {
 #include "shaders/render/exa_wm_src_affine.g7b"
 #include "shaders/render/exa_wm_src_sample_argb.g7b"
 #include "shaders/render/exa_wm_write.g7b"
+};
+
+static struct media_render_kernel render_kernels_gen7[] = {
+  {
+   "SF",
+   SF_KERNEL,
+   sf_kernel_static_gen7,
+   sizeof (sf_kernel_static_gen7),
+   NULL}
+  ,
+  {
+   "PS",
+   PS_KERNEL,
+   ps_kernel_static_gen7,
+   sizeof (ps_kernel_static_gen7),
+   NULL}
+  ,
+
+  {
+   "PS_SUBPIC",
+   PS_SUBPIC_KERNEL,
+   ps_subpic_kernel_static_gen7,
+   sizeof (ps_subpic_kernel_static_gen7),
+   NULL}
 };
 
 static struct media_render_kernel render_kernels_gen7_haswell[] = {
@@ -98,6 +130,10 @@ media_render_init (VADriverContextP ctx)
   if (IS_GEN75 (drv_ctx->drv_data.device_id))
     memcpy (render_state->render_kernels, render_kernels_gen7_haswell,
 	    sizeof (render_state->render_kernels));
+
+  else if (IS_GEN7 (drv_ctx->drv_data.device_id))
+    memcpy (render_state->render_kernels, render_kernels_gen7,
+	    sizeof (render_state->render_kernels));
   else
     {
       printf
@@ -135,9 +171,17 @@ media_render_init (VADriverContextP ctx)
     {
       render_state->max_wm_threads = 408;
     }
+  else if (IS_IVB_GT1 (drv_ctx->drv_data.device_id)
+	   || IS_BAYTRAIL (drv_ctx->drv_data.device_id))
+    {
+      render_state->max_wm_threads = 48;
+    }
+  else if (IS_IVB_GT2 (drv_ctx->drv_data.device_id))
+    {
+      render_state->max_wm_threads = 172;
+    }
   else
     {
-      /* should never get here !!! */
       MEDIA_DRV_ASSERT (0);
     }
 

@@ -253,9 +253,8 @@ media_suface_external_memory (VADriverContextP ctx,
 
 VOID
 media_alloc_surface_bo (VADriverContextP ctx,
-			struct object_surface *obj_surface,
-			INT tiled,
-			UINT fourcc, UINT subsampling)
+			struct object_surface * obj_surface,
+			INT tiled, UINT fourcc, UINT subsampling)
 {
   INT region_width, region_height;
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
@@ -277,6 +276,7 @@ media_alloc_surface_bo (VADriverContextP ctx,
 			fourcc != VA_FOURCC ('Y', 'V', '1', '2'));
 
       obj_surface->width = ALIGN (obj_surface->orig_width, 128);
+      obj_surface->height = ALIGN (obj_surface->orig_height, 32);
       region_height = obj_surface->height;
       switch (fourcc)
 	{
@@ -613,7 +613,7 @@ media_drv_create_surface (VADriverContextP ctx, input_surf_params * params)
 }
 
 VOID
-media_destroy_surface (struct object_heap *heap, struct object_base *obj)
+media_destroy_surface (struct object_heap * heap, struct object_base * obj)
 {
   struct object_surface *obj_surface = (struct object_surface *) obj;
   dri_bo_unreference (obj_surface->bo);

@@ -37,7 +37,7 @@ media_gpe_load_kernels (VADriverContextP ctx,
 {
   MEDIA_DRV_CONTEXT *i965 = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   INT i;
-  UINT kernel_offset, end_offset,kernel_size = 0;
+  UINT kernel_offset, end_offset, kernel_size = 0;
   BYTE *kernel_ptr;
   MEDIA_KERNEL *kernel;
   INSTRUCTION_TYPE *instruction_state = &gpe_context->instruction_state;
@@ -52,8 +52,9 @@ media_gpe_load_kernels (VADriverContextP ctx,
       kernel_size += kernel->size;
     }
   media_allocate_resource (&instruction_state->buff_obj,
-			   i965->drv_data.bufmgr,(const BYTE * ) "kernel shader",
-			   kernel_size, 0x4096);
+			   i965->drv_data.bufmgr,
+			   (const BYTE *) "kernel shader", kernel_size,
+			   0x4096);
   if (instruction_state->buff_obj.bo == NULL)
     {
       printf ("failure to allocate the buffer space for kernel shader\n");
@@ -134,15 +135,17 @@ VOID
 media_gpe_context_init (VADriverContextP ctx, MEDIA_GPE_CTX * gpe_context)
 {
   INT stat_buff_sz = 0;
-  UINT start_offset, end_offset,bo_size = 0;
+  UINT start_offset, end_offset, bo_size = 0;
   MEDIA_DRV_CONTEXT *i965 = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   DYNAMIC_STATE *dynamic_state = &gpe_context->dynamic_state;
   STATUS_BUFFER *status_buffer = &gpe_context->status_buffer;
   bo_size =
     (gpe_context->idrt_size * MAX_INTERFACE_DESC_GEN6) +
-    gpe_context->curbe_size + gpe_context->sampler_size + 192;
+    gpe_context->curbe_size +
+    (gpe_context->sampler_size * MAX_INTERFACE_DESC_GEN6) + 192;
   media_allocate_resource (&dynamic_state->res, i965->drv_data.bufmgr,
-			   (const BYTE*)"dynamic state heap", bo_size, 4096);
+			   (const BYTE *) "dynamic state heap", bo_size,
+			   4096);
   MEDIA_DRV_ASSERT (dynamic_state->res.bo);
   end_offset = 0;
   dynamic_state->end_offset = 0;
@@ -160,14 +163,15 @@ media_gpe_context_init (VADriverContextP ctx, MEDIA_GPE_CTX * gpe_context)
   /* Sampler state offset */
   start_offset = ALIGN (end_offset, 64);
   gpe_context->sampler_offset = start_offset;
-  end_offset = start_offset + gpe_context->sampler_size;
+  end_offset =
+    start_offset + (gpe_context->sampler_size * MAX_INTERFACE_DESC_GEN6);
 
   /* update the end offset of dynamic_state */
   dynamic_state->end_offset = end_offset;
 /*FIXME:Hardcoded the size need to change this*/
   stat_buff_sz = 0x8000;
   media_allocate_resource (&status_buffer->res, i965->drv_data.bufmgr,
-			   (const BYTE*)"status heap", 0x8000, 4096);
+			   (const BYTE *) "status heap", 0x8000, 4096);
   status_buffer->res.bo_size = stat_buff_sz;
   MEDIA_DRV_ASSERT (status_buffer->res.bo);
 

@@ -31,7 +31,7 @@
 #include "media_drv_init.h"
 #include "media_drv_gpe_utils.h"
 #include "media_drv_util.h"
-
+#include "media_drv_hw.h"
 //#define WIDTH_IN_MACROBLOCKS(width)      (((width) + (16 - 1)) / 16)
 //#define HEIGHT_IN_MACROBLOCKS(height)    (((height) + (16 - 1)) / 16)
 
@@ -135,13 +135,29 @@ typedef struct media_encoder_ctx
   bool kernel_dump_enable;
   bool mbenc_chroma_kernel;
   bool mbenc_curbe_set_brc_update;
+  bool disable_multi_ref;
   unsigned int mv_offset;
   unsigned int frame_num;
+
+  void (*set_curbe_i_vp8_mbenc) (struct encode_state * encode_state,
+				 MEDIA_MBENC_CURBE_PARAMS_VP8 * params);
+  void (*set_curbe_p_vp8_mbenc) (struct encode_state * encode_state,
+				 MEDIA_MBENC_CURBE_PARAMS_VP8 * params);
+  void (*surface_state_vp8_mbenc) (struct media_encoder_ctx * encoder_context,
+				   struct encode_state * encode_state,
+				   MBENC_SURFACE_PARAMS_VP8 *
+				   mbenc_sutface_params);
+  void (*surface_state_vp8_mbpak) (struct media_encoder_ctx * encoder_context,
+				   struct encode_state * encode_state,
+				   MBPAK_SURFACE_PARAMS_VP8 *
+				   mbpak_sutface_params);
+  void (*set_curbe_vp8_mbpak) (struct encode_state * encode_state,
+			       MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);
 } MEDIA_ENCODER_CTX;
 
 void
 media_alloc_resource_scaling (VADriverContextP ctx,
-                              MEDIA_ENCODER_CTX * encoder_context);
+			      MEDIA_ENCODER_CTX * encoder_context);
 void
 media_encode_mb_layout_vp8 (MEDIA_ENCODER_CTX * encoder_context, void *data,
 			    UINT * data_size);
