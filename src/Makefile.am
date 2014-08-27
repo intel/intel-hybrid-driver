@@ -56,7 +56,6 @@ source_c = \
         media_drv_encoder.c \
         media_drv_encoder_vp8.c \
         media_drv_encoder_vp8_g7.c \
-        media_drv_hw.c    \
         media_drv_hwcmds.c  \
         media_drv_hw_g75.c  \
         media_drv_hw_g7.c  \
