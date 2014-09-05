@@ -242,7 +242,6 @@ media_destroy_context (struct object_heap *heap, struct object_base *obj)
       media_release_buffer_store (&obj_context->codec_state.encode.pic_param);
       media_release_buffer_store (&obj_context->codec_state.encode.seq_param);
       media_release_buffer_store (&obj_context->codec_state.encode.q_matrix);
-
       for (i = 0; i < obj_context->codec_state.encode.num_slice_params; i++)
 	media_release_buffer_store (&obj_context->codec_state.encode.
 				    slice_params[i]);

@@ -53,7 +53,7 @@ media_free_resource_me (ME_CONTEXT * me_context)
 
   dri_bo_unreference (me_context->mv_data_surface_16x_me.bo);
   me_context->mv_data_surface_16x_me.bo = NULL;
- 
+
   dri_bo_unreference (me_context->mv_data_surface_4x_me.bo);
   me_context->mv_data_surface_4x_me.bo = NULL;
 }
