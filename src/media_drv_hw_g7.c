@@ -1909,6 +1909,10 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   //struct object_buffer *obj_buffer;
   BYTE *binding_surface_state_buf = NULL;
   MEDIA_RESOURCE surface_2d;	//={0,0,0};
+
+  if (mbpak_sutface_params->mbpak_phase_type == MBPAK_HYBRID_STATE_P2)
+    mbpak_gpe_ctx = &mbpak_ctx->gpe_context2;
+
   binding_surface_state_buf =
     (BYTE *) media_map_buffer_obj (mbpak_gpe_ctx->
 				   surface_state_binding_table.res.bo);
