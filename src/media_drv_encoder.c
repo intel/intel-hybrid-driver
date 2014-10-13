@@ -1202,8 +1202,7 @@ mediadrv_gen_encode_brc_update(VADriverContextP ctx,
   media_object_params.interface_offset = 0;
   media_object_params.use_scoreboard = 0;
   media_object_cmd(batch, &media_object_params);
-
-  media_batchbuffer_flush (batch); /* ??? */
+  media_batchbuffer_submit (batch);
 }
 
 VAStatus
