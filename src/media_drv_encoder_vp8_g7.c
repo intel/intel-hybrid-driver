@@ -81,5 +81,25 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   media_gpe_context_init (ctx, gpe_context);
   media_interface_setup_mbpak (encoder_context);
   media_alloc_resource_mbpak (ctx, encoder_context);
+
+  gpe_context = &mbpak_context->gpe_context2;
+  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe.length = /* 0xc0; */ CURBE_TOTAL_DATA_LENGTH;
+  gpe_context->vfe_state.max_num_threads = 32 - 1;	//60 - 1;
+  gpe_context->vfe_state.num_urb_entries = 16;	//64;
+  gpe_context->vfe_state.gpgpu_mode = 0;
+  gpe_context->vfe_state.urb_entry_size = 123;	//16;
+  gpe_context->vfe_state.curbe_allocation_size =
+    CURBE_ALLOCATION_SIZE - 12 - 1;
+  gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
+  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[3],
+			  2);
+
+  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	// * MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;	//0xco
+  gpe_context->sampler_size = 0;
+  media_gpe_context_init (ctx, gpe_context);
+  media_interface_setup_mbpak (encoder_context);
+  media_alloc_resource_mbpak (ctx, encoder_context);
   return;
 }
