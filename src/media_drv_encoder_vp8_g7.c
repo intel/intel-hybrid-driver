@@ -79,7 +79,7 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;	//0xco
   gpe_context->sampler_size = 0;
   media_gpe_context_init (ctx, gpe_context);
-  media_interface_setup_mbpak (encoder_context);
+  media_interface_setup_mbpak (gpe_context);
 
   gpe_context = &mbpak_context->gpe_context2;
   gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
@@ -98,7 +98,7 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;	//0xco
   gpe_context->sampler_size = 0;
   media_gpe_context_init (ctx, gpe_context);
-  media_interface_setup_mbpak (encoder_context);
+  media_interface_setup_mbpak (gpe_context);
   media_alloc_resource_mbpak (ctx, encoder_context);
   return;
 }
