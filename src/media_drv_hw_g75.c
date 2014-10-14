@@ -3112,13 +3112,6 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw32.bilinear_enable = 0;
   cmd->dw32.intra_16x16_no_dc_penalty_segment0 =
     cost_table_vp8_g75[qp_seg0][5];
-
-  // if (params->brc_enabled == TRUE)
-    {
-      cmd->dw30.mv_cost_seg_val = cmd->dw31.mv_cost_seg_val = 0;
-      cmd->dw32.intra_16x16_no_dc_penalty_segment0 = 0;
-    }
-
   if (segmentation_enabled)
     {
       cmd->dw32.intra_16x16_no_dc_penalty_segment1 =
