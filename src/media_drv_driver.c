@@ -155,10 +155,12 @@ media_driver_data_init (VADriverContextP ctx)
   MEDIA_DRV_CONTEXT *drv_ctx = NULL;
   MEDIA_DRV_ASSERT (ctx);
   drv_ctx = ctx->pDriverData;
-  if (IS_HASWELL (drv_ctx->drv_data.device_id))
+  if (IS_GEN75 (drv_ctx->drv_data.device_id))
     drv_ctx->codec_info = &gen75_hw_codec_info;
   else if (IS_GEN7 (drv_ctx->drv_data.device_id))
     drv_ctx->codec_info = &gen7_hw_codec_info;
+  else if (IS_GEN8(drv_ctx->drv_data.device_id))
+    drv_ctx->codec_info = &gen75_hw_codec_info;
   else
     return false;
 
