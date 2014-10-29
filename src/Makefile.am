@@ -62,6 +62,7 @@ source_c = \
         media_drv_init.c   \
         media_drv_kernels.c  \
         media_drv_kernels_g7.c  \
+        media_drv_kernels_g8.c  \
         media_drv_output_dri.c \
         media_drv_render.c   \
         media_drv_surface.c  \
@@ -91,6 +92,7 @@ source_h = \
         media_drv_init.h   \
         media_drv_kernels.h \
         media_drv_kernels_g7.h \
+        media_drv_kernels_g8.h \
         media_drv_output_dri.h  \
         media_drv_render.h  \
         media_drv_surface.h   \
