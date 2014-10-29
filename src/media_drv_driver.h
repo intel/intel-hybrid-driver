@@ -210,8 +210,29 @@
 
 #define IS_GEN75(devid)          (IS_HASWELL(devid))
 
-#define IS_GEN7(devid)          (IS_IVYBRIDGE(devid) || \
-                                 IS_HASWELL(devid))
+#define IS_GEN7(devid)          (IS_IVYBRIDGE(devid))
+
+#define IS_BROADWELL(devid)             (devid == 0x1602 || \
+	                                 devid == 0x1606 || \
+	                                 devid == 0x160A || \
+	                                 devid == 0x160B || \
+	                                 devid == 0x160D || \
+	                                 devid == 0x160E || \
+	                                 devid == 0x1612 || \
+	                                 devid == 0x1616 || \
+	                                 devid == 0x161A || \
+	                                 devid == 0x161B || \
+	                                 devid == 0x161D || \
+	                                 devid == 0x161E || \
+	                                 devid == 0x1622 || \
+	                                 devid == 0x1626 || \
+	                                 devid == 0x162A || \
+	                                 devid == 0x162B || \
+	                                 devid == 0x162D || \
+	                                 devid == 0x162E )
+
+#define IS_GEN8(devid)  (IS_BROADWELL(devid))
+
 struct region
 {
   INT x;
