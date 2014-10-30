@@ -3629,4 +3629,6 @@ media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
 VOID
 media_encode_init_brc_update_constant_data_vp8_g75(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
 
+VOID
+media_add_surface_state (SURFACE_SET_PARAMS * params);
 #endif
