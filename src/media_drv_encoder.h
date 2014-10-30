@@ -204,6 +204,7 @@ typedef struct media_encoder_ctx
 				   mbpak_sutface_params);
   void (*set_curbe_vp8_mbpak) (struct encode_state * encode_state,
 			       MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);
+  void (*media_add_surface_state) (SURFACE_SET_PARAMS * params);
 } MEDIA_ENCODER_CTX;
 
 typedef struct media_encoder_vp8_surface
