@@ -1601,7 +1601,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 			  (mbenc_sutface_params->orig_frame_height) *
 			  MB_CODE_SIZE_VP8 * sizeof (UINT));
   params.cacheability_control = mbenc_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
 //current pic luma
   params = surface_set_params_init;
@@ -1620,7 +1620,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d = &surface_2d;
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbenc_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
 //current pic uv
   params = surface_set_params_init;
@@ -1639,7 +1639,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d = &surface_2d;
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbenc_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
 
   if (mbenc_sutface_params->pic_coding == FRAME_TYPE_I)
@@ -1659,7 +1659,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.uv_direction = VDIRECTION_FULL_FRAME;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //MBMode Cost Luma surface
       params = surface_set_params_init;
@@ -1673,7 +1673,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.surface_2d = &mbenc_ctx->mb_mode_cost_luma_buffer;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //Block Mode cost surface  
       params = surface_set_params_init;
@@ -1687,7 +1687,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.surface_2d = &mbenc_ctx->block_mode_cost_buffer;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //Chroma Reconstruction Surface
       params = surface_set_params_init;
@@ -1702,7 +1702,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.surface_2d = &mbenc_ctx->chroma_reconst_buffer;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
       //histogram
 #if 0
       params = surface_set_params_init;
@@ -1716,7 +1716,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.size = mbenc_ctx->histogram_buffer.bo_size;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 #endif
       kernel_dump_offset = 8;
     }
@@ -1741,7 +1741,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
       if (mbenc_sutface_params->hme_enabled)
 	{
 	  /*need to add me mv data buffer surface states here later */
@@ -1762,7 +1762,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.uv_direction = VDIRECTION_FULL_FRAME;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //current picture VME inter prediction surface..!i
       params = surface_set_params_init;
@@ -1779,7 +1779,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.uv_direction = VDIRECTION_FULL_FRAME;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //current picture VME inter prediction surface..!i
       params = surface_set_params_init;
@@ -1796,7 +1796,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.uv_direction = VDIRECTION_FULL_FRAME;
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //last ref
       if (encode_state->ref_last_frame != NULL
@@ -1818,7 +1818,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	}
 
       //goldeb ref
@@ -1841,7 +1841,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	}
 
       //alternate ref
@@ -1864,7 +1864,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	}
       kernel_dump_offset = 21;
     }
@@ -1888,7 +1888,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 			      (mbenc_sutface_params->orig_frame_height) *
 			      /*MB_CODE_SIZE_VP8 */ 32);
       params.offset = encoder_context->mv_offset;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 #endif
     }
 
@@ -1934,7 +1934,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 			  HEIGHT_IN_MACROBLOCKS
 			  (mbpak_sutface_params->orig_frame_height) *
 			  MB_CODE_SIZE_VP8 * sizeof (UINT));
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
   //current pic luma
   params = surface_set_params_init;
   params.binding_surface_state.bo =
@@ -1952,7 +1952,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d = &surface_2d;
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
 //current pic uv
   params = surface_set_params_init;
@@ -1971,7 +1971,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d = &surface_2d;
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
   //current reconstructed picture luma
   params = surface_set_params_init;
@@ -1992,7 +1992,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d->width = obj_surface->width;
   params.surface_2d->height = obj_surface->height;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
 // current reconstructed picture uv
   params = surface_set_params_init;
@@ -2014,7 +2014,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
-  media_add_surface_state (&params);
+  encoder_context->media_add_surface_state (&params);
 
   if (mbpak_sutface_params->mbpak_phase_type == MBPAK_HYBRID_STATE_P1)
     {
@@ -2035,7 +2035,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	HEIGHT_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_height) * 64;
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //last ref
       if (encode_state->ref_last_frame != NULL
@@ -2060,7 +2060,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.surface_2d->width = obj_surface->width;
 	  params.surface_2d->height = obj_surface->height;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 
 	  params = surface_set_params_init;
 	  params.binding_surface_state.bo =
@@ -2080,7 +2080,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	}
       //goldeb ref
       if (encode_state->ref_gf_frame != NULL
@@ -2104,7 +2104,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 
 	  params = surface_set_params_init;
 	  params.binding_surface_state.bo =
@@ -2124,7 +2124,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->width = obj_surface->width;
 	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 
 	}
       //alterbate ref
@@ -2149,7 +2149,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->width = obj_surface->width;
 	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	  params = surface_set_params_init;
 	  params.binding_surface_state.bo =
 	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
@@ -2168,7 +2168,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 
 	}
       kernel_dump_offset = 12;
@@ -2187,7 +2187,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.size = mbpak_ctx->row_buffer_y.bo_size;
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //row buffer uv
       params = surface_set_params_init;
@@ -2201,7 +2201,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.size = mbpak_ctx->row_buffer_uv.bo_size;
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //column buffer .y
       params = surface_set_params_init;
@@ -2215,7 +2215,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
       params.size = mbpak_ctx->column_buffer_y.bo_size;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 
       //column buffer uv
       params = surface_set_params_init;
@@ -2229,7 +2229,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.size = mbpak_ctx->column_buffer_uv.bo_size;
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
       kernel_dump_offset = 12;
 
     }
@@ -2251,7 +2251,7 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	HEIGHT_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_height) * 32;
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
-      media_add_surface_state (&params);
+      encoder_context->media_add_surface_state (&params);
 #endif
     }
   media_unmap_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.res.bo);
