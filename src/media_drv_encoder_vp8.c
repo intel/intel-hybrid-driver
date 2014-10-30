@@ -29,6 +29,7 @@
 #include "media_drv_encoder.h"
 #include "media_drv_encoder_vp8.h"
 #include "media_drv_driver.h"
+#include "media_drv_hw_g8.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_hw_g7.h"
 #include "media_drv_hwcmds.h"
@@ -954,4 +955,28 @@ media_encoder_init_vp8 (VADriverContextP ctx,
      encoder_context->media_add_surface_state =
         media_add_surface_state;
    }
+  else if (IS_GEN8 (drv_ctx->drv_data.device_id))
+    {
+      encoder_context->num_of_kernels =
+        sizeof (media_hybrid_vp8_kernels_g8) / sizeof (MEDIA_KERNEL);
+      encoder_context->disable_multi_ref = 0;
+      media_encoder_context_params_init (drv_ctx, encoder_context);
+      media_scaling_context_init (ctx, encoder_context);
+      media_me_context_init (ctx, encoder_context);
+      media_mbenc_context_init_vp8_g8 (ctx, encoder_context);
+      media_mbpak_context_init_vp8_g8 (ctx, encoder_context);
+      encoder_context->set_curbe_i_vp8_mbenc = media_set_curbe_i_vp8_mbenc;
+      encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc;
+      encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak;
+      encoder_context->surface_state_vp8_mbenc =
+        media_surface_state_vp8_mbenc;
+      encoder_context->surface_state_vp8_mbpak =
+        media_surface_state_vp8_mbpak;
+      encoder_context->media_add_surface_state =
+        media_add_surface_state_g8;
+    }
+  else {
+   printf("Platform not supported");
+   MEDIA_DRV_ASSERT(0);
+  }
 }
