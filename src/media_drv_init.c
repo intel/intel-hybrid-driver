@@ -1893,8 +1893,10 @@ media_drv_init (VADriverContextP ctx)
     goto data_init_err;
   if (!media_display_attributes_init (ctx))
     goto dis_attr_err;
+  #if 0
   if (!media_render_init (ctx))
     goto render_init_err;
+  #endif
   if (!media_output_dri_init (ctx))
     goto dri_init_error;
 
