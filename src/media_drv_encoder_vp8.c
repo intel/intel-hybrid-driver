@@ -931,6 +931,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_mbenc;
       encoder_context->surface_state_vp8_mbpak =
 	media_surface_state_vp8_mbpak;
+       /*encoder_context->media_add_surface_state =
+        media_add_surface_state;*/
     }
   else if (IS_GEN7 (drv_ctx->drv_data.device_id))
     {
@@ -949,5 +951,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_mbenc_g7;
       encoder_context->surface_state_vp8_mbpak =
 	media_surface_state_vp8_mbpak_g7;
+     /* encoder_context->media_add_surface_state =
+        media_add_surface_state;*/
     }
 }
