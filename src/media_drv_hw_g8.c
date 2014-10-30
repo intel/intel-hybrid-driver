@@ -249,16 +249,14 @@ media_add_binding_table_g8 (MEDIA_GPE_CTX * gpe_ctx)
   media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
 }
 
-media_interface_setup_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context)
+media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX *mbpak_gpe_ctx)
 {
-  MBENC_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
-  MEDIA_GPE_CTX *mbpak_gpe_ctx = &mbpak_ctx->gpe_context;
   struct gen8_interface_descriptor_data *desc;
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
   UINT samplet_offset;
-  bo = mbpak_ctx->gpe_context.dynamic_state.res.bo;
+  bo = mbpak_gpe_ctx->dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);
   desc_ptr = (BYTE *) bo->virtual + mbpak_gpe_ctx->idrt_offset;
