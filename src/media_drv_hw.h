@@ -236,6 +236,8 @@ typedef struct media_object_walker_params
   BOOL hybrid_pak2_pattern_enabled_45_deg;
   UINT frmfield_h_in_mb;
   UINT frm_w_in_mb;
+  UINT walker_degree;
+  UINT scoreboard_mask;
 } MEDIA_OBJ_WALKER_PARAMS;
 
 typedef struct media_object_params

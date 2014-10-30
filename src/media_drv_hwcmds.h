@@ -112,6 +112,8 @@
 
 #define  SCALE_SRC_Y 0
 #define  SCALE_DST_Y 1
+
+#define DEGREE_46 3
 typedef struct media_curbe_scaling_data
 {
   UINT input_pic_height:16;
