@@ -2008,9 +2008,6 @@ va_driver_init (VADriverContextP ctx)
   vtable->vaQuerySurfaceAttributes = media_QuerySurfaceAttributes;
   vtable->vaCreateSurfaces2 = media_CreateSurfaces2;
 
-  vtable_vpp->vaQueryVideoProcFilters = media_QueryVideoProcFilters;
-  vtable_vpp->vaQueryVideoProcFilterCaps = media_QueryVideoProcFilterCaps;
-  vtable_vpp->vaQueryVideoProcPipelineCaps = media_QueryVideoProcPipelineCaps;
   ret = media_drv_init (ctx);
   return ret;
 }
