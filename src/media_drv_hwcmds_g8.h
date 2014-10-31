@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef _MEDIA__DRIVER_HW_G8_H
-#define _MEDIA__DRIVER_HW_G8_H
+#ifndef _MEDIA__DRIVER_HWCMDS_G8_H
+#define _MEDIA__DRIVER_HWCMDS_G8_H
 
 #include "media_drv_batchbuffer.h"
 #define CMD_PIPE_CONTROL_WC_FLUSH               (1 << 12)
