@@ -223,7 +223,7 @@ media_encoder_context_destroy (VOID * hw_context)
   media_drv_free_memory (encoder_context);
 }
 
-static VOID
+VOID
 gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context)
 {
   gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0xFF;
@@ -249,7 +249,7 @@ gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context)
   gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y7 = 0xE;
 }
 
-static VOID
+VOID
 gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context)
 {
   gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0x07;
@@ -627,7 +627,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
 	mbpak_ctx->surface_state_binding_table_mbpak_p2;
       kernel_params.idrt_kernel_offset = MBPAK_PHASE2_OFFSET;
       //FIXME:Need to find a better way to handle this..!
-      gpe_context_vfe_scoreboardinit_pak (mbpak_gpe_ctx);
+      encoder_context->gpe_context_vfe_scoreboardinit_pak (mbpak_gpe_ctx);
 #ifdef DEBUG
       //phase = 2;
 #endif
@@ -650,7 +650,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
   sutface_params.kernel_dump_buffer = mbpak_ctx->kernel_dump_buffer;
   sutface_params.kernel_dump = 1;
   sutface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
-  media_add_binding_table (mbpak_gpe_ctx);
+  encoder_context->media_add_binding_table (mbpak_gpe_ctx);
   encoder_context->surface_state_vp8_mbpak (encoder_context, encode_state,
 					    &sutface_params);
 
@@ -844,7 +844,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   mbenc_sutface_params.iframe_dist_in_use = mbenc_i_frame_dist_in_use;
   mbenc_sutface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
   mbenc_sutface_params.kernel_dump = 1;
-  media_add_binding_table (&mbenc_ctx->gpe_context);
+ encoder_context->media_add_binding_table (&mbenc_ctx->gpe_context);
 
   encoder_context->surface_state_vp8_mbenc (encoder_context, encode_state,
 					    &mbenc_sutface_params);
@@ -1017,7 +1017,7 @@ mediadrv_gen_encode_brc_init_reset(VADriverContextP ctx,
   /* surface & binding table */
   media_drv_memset (&surface_params, sizeof (surface_params));
   surface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
-  media_add_binding_table (gpe_ctx);
+ encoder_context->media_add_binding_table (gpe_ctx);
   media_surface_state_vp8_brc_init_reset (encoder_context,
 					  encode_state,
 					  &surface_params);
@@ -1185,7 +1185,7 @@ mediadrv_gen_encode_brc_update(VADriverContextP ctx,
   /* surface & binding table */
   media_drv_memset (&surface_params, sizeof (surface_params));
   surface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
-  media_add_binding_table (gpe_ctx);
+  encoder_context->media_add_binding_table (gpe_ctx);
   media_surface_state_vp8_brc_update (encoder_context,
 				      encode_state,
 				      &surface_params);

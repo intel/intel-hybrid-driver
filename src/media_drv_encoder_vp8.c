@@ -356,7 +356,33 @@ static UINT16 pak_qp_input_table[160 * 18] = {
   0x00e6, 0x011c, 0x0010, 0x01a1, 0x009d, 0x0010, 0x0094, 0x01b8, 0x0010,
     0x00d0, 0x013a, 0x0010, 0x00e6, 0x011c, 0x0010, 0x01f0, 0x0084, 0x0010
 };
-
+#if 0
+VOID media_object_walker_init_pak(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
+{
+  media_drv_memset (media_obj_walker_params,
+                    sizeof (MEDIA_OBJ_WALKER_PARAMS));
+  media_obj_walker_params->use_scoreboard = encoder_context->use_hw_scoreboard;
+  media_obj_walker_params->walker_mode = encoder_context->walker_mode;
+  media_obj_walker_params->pic_coding_type = encoder_context->pic_coding_type;
+  //media_obj_walker_params->direct_spatial_mv_pred;
+  //media_obj_walker_params->me_in_use = TRUE;
+  //media_obj_walker_params->mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
+  //media_obj_walker_params->force_26_degree;
+  //media_obj_walker_params->frmfield_h_in_mb =encoder_context->picture_height_in_mbs;
+if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
+    {
+      media_obj_walker_params->me_in_use = TRUE;
+      media_obj_walker_params->frmfield_h_in_mb =
+	encoder_context->picture_height_in_mbs;
+    }
+  else if (pak_phase_type == MBPAK_HYBRID_STATE_P2)
+    {
+      media_obj_walker_params->hybrid_pak2_pattern_enabled_45_deg = 1;
+      media_obj_walker_params->frmfield_h_in_mb =
+	encoder_context->picture_height_in_mbs * 2;
+    }
+}
+#endif
 VOID
 gpe_context_vfe_scoreboardinit_vp8 (MEDIA_GPE_CTX * gpe_context)
 {
@@ -1109,6 +1135,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_mbpak;
       encoder_context->media_add_surface_state = media_add_surface_state;
       encoder_context->media_add_binding_table = media_add_binding_table;
+     encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit_pak;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
@@ -1133,6 +1160,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_mbpak_g7;
       encoder_context->media_add_surface_state = media_add_surface_state;
       encoder_context->media_add_binding_table = media_add_binding_table;
+     encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit_pak;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
@@ -1157,11 +1185,12 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_mbpak_g8;
       encoder_context->media_add_surface_state = media_add_surface_state_g8;
       encoder_context->media_add_binding_table = media_add_binding_table_g8;
+     encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd_g8;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
 	mediadrv_gen_media_vfe_state_cmd_g8;
-    }
+      }
   else
     {
       printf ("Platform not supported");

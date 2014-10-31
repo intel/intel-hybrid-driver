@@ -31,6 +31,43 @@
 #include "media_drv_hw_g8.h"
 #include "media_drv_hw_g7.h"
 #include "media_drv_encoder_vp8.h"
+#if 0
+VOID media_object_walker_init_pak_g8(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
+{
+
+ media_drv_memset (media_obj_walker_params,
+		    sizeof (MEDIA_OBJ_WALKER_PARAMS));
+  media_obj_walker_params->use_scoreboard = encoder_context->use_hw_scoreboard;
+  media_obj_walker_params->walker_mode = encoder_context->walker_mode;
+  media_obj_walker_params->pic_coding_type = encoder_context->pic_coding_type;
+  //media_obj_walker_params->direct_spatial_mv_pred;
+  //media_obj_walker_params->me_in_use = TRUE;
+  //media_obj_walker_params->mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
+  //media_obj_walker_params->force_26_degree;
+  //media_obj_walker_params->frmfield_h_in_mb =encoder_context->picture_height_in_mbs;
+ if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
+    {
+      media_obj_walker_params->me_in_use = TRUE;
+      media_obj_walker_params->frmfield_h_in_mb =
+	encoder_context->picture_height_in_mbs;
+    }
+else if (pak_phase_type == MBPAK_HYBRID_STATE_P2)
+    {
+     if (encoder_context->pic_coding_type == FRAME_TYPE_I){
+      media_obj_walker_params->frmfield_h_in_mb =
+	encoder_context->picture_height_in_mbs * 2;
+         media_obj_walker_params->scoreboard_mask=0x7;
+      }
+   else {
+    media_obj_walker_params->frmfield_h_in_mb =
+   encoder_context->picture_height_in_mbs * 3;
+    media_obj_walker_params->scoreboard_mask=0x1f;
+      }
+media_obj_walker_params->walker_degree=DEGREE_46;
+    }
+
+}
+#endif
 VOID
 media_mbpak_context_init_vp8_g8(VADriverContextP ctx,
 			      MEDIA_ENCODER_CTX * encoder_context)
