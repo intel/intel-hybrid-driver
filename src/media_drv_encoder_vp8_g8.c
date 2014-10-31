@@ -31,8 +31,8 @@
 #include "media_drv_hw_g8.h"
 #include "media_drv_hw_g7.h"
 #include "media_drv_encoder_vp8.h"
-#if 0
-VOID media_object_walker_init_pak_g8(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
+
+VOID media_object_walker_pak_init_g8(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
 {
 
  media_drv_memset (media_obj_walker_params,
@@ -67,7 +67,7 @@ media_obj_walker_params->walker_degree=DEGREE_46;
     }
 
 }
-#endif
+
 VOID
 media_mbpak_context_init_vp8_g8(VADriverContextP ctx,
 			      MEDIA_ENCODER_CTX * encoder_context)
