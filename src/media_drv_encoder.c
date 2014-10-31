@@ -416,7 +416,7 @@ media_drv_generic_kernel_cmds (VADriverContextP ctx,
   state_base_addr_params.instruction_buffer.bo =
     gpe_context->instruction_state.buff_obj.bo;
 
-  mediadrv_gen_state_base_address_cmd (batch, &state_base_addr_params);
+  encoder_context->mediadrv_gen_state_base_address_cmd (batch, &state_base_addr_params);
   vfe_state_params.gpgpu_mode = gpe_context->vfe_state.gpgpu_mode;
   vfe_state_params.max_num_threads = gpe_context->vfe_state.max_num_threads;
   vfe_state_params.num_urb_entries = gpe_context->vfe_state.num_urb_entries;
@@ -429,7 +429,7 @@ media_drv_generic_kernel_cmds (VADriverContextP ctx,
   vfe_state_params.scoreboardDW5 = gpe_context->vfe_state.vfe_desc5.dword;
   vfe_state_params.scoreboardDW6 = gpe_context->vfe_state.vfe_desc6.dword;
   vfe_state_params.scoreboardDW7 = gpe_context->vfe_state.vfe_desc7.dword;
-  mediadrv_gen_media_vfe_state_cmd (batch, &vfe_state_params);
+  encoder_context->mediadrv_gen_media_vfe_state_cmd (batch, &vfe_state_params);
 
   curbe_load_params.curbe_size = gpe_context->curbe_size;
   curbe_load_params.curbe_offset = gpe_context->curbe_offset;

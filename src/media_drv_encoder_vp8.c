@@ -1152,9 +1152,9 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc;
       encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak;
       encoder_context->surface_state_vp8_mbenc =
-	media_surface_state_vp8_mbenc;
+	media_surface_state_vp8_mbenc_g8;
       encoder_context->surface_state_vp8_mbpak =
-	media_surface_state_vp8_mbpak;
+	media_surface_state_vp8_mbpak_g8;
       encoder_context->media_add_surface_state = media_add_surface_state_g8;
       encoder_context->media_add_binding_table = media_add_binding_table_g8;
       encoder_context->mediadrv_gen_state_base_address_cmd =
