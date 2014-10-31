@@ -826,32 +826,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   media_drv_generic_kernel_cmds (ctx, encoder_context, batch, mbenc_gpe_ctx,
 				 &kernel_params);
-
-  media_drv_memset (&media_obj_walker_params,
-		    sizeof (media_obj_walker_params));
-  media_obj_walker_params.pic_coding_type = encoder_context->pic_coding_type;
-  if ((encoder_context->pic_coding_type == FRAME_TYPE_I)
-      && (mbenc_phase_2 == FALSE))
-    media_obj_walker_params.me_in_use = TRUE;
-  else
-    {
-      media_obj_walker_params.pic_coding_type = FRAME_TYPE_I;
-    }
-
-  media_obj_walker_params.use_scoreboard = encoder_context->use_hw_scoreboard;
-  media_obj_walker_params.walker_mode = encoder_context->walker_mode;
-  //media_obj_walker_params.direct_spatial_mv_pred;
-  //media_obj_walker_params.me_in_use = TRUE;
-  media_obj_walker_params.mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
-  //media_obj_walker_params.force_26_degree;
-  media_obj_walker_params.frmfield_h_in_mb =
-    mbenc_i_frame_dist_in_use ?
-    encoder_context->down_scaled_frame_field_height_mb4x :
-    encoder_context->picture_height_in_mbs;
-  media_obj_walker_params.frm_w_in_mb =
-    mbenc_i_frame_dist_in_use ? encoder_context->down_scaled_width_mb4x
-    : (UINT) encoder_context->picture_width_in_mbs;
-
+  encoder_context->media_object_walker_mbenc_init(mbenc_i_frame_dist_in_use,mbenc_phase_2,encoder_context,&media_obj_walker_params);
   media_object_walker_cmd (batch, &media_obj_walker_params);
 #if 0
 #ifdef STATUS_REPORT
