@@ -205,7 +205,9 @@ typedef struct media_encoder_ctx
   void (*set_curbe_vp8_mbpak) (struct encode_state * encode_state,
 			       MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);
   void (*media_add_surface_state) (SURFACE_SET_PARAMS * params);
-  VOID (*media_add_binding_table) (MEDIA_GPE_CTX * gpe_ctx);
+  void (*media_add_binding_table) (MEDIA_GPE_CTX * gpe_ctx);
+  void (*gpe_context_vfe_scoreboardinit) (MEDIA_GPE_CTX * gpe_context);
+  void (*gpe_context_vfe_scoreboardinit_pak) (MEDIA_GPE_CTX * gpe_context);
   STATUS (*mediadrv_gen_state_base_address_cmd) (MEDIA_BATCH_BUFFER * batch,STATE_BASE_ADDR_PARAMS * params);
   STATUS (*mediadrv_gen_media_vfe_state_cmd) (MEDIA_BATCH_BUFFER * batch,VFE_STATE_PARAMS * params);
 
@@ -234,4 +236,8 @@ media_encoder_picture (VADriverContextP ctx,
 		       VAProfile profile,
 		       union codec_state *codec_state,
 		       struct hw_context *hw_context);
+void
+gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context);
+void
+gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context);
 #endif

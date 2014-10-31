@@ -217,4 +217,5 @@
 #define BRC_CONSTANTSURFACE_WIDTH_G75           64
 #define BRC_CONSTANTSURFACE_HEIGHT_G75          43
 
+#define DEGREE_46 3
 #endif
