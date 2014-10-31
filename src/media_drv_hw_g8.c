@@ -235,8 +235,8 @@ media_add_binding_table_g8 (MEDIA_GPE_CTX * gpe_ctx)
   BYTE *binding_surface_state_buf = NULL;
   UINT i;
   binding_surface_state_buf =
-    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.res.
-				   bo);
+    (BYTE *) media_map_buffer_obj (gpe_ctx->surface_state_binding_table.
+				   res.bo);
   media_drv_memset (binding_surface_state_buf,
 		    gpe_ctx->surface_state_binding_table.res.bo->size);
 
@@ -249,7 +249,7 @@ media_add_binding_table_g8 (MEDIA_GPE_CTX * gpe_ctx)
   media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
 }
 
-media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX *mbpak_gpe_ctx)
+media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx)
 {
   struct gen8_interface_descriptor_data *desc;
   INT i;
@@ -511,4 +511,749 @@ media_add_surface_state_g8 (SURFACE_SET_PARAMS * params)
 		  params->binding_table_offset)) =
 	params->surface_state_offset /*<< BINDING_TABLE_SURFACE_SHIFT */ ;
     }
+}
+
+VOID
+media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
+				  struct encode_state *encode_state,
+				  MBENC_SURFACE_PARAMS_VP8 *
+				  mbenc_sutface_params)
+{
+  MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
+  MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
+  //ME_CONTEXT *me_ctx = &encoder_context->me_context;
+  UINT kernel_dump_offset = 0;
+  SURFACE_SET_PARAMS params;
+  struct object_surface *obj_surface;
+  //struct object_buffer *obj_buffer;
+  BYTE *binding_surface_state_buf = NULL;
+  MEDIA_RESOURCE surface_2d;
+//MEDIA_RESOURCE *obj_buffer_res;
+  binding_surface_state_buf =
+    (BYTE *) media_map_buffer_obj (mbenc_gpe_ctx->surface_state_binding_table.
+				   res.bo);
+  //media_drv_memset(binding_surface_state_buf,mbenc_gpe_ctx->surface_state_binding_table.res.bo->size);
+  //coded data buffer
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (0);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (0);
+  obj_surface = encode_state->coded_buf_surface;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.buf_object = surface_2d;
+  //params.surface_is_raw = 1;
+  params.offset = 0;
+  params.size =
+    WIDTH_IN_MACROBLOCKS ((mbenc_sutface_params->orig_frame_width) *
+			  HEIGHT_IN_MACROBLOCKS
+			  (mbenc_sutface_params->orig_frame_height) *
+			  MB_CODE_SIZE_VP8 * sizeof (UINT));
+  params.cacheability_control = 121;	//mbenc_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+//current pic luma
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (1);
+  obj_surface = encode_state->input_yuv_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbenc_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+//current pic uv
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_uv_2d = 1;
+  params.media_block_raw = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (2);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (2);
+  obj_surface = encode_state->input_yuv_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbenc_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+
+  if (mbenc_sutface_params->pic_coding == FRAME_TYPE_I)
+    {
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.advance_state = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (9);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (9);
+      obj_surface = encode_state->input_yuv_object;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      params.surface_2d = &surface_2d;
+      params.uv_direction = VDIRECTION_FULL_FRAME;
+      params.cacheability_control = 121;	//       mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //MBMode Cost Luma surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.surface_is_2d = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (3);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (3);
+      params.surface_2d = &mbenc_ctx->mb_mode_cost_luma_buffer;
+      params.cacheability_control = 121;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //Block Mode cost surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.surface_is_2d = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (4);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (4);
+      params.surface_2d = &mbenc_ctx->block_mode_cost_buffer;
+      params.cacheability_control = 121;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //Chroma Reconstruction Surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.surface_is_2d = 1;
+      params.media_block_raw = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (5);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (5);
+      params.surface_2d = &mbenc_ctx->chroma_reconst_buffer;
+      params.cacheability_control = 0;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //histogram
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (7);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (7);
+      params.buf_object = mbenc_ctx->histogram_buffer;
+      params.surface_is_raw = 1;
+      params.size = mbenc_ctx->histogram_buffer.bo_size;
+      params.cacheability_control = 0;	//121;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+      kernel_dump_offset = 8;
+
+    }
+  else
+    {
+      //MV Data surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (4);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (4);
+      obj_surface = encode_state->coded_buf_surface;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      params.buf_object = surface_2d;
+      params.media_block_raw = 1;
+      params.surface_is_raw = 1;
+      params.offset = encoder_context->mv_offset;
+      params.size =
+	WIDTH_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_width) *
+	HEIGHT_IN_MACROBLOCKS (mbenc_sutface_params->orig_frame_height) * 64;
+
+      params.cacheability_control = 121;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+      if (mbenc_sutface_params->hme_enabled)
+	{
+	  /*need to add me mv data buffer surface states here later */
+
+	}
+
+      //reference frame mb count
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (5);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (5);
+      params.buf_object = mbenc_ctx->ref_frm_count_surface;
+      params.media_block_raw = 1;
+      params.size = (sizeof (UINT) * 8);
+      media_add_surface_state_g8 (&params);
+
+      //current picture VME inter prediction surface..!
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.advance_state = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (8);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (8);
+      obj_surface = encode_state->input_yuv_object;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      params.surface_2d = &surface_2d;
+      params.uv_direction = VDIRECTION_FULL_FRAME;
+      params.cacheability_control = 121;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //last ref
+      if (encode_state->ref_last_frame != NULL
+	  && encode_state->ref_last_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (9);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (9);
+	  obj_surface = encode_state->ref_last_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.uv_direction = VDIRECTION_FULL_FRAME;
+	  params.cacheability_control = 121;
+	  //mbenc_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+	}
+
+      //goldeb ref
+      if (encode_state->ref_gf_frame != NULL
+	  && encode_state->ref_gf_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (11);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (11);
+	  obj_surface = encode_state->ref_gf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.uv_direction = VDIRECTION_FULL_FRAME;
+	  params.cacheability_control = 121;
+	  //mbenc_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+	}
+
+      //alternate ref
+      if (encode_state->ref_arf_frame != NULL
+	  && encode_state->ref_arf_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (13);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (13);
+	  obj_surface = encode_state->ref_arf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.uv_direction = VDIRECTION_FULL_FRAME;
+	  params.cacheability_control = 121;
+	  //mbenc_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+	}
+
+      //Per-MB quant data surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.surface_is_2d = 1;
+      params.media_block_raw = 1;
+      params.vert_line_stride_offset = 0;
+      params.vert_line_stride = 0;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (15);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (15);
+      params.surface_2d = &mbenc_ctx->pred_mb_quant_data_surface;
+      params.cacheability_control = 0;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      if (mbenc_sutface_params->seg_enabled)
+	{
+
+	  //need to add per segmentation map later here
+	}
+      //inter prediction distortion surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.surface_is_2d = 1;
+      params.vert_line_stride_offset = 0;
+      params.vert_line_stride = 0;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (17);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (17);
+      params.surface_2d =
+	&encoder_context->me_context.mv_distortion_surface_4x_me;
+      params.cacheability_control = 0;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (18);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (18);
+      params.buf_object = mbenc_ctx->histogram_buffer;
+      params.surface_is_raw = 1;
+      params.size = mbenc_ctx->histogram_buffer.bo_size;
+      params.cacheability_control = 0;
+      //mbenc_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //Pred MV Data Surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (19);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (19);
+      params.buf_object = mbenc_ctx->pred_mv_data_surface;
+      params.size = mbenc_ctx->pred_mv_data_surface.bo_size;
+      params.media_block_raw = 1;
+      media_add_surface_state_g8 (&params);
+
+      //ModeCost Update Surface
+#if 0
+      dri_bo_map (mbenc_ctx->mode_cost_update_surface.bo, 1);
+      BYTE *data = (BYTE *) mbenc_ctx->mode_cost_update_surface.bo->virtual;
+      data[2] = 0x30;
+      data[3] = 0x01;
+
+      data[6] = 0x08;
+      data[7] = 0x13;
+
+      data[8] = 0x3c;
+      data[9] = 0x07;
+      data[10] = 0x65;
+      data[11] = 0x03;
+
+      data[14] = 0xc9;
+      data[15] = 0x0d;
+
+      data[24] = 0x14;
+      data[25] = 0x02;
+      data[26] = 0x62;
+      data[27] = 0x03;
+      data[28] = 0x04;
+      data[29] = 0x02;
+      data[30] = 0x6a;
+
+      data[32] = 0x67;
+      data[33] = 0x09;
+      data[34] = 0x69;
+      dri_bo_unmap (mbenc_ctx->mode_cost_update_surface.bo);
+#endif
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (20);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (20);
+      params.buf_object = mbenc_ctx->mode_cost_update_surface;
+      params.size = 64;		//mbenc_ctx->mode_cost_update_surface.bo_size;
+      params.surface_is_raw = 1;
+      media_add_surface_state_g8 (&params);
+      kernel_dump_offset = 21;
+
+    }
+
+  if (mbenc_sutface_params->kernel_dump)
+    {
+#if 0
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset =
+	BINDING_TABLE_OFFSET_G8 (kernel_dump_offset);
+      params.surface_state_offset =
+	SURFACE_STATE_OFFSET_G8 (kernel_dump_offset);
+      params.buf_object = mbenc_ctx->kernel_dump_buffer;
+      //params.surface_is_raw = 1;
+      params.cacheability_control = 1;
+      //mbenc_sutface_params->cacheability_control;
+      params.size =
+	WIDTH_IN_MACROBLOCKS ((mbenc_sutface_params->orig_frame_width) *
+			      HEIGHT_IN_MACROBLOCKS
+			      (mbenc_sutface_params->orig_frame_height) *
+			      /*MB_CODE_SIZE_VP8 */ 32);
+      params.offset = encoder_context->mv_offset;
+      media_add_surface_state_g8 (&params);
+#endif
+    }
+
+  media_unmap_buffer_obj (mbenc_gpe_ctx->surface_state_binding_table.res.bo);
+}
+
+VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
+				  struct encode_state *encode_state,
+				  MBPAK_SURFACE_PARAMS_VP8 *
+				  mbpak_sutface_params)
+{
+  MBPAK_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
+  MEDIA_GPE_CTX *mbpak_gpe_ctx = &mbpak_ctx->gpe_context;
+  SURFACE_SET_PARAMS params;
+  UINT kernel_dump_offset = 0;
+  struct object_surface *obj_surface;
+  //struct object_buffer *obj_buffer;
+  BYTE *binding_surface_state_buf = NULL;
+  MEDIA_RESOURCE surface_2d;	//={0,0,0};
+
+  if (mbpak_sutface_params->mbpak_phase_type == MBPAK_HYBRID_STATE_P2)
+    mbpak_gpe_ctx = &mbpak_ctx->gpe_context2;
+  binding_surface_state_buf =
+    (BYTE *) media_map_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.
+				   res.bo);
+  //coded data buffer
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (0);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (0);
+  obj_surface = encode_state->coded_buf_surface;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.buf_object = surface_2d;
+  //params.surface_is_raw = 1;
+  params.offset = 0;
+  params.cacheability_control = 121;	//mbpak_sutface_params->cacheability_control;
+  params.size =
+    WIDTH_IN_MACROBLOCKS ((mbpak_sutface_params->orig_frame_width) *
+			  HEIGHT_IN_MACROBLOCKS
+			  (mbpak_sutface_params->orig_frame_height) *
+			  MB_CODE_SIZE_VP8 * sizeof (UINT));
+  media_add_surface_state_g8 (&params);
+  //current pic luma
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 0;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (1);
+  obj_surface = encode_state->input_yuv_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbpak_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+//current pic uv
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_uv_2d = 1;
+  params.media_block_raw = 0;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (2);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (2);
+  obj_surface = encode_state->input_yuv_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbpak_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+  //current reconstructed picture luma
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 0;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (3);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (3);
+  obj_surface = encode_state->reconstructed_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbpak_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+  //current reconstructed picture uv
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_uv_2d = 1;
+  params.media_block_raw = 0;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (4);
+  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (4);
+  obj_surface = encode_state->reconstructed_object;
+  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+  params.surface_2d = &surface_2d;
+  params.cacheability_control = 121;	//mbpak_sutface_params->cacheability_control;
+  media_add_surface_state_g8 (&params);
+
+  if (mbpak_sutface_params->mbpak_phase_type == MBPAK_HYBRID_STATE_P1)
+    {
+      //MV Data surface
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (11);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (11);
+      obj_surface = encode_state->coded_buf_surface;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      params.buf_object = surface_2d;
+      //params.surface_is_raw = 1;
+      params.offset = encoder_context->mv_offset;
+      params.size =
+	WIDTH_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_width) *
+	HEIGHT_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_height) * 64;
+      params.cacheability_control = 121;
+      //mbpak_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //last ref
+      if (encode_state->ref_last_frame != NULL
+	  && encode_state->ref_last_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.surface_is_2d = 1;
+	  params.media_block_raw = 1;
+
+	  //params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (5);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (5);
+	  obj_surface = encode_state->ref_last_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = 121;
+	  //mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  params.surface_is_uv_2d = 1;
+	  params.media_block_raw = 1;
+	  //params.advance_state = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (6);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (6);
+	  obj_surface = encode_state->ref_last_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control =
+	    mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+	}
+      //golden ref
+      if (encode_state->ref_gf_frame != NULL
+	  && encode_state->ref_gf_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  //params.advance_state = 1;
+	  params.surface_is_2d = 1;
+	  params.media_block_raw = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (7);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (7);
+	  obj_surface = encode_state->ref_gf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = 121;
+	  //mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  //params.advance_state = 1;
+	  params.surface_is_uv_2d = 1;
+	  params.media_block_raw = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (8);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (8);
+	  obj_surface = encode_state->ref_gf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = 121;
+	  // mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+
+	}
+      //alterbate ref
+      if (encode_state->ref_arf_frame != NULL
+	  && encode_state->ref_arf_frame->bo != NULL)
+	{
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  //params.advance_state = 1;
+	  params.surface_is_2d = 1;
+	  params.media_block_raw = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (9);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (9);
+	  obj_surface = encode_state->ref_arf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = 121;
+	  //mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+
+	  params = surface_set_params_init;
+	  params.binding_surface_state.bo =
+	    mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+	  params.binding_surface_state.buf = binding_surface_state_buf;
+	  //params.advance_state = 1;
+	  params.surface_is_uv_2d = 1;
+	  params.media_block_raw = 1;
+	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	  params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (10);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (10);
+	  obj_surface = encode_state->ref_arf_frame;
+	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+	  params.surface_2d = &surface_2d;
+	  params.cacheability_control = 121;
+	  //mbpak_sutface_params->cacheability_control;
+	  media_add_surface_state_g8 (&params);
+
+	}
+      kernel_dump_offset = 12;
+    }
+  else
+    {
+      //row buffer y
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (5);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (5);
+      params.buf_object = mbpak_ctx->row_buffer_y;
+      //params.surface_is_raw = 1;
+      params.size = mbpak_ctx->row_buffer_y.bo_size;
+      params.cacheability_control = 0;
+      //mbpak_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //row buffer uv
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (6);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (6);
+      params.buf_object = mbpak_ctx->row_buffer_uv;
+      //params.surface_is_raw = 1;
+      params.size = mbpak_ctx->row_buffer_uv.bo_size;
+      params.cacheability_control = 0;
+      //mbpak_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+
+      //column buffer .y
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (7);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (7);
+      params.buf_object = mbpak_ctx->column_buffer_y;
+      //params.surface_is_raw = 1;
+      params.cacheability_control = 0;
+      //mbpak_sutface_params->cacheability_control;
+      params.size = mbpak_ctx->column_buffer_y.bo_size;
+      media_add_surface_state_g8 (&params);
+
+      //column buffer uv
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset = BINDING_TABLE_OFFSET_G8 (8);
+      params.surface_state_offset = SURFACE_STATE_OFFSET_G8 (8);
+      params.buf_object = mbpak_ctx->column_buffer_uv;
+      //params.surface_is_raw = 1;
+      params.size = mbpak_ctx->column_buffer_uv.bo_size;
+      params.cacheability_control = 0;
+      //mbpak_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+      kernel_dump_offset = 12;
+
+    }
+  if (mbpak_sutface_params->kernel_dump)
+    {
+#if 0
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.binding_table_offset =
+	BINDING_TABLE_OFFSET_G8 (kernel_dump_offset);
+      params.surface_state_offset =
+	SURFACE_STATE_OFFSET_G8 (kernel_dump_offset);
+      //FIXME:need to pass right buffer here..!
+      params.buf_object = mbpak_sutface_params->kernel_dump_buffer;	//mbpak_ctx->kernel_dump_buffer;
+      //params.surface_is_raw = 1;
+      params.size =
+	WIDTH_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_width) *
+	HEIGHT_IN_MACROBLOCKS (mbpak_sutface_params->orig_frame_height) * 32;
+      params.cacheability_control =
+	mbpak_sutface_params->cacheability_control;
+      media_add_surface_state_g8 (&params);
+#endif
+    }
+  media_unmap_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.res.bo);
+
 }

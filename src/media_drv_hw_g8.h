@@ -355,4 +355,16 @@ struct gen8_interface_descriptor_data
 };
 VOID
 media_add_surface_state_g8 (SURFACE_SET_PARAMS * params);
+VOID
+media_add_binding_table_g8 (MEDIA_GPE_CTX * gpe_ctx);
+VOID
+media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
+                                  struct encode_state *encode_state,
+                                  MBPAK_SURFACE_PARAMS_VP8 *
+                                  mbpak_sutface_params);
+VOID
+media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
+                                  struct encode_state *encode_state,
+                                  MBENC_SURFACE_PARAMS_VP8 *
+                                  mbenc_sutface_params);
 #endif
