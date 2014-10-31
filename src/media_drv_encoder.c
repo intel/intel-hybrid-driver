@@ -658,32 +658,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
   //kernel_params.idrt_kernel_offset=0;
   media_drv_generic_kernel_cmds (ctx, encoder_context, batch, mbpak_gpe_ctx,
 				 &kernel_params);
-
-  media_drv_memset (&media_obj_walker_params,
-		    sizeof (media_obj_walker_params));
-  media_obj_walker_params.use_scoreboard = encoder_context->use_hw_scoreboard;
-  media_obj_walker_params.walker_mode = encoder_context->walker_mode;
-  media_obj_walker_params.pic_coding_type = encoder_context->pic_coding_type;
-  //media_obj_walker_params.direct_spatial_mv_pred;
-  //media_obj_walker_params.me_in_use = TRUE;
-  //media_obj_walker_params.mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
-  //media_obj_walker_params.force_26_degree;
-  //media_obj_walker_params.frmfield_h_in_mb =encoder_context->picture_height_in_mbs;
-  media_obj_walker_params.frm_w_in_mb =
-    (UINT) encoder_context->picture_width_in_mbs;
-  if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
-    {
-      media_obj_walker_params.me_in_use = TRUE;
-      media_obj_walker_params.frmfield_h_in_mb =
-	encoder_context->picture_height_in_mbs;
-    }
-  else if (pak_phase_type == MBPAK_HYBRID_STATE_P2)
-    {
-      media_obj_walker_params.hybrid_pak2_pattern_enabled_45_deg = 1;
-      media_obj_walker_params.frmfield_h_in_mb =
-	encoder_context->picture_height_in_mbs * 2;
-    }
-
+  encoder_context->media_object_walker_pak_init(pak_phase_type,encoder_context,&media_obj_walker_params);
   media_object_walker_cmd (batch, &media_obj_walker_params);
 #if 0
 #ifdef STATUS_REPORT
