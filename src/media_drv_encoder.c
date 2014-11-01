@@ -659,7 +659,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
   media_drv_generic_kernel_cmds (ctx, encoder_context, batch, mbpak_gpe_ctx,
 				 &kernel_params);
   encoder_context->media_object_walker_pak_init(pak_phase_type,encoder_context,&media_obj_walker_params);
-  media_object_walker_cmd (batch, &media_obj_walker_params);
+  encoder_context->media_object_walker_cmd (batch, &media_obj_walker_params);
 #if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbpak_gpe_ctx);
@@ -827,7 +827,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   media_drv_generic_kernel_cmds (ctx, encoder_context, batch, mbenc_gpe_ctx,
 				 &kernel_params);
   encoder_context->media_object_walker_mbenc_init(mbenc_i_frame_dist_in_use,mbenc_phase_2,encoder_context,&media_obj_walker_params);
-  media_object_walker_cmd (batch, &media_obj_walker_params);
+  encoder_context->media_object_walker_cmd (batch, &media_obj_walker_params);
 #if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, mbenc_gpe_ctx);
@@ -909,7 +909,7 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
   media_obj_walker_params.frm_w_in_mb =
     (me_16x) ? encoder_context->down_scaled_width_mb16x : encoder_context->
     down_scaled_width_mb4x;
-  media_object_walker_cmd (batch, &media_obj_walker_params);
+  encoder_context->media_object_walker_cmd (batch, &media_obj_walker_params);
   media_batchbuffer_submit (batch);
 }
 
