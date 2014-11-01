@@ -60,7 +60,6 @@ VOID media_object_walker_mbenc_init_g8(BOOL mbenc_i_frame_dist_in_use,BOOL mbenc
     : (UINT) encoder_context->picture_width_in_mbs;
  if ((encoder_context->pic_coding_type == FRAME_TYPE_I)&&(mbenc_phase_2 == FALSE)){
    //media_obj_walker_params.use_scoreboard =
-
   }
   else {
         media_obj_walker_params->use_scoreboard =1;
@@ -70,7 +69,7 @@ VOID media_object_walker_mbenc_init_g8(BOOL mbenc_i_frame_dist_in_use,BOOL mbenc
 VOID media_object_walker_pak_init_g8(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
 {
 
- media_drv_memset (media_obj_walker_params,
+  media_drv_memset (media_obj_walker_params,
 		    sizeof (MEDIA_OBJ_WALKER_PARAMS));
   media_obj_walker_params->use_scoreboard = encoder_context->use_hw_scoreboard;
   media_obj_walker_params->walker_mode = encoder_context->walker_mode;
@@ -80,6 +79,8 @@ VOID media_object_walker_pak_init_g8(UINT pak_phase_type,MEDIA_ENCODER_CTX * enc
   //media_obj_walker_params->mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
   //media_obj_walker_params->force_26_degree;
   //media_obj_walker_params->frmfield_h_in_mb =encoder_context->picture_height_in_mbs;
+   media_obj_walker_params->frm_w_in_mb =
+    (UINT) encoder_context->picture_width_in_mbs;
  if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
     {
       media_obj_walker_params->me_in_use = TRUE;
@@ -98,7 +99,7 @@ else if (pak_phase_type == MBPAK_HYBRID_STATE_P2)
    encoder_context->picture_height_in_mbs * 3;
     media_obj_walker_params->scoreboard_mask=0x1f;
       }
-media_obj_walker_params->walker_degree=DEGREE_46;
+   media_obj_walker_params->walker_degree=DEGREE_46;
     }
 
 }

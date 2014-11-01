@@ -398,7 +398,9 @@ VOID media_object_walker_pak_init(UINT pak_phase_type,MEDIA_ENCODER_CTX * encode
   //media_obj_walker_params->mb_enc_iframe_dist_en = mbenc_i_frame_dist_in_use;
   //media_obj_walker_params->force_26_degree;
   //media_obj_walker_params->frmfield_h_in_mb =encoder_context->picture_height_in_mbs;
-if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
+   media_obj_walker_params->frm_w_in_mb =
+   (UINT) encoder_context->picture_width_in_mbs;
+  if (pak_phase_type == MBPAK_HYBRID_STATE_P1)
     {
       media_obj_walker_params->me_in_use = TRUE;
       media_obj_walker_params->frmfield_h_in_mb =
