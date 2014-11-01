@@ -212,7 +212,7 @@ typedef struct media_encoder_ctx
   void (*gpe_context_vfe_scoreboardinit_pak) (MEDIA_GPE_CTX * gpe_context);
   STATUS (*mediadrv_gen_state_base_address_cmd) (MEDIA_BATCH_BUFFER * batch,STATE_BASE_ADDR_PARAMS * params);
   STATUS (*mediadrv_gen_media_vfe_state_cmd) (MEDIA_BATCH_BUFFER * batch,VFE_STATE_PARAMS * params);
-
+   STATUS (*media_object_walker_cmd) (MEDIA_BATCH_BUFFER * batch,MEDIA_OBJ_WALKER_PARAMS * params);
 } MEDIA_ENCODER_CTX;
 
 typedef struct media_encoder_vp8_surface

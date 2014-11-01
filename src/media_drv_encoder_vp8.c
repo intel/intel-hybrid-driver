@@ -1173,6 +1173,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
 	mediadrv_gen_media_vfe_state_cmd;
+      encoder_context->media_object_walker_cmd=
+        media_object_walker_cmd;
     }
   else if (IS_GEN7 (drv_ctx->drv_data.device_id))
     {
@@ -1196,11 +1198,12 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init;
       encoder_context->media_object_walker_mbenc_init =media_object_walker_mbenc_init;
       encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit_pak;
-
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
 	mediadrv_gen_media_vfe_state_cmd;
+      encoder_context->media_object_walker_cmd=
+        media_object_walker_cmd;
     }
   else if (IS_GEN8 (drv_ctx->drv_data.device_id))
     {
@@ -1228,6 +1231,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	mediadrv_gen_state_base_address_cmd_g8;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
 	mediadrv_gen_media_vfe_state_cmd_g8;
+      encoder_context->media_object_walker_cmd=
+        media_object_walker_cmd_g8;
       }
   else
     {
