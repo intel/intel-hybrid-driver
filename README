@@ -13,6 +13,8 @@ and Intel HD Graphics for Intel Core processor family.
 
 Platform definitions:
 HSW: Haswell
+BYT: Bay-Trail-M
+BDW: Broadwell
 
 Codecs
 ------
