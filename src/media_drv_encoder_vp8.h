@@ -32,6 +32,9 @@ VOID gpe_context_vfe_scoreboardinit_vp8 (MEDIA_GPE_CTX * gpe_context);
 VOID gpe_context_vfe_scoreboardinit_pak_vp8 (MEDIA_GPE_CTX * gpe_context);
 VOID media_alloc_resource_mbpak (VADriverContextP ctx,
 				 MEDIA_ENCODER_CTX * encoder_context);
+VOID
+media_alloc_resource_mbenc (VADriverContextP ctx,MEDIA_ENCODER_CTX * encoder_context);
 VOID media_object_walker_pak_init(UINT pak_phase_type,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params);
 VOID media_object_walker_mbenc_init(BOOL mbenc_i_frame_dist_in_use,BOOL mbenc_phase_2,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params);
+VOID media_encoder_init_vp8 (VADriverContextP ctx,MEDIA_ENCODER_CTX * encoder_context);
 #endif

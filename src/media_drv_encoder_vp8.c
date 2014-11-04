@@ -28,6 +28,7 @@
 
 #include "media_drv_encoder.h"
 #include "media_drv_encoder_vp8.h"
+#include "media_drv_encoder_vp8_g7.h"
 #include "media_drv_encoder_vp8_g8.h"
 #include "media_drv_driver.h"
 #include "media_drv_hw_g8.h"
@@ -1010,7 +1011,7 @@ media_brc_init_reset_context_init (VADriverContextP ctx,
   media_alloc_resource_brc_init_reset (ctx, encoder_context);
   return;
 }
-
+#if 0
 VOID
 media_alloc_resource_brc_update (VADriverContextP ctx,
 				 MEDIA_ENCODER_CTX * encoder_context)
@@ -1018,7 +1019,7 @@ media_alloc_resource_brc_update (VADriverContextP ctx,
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   BRC_UPDATE_CONTEXT *distortion_ctx = &encoder_context->brc_update_context;
 }
-
+#endif
 VOID
 media_brc_update_context_init (VADriverContextP ctx,
 			       MEDIA_ENCODER_CTX * encoder_context)
@@ -1044,7 +1045,10 @@ media_brc_update_context_init (VADriverContextP ctx,
   encoder_context->brc_constant_buffer_supported = 1;
 
   media_interface_setup_brc_update (encoder_context);
-  media_alloc_resource_brc_update (ctx, encoder_context);
+//FIXME:This function is not doing anything.Remove this later if not required
+  #if 0
+   media_alloc_resource_brc_update (ctx, encoder_context);
+  #endif
   return;
 }
 
