@@ -1687,7 +1687,7 @@ media_encoder_init_priv_surfaces(VADriverContextP ctx,
   if (!obj_surface || obj_surface->private_data)
     return;
 
-  vp8_surface = calloc(1, sizeof(MEDIA_ENCODER_VP8_SURFACE));
+  vp8_surface = media_drv_alloc_memory(sizeof(MEDIA_ENCODER_VP8_SURFACE));
   vp8_surface->ctx = ctx;
 
   if (encoder_context->brc_enabled) {
