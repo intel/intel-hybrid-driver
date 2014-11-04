@@ -622,8 +622,11 @@ media_destroy_surface (struct object_heap * heap, struct object_base * obj)
   if (obj_surface->free_private_data != NULL)
     {
       obj_surface->free_private_data (&obj_surface->private_data);
+      if(obj_surface->private_data!=NULL)
+      {
+        media_drv_free_memory(obj_surface->private_data);
+      }
       obj_surface->private_data = NULL;
     }
-
   object_heap_free (heap, obj);
 }
