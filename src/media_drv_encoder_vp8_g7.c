@@ -51,7 +51,7 @@ media_mbenc_context_init_g7 (VADriverContextP ctx,
   gpe_context->curbe_size = /*0x140 */ CURBE_TOTAL_DATA_LENGTH;
   gpe_context->sampler_size = /*0 */ 0x80;
   media_gpe_context_init (ctx, gpe_context);
-  media_sampler_setup_mbenc (encoder_context);
+  media_sampler_setup_mbenc_g7 (encoder_context);
   media_interface_setup_mbenc (encoder_context);
   media_alloc_resource_mbenc (ctx, encoder_context);
   return;

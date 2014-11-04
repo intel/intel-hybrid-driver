@@ -1912,7 +1912,9 @@ media_drv_init (VADriverContextP ctx)
   return VA_STATUS_SUCCESS;
 
 dri_init_error:media_output_dri_terminate (ctx);
+#if 0
 render_init_err:media_render_terminate (ctx);
+#endif
 dis_attr_err:media_display_attributes_terminate (ctx);
 data_init_err:media_driver_data_terminate (ctx);
 dri_init_err:media_driver_terminate (ctx);
@@ -1953,7 +1955,6 @@ va_driver_init (VADriverContextP ctx)
 {
   VAStatus ret = VA_STATUS_ERROR_UNKNOWN;
   struct VADriverVTable *const vtable = ctx->vtable;
-  struct VADriverVTableVPP *const vtable_vpp = ctx->vtable_vpp;
   ctx->version_major = VA_MAJOR_VERSION;
   ctx->version_minor = VA_MINOR_VERSION;
   ctx->max_profiles = MEDIA_GEN_MAX_PROFILES;

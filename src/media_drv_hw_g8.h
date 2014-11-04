@@ -367,4 +367,9 @@ media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
                                   struct encode_state *encode_state,
                                   MBENC_SURFACE_PARAMS_VP8 *
                                   mbenc_sutface_params);
+VOID
+media_interface_setup_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context);
+
+VOID
+media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx);
 #endif

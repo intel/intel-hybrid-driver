@@ -100,23 +100,17 @@ const SURFACE_STATE_G8 SURFACE_STATE_INIT_G8 = {
   //dw1
   {
    0,
-   0,
-   0x20,
-   0},
+   0x20},
   //dw2
   {
    0,
-   0,
-   0,
    0},
-  //dw3
+ //dw3
   {
-   0,
    0,
    0},
   //dw4
   {
-   0,
    0,
    0,
    0,
@@ -131,12 +125,9 @@ const SURFACE_STATE_G8 SURFACE_STATE_INIT_G8 = {
    0,
    0,
    0,
-   0,
    0},
   //dw6
   {
-   0,
-   0,
    0,
    0},
   //dw7
@@ -156,23 +147,21 @@ const SURFACE_STATE_G8 SURFACE_STATE_INIT_G8 = {
    0},
 //dw9
   {
-   0,
-   0},
+  0},
 //dw10
   {
-   0,
    0},
 //dw11
   {
-   0,
    0},
 //dw12
   {
    0},
 //dw 13,14,15
+ {
   0,
   0,
-  0
+  0}
 };
 
 const SURFACE_STATE_ADV_G8 SURFACE_STATE_ADV_INIT_G8 = {
@@ -187,7 +176,6 @@ const SURFACE_STATE_ADV_G8 SURFACE_STATE_ADV_INIT_G8 = {
    0},
   {
 //dw2
-   0,
    0,
    0,
    0,
@@ -209,7 +197,6 @@ const SURFACE_STATE_ADV_G8 SURFACE_STATE_ADV_INIT_G8 = {
 //dw5
   {
    0x20,
-   0,
    0,
    0},
   //dw6
@@ -249,13 +236,15 @@ media_add_binding_table_g8 (MEDIA_GPE_CTX * gpe_ctx)
   media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
 }
 
-media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx)
+VOID media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx)
 {
   struct gen8_interface_descriptor_data *desc;
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
+  #if 0
   UINT samplet_offset;
+  #endif
   bo = mbpak_gpe_ctx->dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);
@@ -287,7 +276,7 @@ media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx)
 }
 
 
-media_interface_setup_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context)
+VOID media_interface_setup_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context)
 {
   MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
   MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
@@ -295,7 +284,9 @@ media_interface_setup_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context)
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
+  #if 0
   UINT samplet_offset;
+  #endif
   bo = mbenc_ctx->gpe_context.dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);
@@ -522,7 +513,9 @@ media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
   MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
   MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
   //ME_CONTEXT *me_ctx = &encoder_context->me_context;
+  #if 0
   UINT kernel_dump_offset = 0;
+  #endif
   SURFACE_SET_PARAMS params;
   struct object_surface *obj_surface;
   //struct object_buffer *obj_buffer;
@@ -662,8 +655,9 @@ media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control = 0;	//121;
       //mbenc_sutface_params->cacheability_control;
       media_add_surface_state_g8 (&params);
+      #if 0
       kernel_dump_offset = 8;
-
+      #endif
     }
   else
     {
@@ -890,13 +884,13 @@ media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
       params.size = 64;		//mbenc_ctx->mode_cost_update_surface.bo_size;
       params.surface_is_raw = 1;
       media_add_surface_state_g8 (&params);
+      #if 0
       kernel_dump_offset = 21;
-
+      #endif
     }
-
+#if 0
   if (mbenc_sutface_params->kernel_dump)
     {
-#if 0
       params = surface_set_params_init;
       params.binding_surface_state.bo =
 	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
@@ -916,9 +910,8 @@ media_surface_state_vp8_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context,
 			      /*MB_CODE_SIZE_VP8 */ 32);
       params.offset = encoder_context->mv_offset;
       media_add_surface_state_g8 (&params);
-#endif
     }
-
+#endif
   media_unmap_buffer_obj (mbenc_gpe_ctx->surface_state_binding_table.res.bo);
 }
 
@@ -930,7 +923,9 @@ VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
   MBPAK_CONTEXT *mbpak_ctx = &encoder_context->mbpak_context;
   MEDIA_GPE_CTX *mbpak_gpe_ctx = &mbpak_ctx->gpe_context;
   SURFACE_SET_PARAMS params;
+  #if 0
   UINT kernel_dump_offset = 0;
+  #endif
   struct object_surface *obj_surface;
   //struct object_buffer *obj_buffer;
   BYTE *binding_surface_state_buf = NULL;
@@ -1170,7 +1165,9 @@ VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
 	  media_add_surface_state_g8 (&params);
 
 	}
+      #if 0
       kernel_dump_offset = 12;
+      #endif
     }
   else
     {
@@ -1229,12 +1226,13 @@ VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control = 0;
       //mbpak_sutface_params->cacheability_control;
       media_add_surface_state_g8 (&params);
+      #if 0
       kernel_dump_offset = 12;
-
+      #endif
     }
+#if 0
   if (mbpak_sutface_params->kernel_dump)
     {
-#if 0
       params = surface_set_params_init;
       params.binding_surface_state.bo =
 	mbpak_gpe_ctx->surface_state_binding_table.res.bo;
@@ -1252,8 +1250,8 @@ VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control =
 	mbpak_sutface_params->cacheability_control;
       media_add_surface_state_g8 (&params);
-#endif
     }
+#endif
   media_unmap_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.res.bo);
 
 }

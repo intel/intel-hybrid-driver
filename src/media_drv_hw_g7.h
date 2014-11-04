@@ -939,4 +939,6 @@ VOID
 media_set_curbe_vp8_mbpak_g7 (struct encode_state *encode_state,
 			      MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);
 
+VOID
+media_sampler_setup_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context);
 #endif

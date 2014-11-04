@@ -1723,7 +1723,6 @@ media_interface_setup_mbenc (MEDIA_ENCODER_CTX * encoder_context)
   INT i;
   dri_bo *bo;
   BYTE *desc_ptr;
-  UINT samplet_offset;
   bo = mbenc_ctx->gpe_context.dynamic_state.res.bo;
   dri_bo_map (bo, 1);
   MEDIA_DRV_ASSERT (bo->virtual);

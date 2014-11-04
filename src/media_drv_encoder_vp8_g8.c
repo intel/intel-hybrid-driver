@@ -154,9 +154,7 @@ media_mbenc_context_init_vp8_g8 (VADriverContextP ctx,
 {
   MBENC_CONTEXT *mbenc_context = &encoder_context->mbenc_context;
   MEDIA_GPE_CTX *gpe_context = &mbenc_context->gpe_context;
-  MEDIA_DRV_CONTEXT *drv_ctx = NULL;
   MEDIA_DRV_ASSERT (ctx);
-  drv_ctx = ctx->pDriverData;
   gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
   gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
   //gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;

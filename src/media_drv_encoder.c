@@ -44,6 +44,7 @@
 #include "media_drv_hwcmds.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_driver.h"
+#include "media_drv_encoder_vp8.h"
 
 VOID
 media_free_resource_me (ME_CONTEXT * me_context)
@@ -299,8 +300,6 @@ media_generic_gpe_context_init (VADriverContextP ctx,
 BOOL
 media_encoder_init (VADriverContextP ctx, MEDIA_ENCODER_CTX * encoder_context)
 {
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  INT num_of_kernels;
   switch (encoder_context->codec)
     {
     case CODEC_VP8:
@@ -1162,10 +1161,11 @@ media_encode_kernel_functions (VADriverContextP ctx,
 			       MEDIA_ENCODER_CTX * encoder_context)
 {
   VAStatus status = VA_STATUS_SUCCESS;
+  #if 0
   SCALING_KERNEL_PARAMS scaling_params;
-
   scaling_params.scaling_16x_en = 0;
   scaling_params.scaling_32x_en = 0;
+  #endif
   encoder_context->mbenc_curbe_set_brc_update = FALSE;
   encoder_context->mbpak_curbe_set_brc_update = FALSE;
 
@@ -1575,7 +1575,7 @@ media_get_misc_params_vp8_encode (VADriverContextP ctx,
     misc_param = (VAEncMiscParameterBuffer *)encode_state->misc_param[i]->buffer;
     assert (misc_param->type == type);
 
-    switch (type) {
+    switch ((INT)type) {
     case VAEncMiscParameterTypeHRD:
       media_get_hrd_params_vp8_encode(ctx,
 				      encoder_context,
