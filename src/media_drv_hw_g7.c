@@ -33,24 +33,12 @@
 #include "media_drv_surface.h"
 //#define DEBUG
 struct hw_codec_info gen7_hw_codec_info = {
-
   .max_width = 4096,
   .max_height = 4096,
-
-  .mpeg2_dec_support = 0,
-  .mpeg2_enc_support = 0,
-  .h264_dec_support = 0,
-  .h264_enc_support = 0,
-  .vc1_dec_support = 0,
-  .jpeg_dec_support = 0,
   .vp8_enc_hybrid_support = 1,
-  .vpp_support = 0,
-  .accelerated_getimage = 1,
-  .accelerated_putimage = 1,
   .tiled_surface = 1,
-  .di_motion_adptive = 1,
-  .di_motion_compensated = 1,
-  .blending = 1,
+  .vp8_enc_hybrid_support=1,
+  .ratecontrol= VA_RC_CQP
 };
 
 MEDIA_KERNEL media_hybrid_vp8_kernels_g7[] = {

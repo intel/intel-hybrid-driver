@@ -33,6 +33,15 @@
 #include "media_drv_kernels_g8.h"
 #include "media_drv_surface.h"
 //#define DEBUG
+struct hw_codec_info gen8_hw_codec_info = {
+  .max_width = 4096,
+  .max_height = 4096,
+  .vp8_enc_hybrid_support = 1,
+  .tiled_surface = 1,
+  .vp8_enc_hybrid_support=1,
+  .ratecontrol= VA_RC_CQP
+ };
+
 MEDIA_KERNEL media_hybrid_vp8_kernels_g8[] = {
   {
    (BYTE *) "VP8_MBENC_I",
