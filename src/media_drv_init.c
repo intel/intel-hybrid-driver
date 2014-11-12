@@ -1631,6 +1631,8 @@ media_GetConfigAttributes (VADriverContextP ctx, VAProfile profile, VAEntrypoint
 			   INT num_attribs)
 {
   INT i;
+  MEDIA_DRV_CONTEXT *drv_ctx;
+  drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
   /* other attributes don't seem to be defined */
   /* What to do if we don't know the attribute? */
   for (i = 0; i < num_attribs; i++)
@@ -1642,8 +1644,9 @@ media_GetConfigAttributes (VADriverContextP ctx, VAProfile profile, VAEntrypoint
 	  break;
 
 	case VAConfigAttribRateControl:
-	  attrib_list[i].value = VA_RC_CBR | VA_RC_CQP | VA_RC_VBR;
-	  break;
+          /*For now supported rate control methods (VA_RC_CBR/VA_RC_CQP/VA_RC_VBR) are set based on platform*/
+            attrib_list[i].value = drv_ctx->codec_info->ratecontrol;
+          break;
 	case VAConfigAttribEncPackedHeaders:
 	  attrib_list[i].value =
 	    VA_ENC_PACKED_HEADER_SEQUENCE | VA_ENC_PACKED_HEADER_PICTURE |

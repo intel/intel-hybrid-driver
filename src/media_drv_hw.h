@@ -32,7 +32,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <i915_drm.h>
-#include<xf86drm.h>
+#include <xf86drm.h>
 #include "media_drv_gpe_utils.h"
 
 #define STATUS_QUERY_END_FLAG   0xFF
@@ -198,25 +198,9 @@ struct hw_codec_info
 {
   INT max_width;
   INT max_height;
-  UINT mpeg2_dec_support:1;
-  UINT mpeg2_enc_support:1;
-  UINT h264_dec_support:1;
-  UINT h264_enc_support:1;
-  UINT vc1_dec_support:1;
-  UINT vc1_enc_support:1;
-  UINT jpeg_dec_support:1;
-  UINT jpeg_enc_support:1;
-  UINT vpp_support:1;
-  UINT accelerated_getimage:1;
-  UINT accelerated_putimage:1;
   UINT tiled_surface:1;
-  UINT di_motion_adptive:1;
-  UINT di_motion_compensated:1;
-  UINT blending:1;
-  UINT vp8_dec_support:1;
-  UINT vp8_enc_support:1;
   UINT vp8_enc_hybrid_support:1;
-  UINT num_filters;
+  UINT ratecontrol;
 };
 
 typedef struct mi_store_data_imm_params
