@@ -1803,8 +1803,6 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_last_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
@@ -1826,8 +1824,6 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_gf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
@@ -1849,8 +1845,6 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_arf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control =
 	    mbenc_sutface_params->cacheability_control;
@@ -1981,8 +1975,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
   params.surface_2d = &surface_2d;
   params.surface_2d->surface_array_spacing = 1;
-  params.surface_2d->width = obj_surface->width;
-  params.surface_2d->height = obj_surface->height;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
   encoder_context->media_add_surface_state (&params);
 
@@ -2001,8 +1993,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
   obj_surface = encode_state->reconstructed_object;
   OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
   params.surface_2d = &surface_2d;
-  params.surface_2d->width = obj_surface->width;
-  params.surface_2d->height = obj_surface->height;
 
   params.surface_2d->surface_array_spacing = 1;
   params.cacheability_control = mbpak_sutface_params->cacheability_control;
@@ -2050,8 +2040,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
 	  params.surface_2d->surface_array_spacing = 1;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  encoder_context->media_add_surface_state (&params);
 
 	  params = surface_set_params_init;
@@ -2067,8 +2055,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_last_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
@@ -2091,8 +2077,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_gf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
@@ -2113,8 +2097,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d = &surface_2d;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
 	  encoder_context->media_add_surface_state (&params);
 
@@ -2138,8 +2120,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d = &surface_2d;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
 	  encoder_context->media_add_surface_state (&params);
 	  params = surface_set_params_init;
@@ -2155,8 +2135,6 @@ media_surface_state_vp8_mbpak_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  obj_surface = encode_state->ref_arf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
-	  params.surface_2d->width = obj_surface->width;
-	  params.surface_2d->height = obj_surface->height;
 	  params.surface_2d->surface_array_spacing = 1;
 	  params.cacheability_control =
 	    mbpak_sutface_params->cacheability_control;
