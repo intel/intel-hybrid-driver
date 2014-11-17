@@ -29,6 +29,7 @@
 #define VAEncMiscParameterTypePrivate   -2
 #define VAEncMbDataBufferType	        -4
 #define VAEncMiscParameterTypeVP8HybridFrameUpdate      -3
+#define VAEncMiscParameterTypeVP8SegmentMapParams	-4
 
 typedef struct _VAEncMbDataLayout
 {
@@ -50,6 +51,7 @@ typedef struct _VAEncMiscParameterVP8HybridFrameUpdate
     unsigned short  inter_mode_cost[4];
     unsigned char   intra_non_dc_penalty_16x16[4];
     unsigned char   intra_non_dc_penalty_4x4[4];
+    unsigned char   ref_q_index[3];
 } VAEncMiscParameterVP8HybridFrameUpdate;
 
 typedef struct _VAEncMiscParameterVP8FrameRate

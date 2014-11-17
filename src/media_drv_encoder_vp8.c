@@ -553,11 +553,8 @@ media_alloc_resource_mbenc (VADriverContextP ctx,
       encoder_context->mb_data_offset = 0;
     }
 
-  encoder_context->mb_data_in_bytes =
-    pic_w_h_in_mb * MB_CODE_SIZE_VP8 * sizeof (UINT);
-  encoder_context->mv_offset =
-    ALIGN ((encoder_context->mb_data_offset +
-	    encoder_context->mb_data_in_bytes), MB_MV_ALIGNMENT);
+  encoder_context->mb_data_in_bytes = pic_w_h_in_mb * ALIGN(MB_CODE_SIZE_VP8 * sizeof(UINT), 32);
+  encoder_context->mv_offset = encoder_context->mb_data_offset + encoder_context->mb_data_in_bytes;
   encoder_context->mv_in_bytes = pic_w_h_in_mb * MB_MV_CODE_SIZE_VP8;
 
   mbenc_context->mb_mode_cost_luma_buffer.width =
@@ -751,7 +748,7 @@ media_encoder_context_params_init (MEDIA_DRV_CONTEXT * drv_ctx,
     (encoder_context->internal_rate_mode == HB_BRC_CBR
      || encoder_context->internal_rate_mode == HB_BRC_VBR);
   encoder_context->brc_initted = 0;
-  encoder_context->frame_rate = 3000;	/* in case user doesn't set frame rate */
+  encoder_context->frame_rate = 30; /* in case user doesn't set frame rate */
 
   if (encoder_context->hme_supported == 1)
     {
@@ -1164,10 +1161,18 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->set_curbe_i_vp8_mbenc = media_set_curbe_i_vp8_mbenc;
       encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc;
       encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak;
+      encoder_context->set_curbe_vp8_brc_init_reset = media_set_curbe_vp8_brc_init_reset;
+      encoder_context->set_curbe_vp8_brc_update = media_set_curbe_vp8_brc_update;
       encoder_context->surface_state_vp8_mbenc =
 	media_surface_state_vp8_mbenc;
       encoder_context->surface_state_vp8_mbpak =
 	media_surface_state_vp8_mbpak;
+      encoder_context->surface_state_vp8_brc_init_reset =
+	media_surface_state_vp8_brc_init_reset;
+      encoder_context->surface_state_vp8_brc_update =
+	media_surface_state_vp8_brc_update;
+      encoder_context->init_brc_update_constant_data_vp8 =
+	media_encode_init_brc_update_constant_data_vp8_g75;
       encoder_context->media_add_surface_state = media_add_surface_state;
       encoder_context->media_add_binding_table = media_add_binding_table;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init;
@@ -1190,13 +1195,23 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       media_me_context_init (ctx, encoder_context);
       media_mbenc_context_init_g7 (ctx, encoder_context);
       media_mbpak_context_init_vp8_g7 (ctx, encoder_context);
+      media_brc_init_reset_context_init_g7(ctx, encoder_context);
+      media_brc_update_context_init_g7(ctx, encoder_context);
       encoder_context->set_curbe_i_vp8_mbenc = media_set_curbe_i_vp8_mbenc_g7;
       encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc_g7;
       encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak_g7;
+      encoder_context->set_curbe_vp8_brc_init_reset = media_set_curbe_vp8_brc_init_reset_g7;
+      encoder_context->set_curbe_vp8_brc_update = media_set_curbe_vp8_brc_update_g7;
       encoder_context->surface_state_vp8_mbenc =
 	media_surface_state_vp8_mbenc_g7;
       encoder_context->surface_state_vp8_mbpak =
 	media_surface_state_vp8_mbpak_g7;
+      encoder_context->surface_state_vp8_brc_init_reset =
+	media_surface_state_vp8_brc_init_reset_g7;
+      encoder_context->surface_state_vp8_brc_update =
+	media_surface_state_vp8_brc_update_g7;
+      encoder_context->init_brc_update_constant_data_vp8 =
+	media_encode_init_brc_update_constant_data_vp8_g7;
       encoder_context->media_add_surface_state = media_add_surface_state;
       encoder_context->media_add_binding_table = media_add_binding_table;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init;

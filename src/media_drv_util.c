@@ -310,6 +310,7 @@ static VAEncMiscParameterType media_drv_va_misc_types[] = {
   VAEncMiscParameterTypeRateControl,
   VAEncMiscParameterTypePrivate,
   VAEncMiscParameterTypeVP8HybridFrameUpdate,
+  VAEncMiscParameterTypeVP8SegmentMapParams,
 };
 
 int media_drv_va_misc_type_to_index(VAEncMiscParameterType type)

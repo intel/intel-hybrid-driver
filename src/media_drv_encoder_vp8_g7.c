@@ -46,7 +46,7 @@ media_mbenc_context_init_g7 (VADriverContextP ctx,
     (CURBE_ALLOCATION_SIZE - 12 - 1) /*CURBE_ALLOCATION_SIZE -1 */ ;
   gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
   media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[0],
-			  3);
+			  5);
   gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	//* MAX_INTERFACE_DESC_GEN6;
   gpe_context->curbe_size = /*0x140 */ CURBE_TOTAL_DATA_LENGTH;
   gpe_context->sampler_size = /*0 */ 0x80;
@@ -72,7 +72,7 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   gpe_context->vfe_state.curbe_allocation_size =
     CURBE_ALLOCATION_SIZE - 12 - 1;
   gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
-  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[3],
+  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[5],
 			  2);
 
   gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	// * MAX_INTERFACE_DESC_GEN6;
@@ -91,7 +91,7 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   gpe_context->vfe_state.curbe_allocation_size =
     CURBE_ALLOCATION_SIZE - 12 - 1;
   gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
-  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[3],
+  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[5],
 			  2);
 
   gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	// * MAX_INTERFACE_DESC_GEN6;
@@ -100,5 +100,66 @@ media_mbpak_context_init_vp8_g7 (VADriverContextP ctx,
   media_gpe_context_init (ctx, gpe_context);
   media_interface_setup_mbpak (gpe_context);
   media_alloc_resource_mbpak (ctx, encoder_context);
+  return;
+}
+
+VOID
+media_brc_init_reset_context_init_g7(VADriverContextP ctx,
+				     MEDIA_ENCODER_CTX * encoder_context)
+{
+  BRC_INIT_RESET_CONTEXT *brc_init_reset_context = &encoder_context->brc_init_reset_context;
+  MEDIA_GPE_CTX *gpe_context = &brc_init_reset_context->gpe_context;
+
+  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
+  gpe_context->vfe_state.max_num_threads = 32 - 1;	//60 - 1;
+  gpe_context->vfe_state.num_urb_entries = 16;	//64;
+  gpe_context->vfe_state.gpgpu_mode = 0;
+  gpe_context->vfe_state.urb_entry_size = 123;	//121;    //16;
+  gpe_context->vfe_state.curbe_allocation_size =
+    (CURBE_ALLOCATION_SIZE - 12 - 1) /*CURBE_ALLOCATION_SIZE -1 */ ;
+  gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
+  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[7],
+			  2);
+  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	//* MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe_size = /*0x140 */ CURBE_TOTAL_DATA_LENGTH;
+  gpe_context->sampler_size = /*0 */ 0x80;
+  media_gpe_context_init (ctx, gpe_context);
+  media_interface_setup_brc_init_reset (encoder_context);
+  media_alloc_resource_brc_init_reset (ctx, encoder_context);
+
+  return;
+}
+
+VOID
+media_brc_update_context_init_g7(VADriverContextP ctx,
+				 MEDIA_ENCODER_CTX * encoder_context)
+{
+  BRC_UPDATE_CONTEXT *distortion_ctx = &encoder_context->brc_update_context;
+  MEDIA_GPE_CTX *gpe_context = &distortion_ctx->gpe_context;
+
+  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
+  gpe_context->vfe_state.max_num_threads = 32 - 1;	//60 - 1;
+  gpe_context->vfe_state.num_urb_entries = 16;	//64;
+  gpe_context->vfe_state.gpgpu_mode = 0;
+  gpe_context->vfe_state.urb_entry_size = 123;	//121;    //16;
+  gpe_context->vfe_state.curbe_allocation_size =
+    (CURBE_ALLOCATION_SIZE - 12 - 1) /*CURBE_ALLOCATION_SIZE -1 */ ;
+  gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
+  media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[9],
+			  1);
+  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	//* MAX_INTERFACE_DESC_GEN6;
+  gpe_context->curbe_size = /*0x140 */ CURBE_TOTAL_DATA_LENGTH;
+  gpe_context->sampler_size = /*0 */ 0x80;
+  media_gpe_context_init (ctx, gpe_context);
+
+  encoder_context->brc_distortion_buffer_supported = 1;
+  encoder_context->brc_constant_buffer_supported = 1;
+
+  media_interface_setup_brc_update (encoder_context);
+#if 0
+  media_alloc_resource_brc_update (ctx, encoder_context);
+#endif
   return;
 }

@@ -32,6 +32,7 @@
 #include "media_drv_encoder.h"
 #include "media_drv_hw.h"
 #define NUM_OF_VP8_KERNELS 12
+#define MAX_QP_VP8               128
 extern MEDIA_KERNEL media_hybrid_vp8_kernels[NUM_OF_VP8_KERNELS];
 extern struct hw_codec_info gen75_hw_codec_info;
 extern const BYTE rasterscan_48x40_vp8_g75[56];
@@ -42,20 +43,23 @@ extern const BYTE fullspiral_48x40_vp8_g75[56];
 extern const UINT single_su_vp8_g75[14];
 extern const UINT cost_table_vp8_g75[128][7];
 extern const UINT new_mv_skip_threshold_VP8_g75[128];
-extern const UINT16 quant_dc_vp8_g75[];
-extern const UINT16 quant_ac_vp8_g75[];
+extern const UINT16 quant_dc_vp8_g75[MAX_QP_VP8];
+extern const UINT16 quant_ac_vp8_g75[MAX_QP_VP8];
 extern const BYTE frame_i_vme_cost_vp8_g75[128][4];
 extern const UINT16 quant_dc2_vp8_g75[];
 extern const UINT16 quant_ac2_vp8_g75[];
 extern const UINT16 quant_dc_uv_vp8_g75[];
 extern const SURFACE_SET_PARAMS surface_set_params_init;
+extern const BYTE brc_qpadjustment_distthreshold_maxframethreshold_distqpadjustment_IPB_vp8_g75[576];
+extern const BYTE brc_iframe_cost_table_vp8_g75 [512];
+extern const UINT16 brc_skip_mv_threshold_table_vp8_g75 [128];
+
 #define HSW_SCS_ZERO                      0
 #define HSW_SCS_ONE                       1
 #define HSW_SCS_RED                       4
 #define HSW_SCS_GREEN                     5
 #define HSW_SCS_BLUE                      6
 #define HSW_SCS_ALPHA                     7
-#define MAX_QP_VP8               128
 #define MAX_QP_VP8_G75                          127
 #define MB_CODE_SIZE_VP8       204
 #define MB_MV_CODE_SIZE_VP8     64
