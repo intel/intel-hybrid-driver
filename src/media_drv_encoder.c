@@ -767,6 +767,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 	}
       encoder_context->ref_frame_ctrl = ref_frame_flag_final;
       curbe_params.ref_frame_ctrl = encoder_context->ref_frame_ctrl;
+      curbe_params.frame_update = &encoder_context->frame_update;
 
       if (encoder_context->pic_coding_type == FRAME_TYPE_I)
 	{
@@ -960,16 +961,16 @@ mediadrv_gen_encode_brc_init_reset(VADriverContextP ctx,
 
   curbe_params.curbe_cmd_buff =
     media_map_buffer_obj (gpe_ctx->dynamic_state.res.bo);
-  media_set_curbe_vp8_brc_init_reset(encode_state, &curbe_params);
+  encoder_context->set_curbe_vp8_brc_init_reset(encode_state, &curbe_params);
   media_unmap_buffer_obj (gpe_ctx->dynamic_state.res.bo);
 
   /* surface & binding table */
   media_drv_memset (&surface_params, sizeof (surface_params));
   surface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
  encoder_context->media_add_binding_table (gpe_ctx);
-  media_surface_state_vp8_brc_init_reset (encoder_context,
-					  encode_state,
-					  &surface_params);
+  encoder_context->surface_state_vp8_brc_init_reset (encoder_context,
+						     encode_state,
+						     &surface_params);
 
   /* kernels */
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
@@ -1124,20 +1125,20 @@ mediadrv_gen_encode_brc_update(VADriverContextP ctx,
 
   curbe_params.curbe_cmd_buff =
     media_map_buffer_obj (gpe_ctx->dynamic_state.res.bo);
-  media_set_curbe_vp8_brc_update(encode_state, &curbe_params);
+  encoder_context->set_curbe_vp8_brc_update(encode_state, &curbe_params);
   media_unmap_buffer_obj (gpe_ctx->dynamic_state.res.bo);
 
   /* init constant data surface */
   constant_data_params.brc_update_constant_data = &brc_init_reset_context->brc_constant_data;
-  media_encode_init_brc_update_constant_data_vp8_g75(&constant_data_params);
+  encoder_context->init_brc_update_constant_data_vp8(&constant_data_params);
 
   /* surface & binding table */
   media_drv_memset (&surface_params, sizeof (surface_params));
   surface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
   encoder_context->media_add_binding_table (gpe_ctx);
-  media_surface_state_vp8_brc_update (encoder_context,
-				      encode_state,
-				      &surface_params);
+  encoder_context->surface_state_vp8_brc_update (encoder_context,
+						 encode_state,
+						 &surface_params);
 
   /* kernels */
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
@@ -1509,7 +1510,7 @@ media_get_frame_rate_params_vp8_encode (VADriverContextP ctx,
                                         MEDIA_ENCODER_CTX *encoder_context,
                                         VAEncMiscParameterFrameRate *misc)
 {
-  encoder_context->frame_rate = misc->framerate;
+  encoder_context->frame_rate = misc->framerate / 100; /* misc->framerate is multiple of 100 */
 }
 
 VOID

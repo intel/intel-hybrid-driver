@@ -204,6 +204,17 @@ typedef struct media_encoder_ctx
 				   mbpak_sutface_params);
   void (*set_curbe_vp8_mbpak) (struct encode_state * encode_state,
 			       MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);
+  void (*set_curbe_vp8_brc_init_reset) (struct encode_state *encode_state,
+					MEDIA_BRC_INIT_RESET_PARAMS_VP8 * params);
+  void (*surface_state_vp8_brc_init_reset) (struct media_encoder_ctx * encoder_context,
+					    struct encode_state *encode_state,
+					    BRC_INIT_RESET_SURFACE_PARAMS_VP8 *surface_params);
+  void (*set_curbe_vp8_brc_update) (struct encode_state *encode_state,
+					  MEDIA_BRC_UPDATE_PARAMS_VP8 * params);
+  void (*surface_state_vp8_brc_update) (struct media_encoder_ctx * encoder_context,
+					struct encode_state *encode_state,
+					BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params);
+  void (*init_brc_update_constant_data_vp8)(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
   void (*media_add_surface_state) (SURFACE_SET_PARAMS * params);
   void (*media_add_binding_table) (MEDIA_GPE_CTX * gpe_ctx);
   void (*gpe_context_vfe_scoreboardinit) (MEDIA_GPE_CTX * gpe_context);
@@ -213,6 +224,7 @@ typedef struct media_encoder_ctx
   STATUS (*mediadrv_gen_state_base_address_cmd) (MEDIA_BATCH_BUFFER * batch,STATE_BASE_ADDR_PARAMS * params);
   STATUS (*mediadrv_gen_media_vfe_state_cmd) (MEDIA_BATCH_BUFFER * batch,VFE_STATE_PARAMS * params);
    STATUS (*media_object_walker_cmd) (MEDIA_BATCH_BUFFER * batch,MEDIA_OBJ_WALKER_PARAMS * params);
+
 } MEDIA_ENCODER_CTX;
 
 typedef struct media_encoder_vp8_surface

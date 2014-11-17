@@ -2974,8 +2974,11 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw1.enable_segmentation = segmentation_enabled;
   cmd->dw1.enable_segmentation_info_update = 0;
   cmd->dw1.multi_reference_qp_check = 1;
-  cmd->dw1.mode_cost_enable_flag = 1;
+  cmd->dw1.mode_cost_enable_flag = 0;
   cmd->dw1.hme_coarse_shape = 2;
+
+  if (params->brc_enabled)
+    cmd->dw1.mode_cost_enable_flag = 1;
 
   //dw2
   cmd->dw2.lambda_intra_segment0 = quant_dc_vp8_g75[qp_seg0];
@@ -3124,14 +3127,16 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   }
 
   //dw60
-  cmd->dw60.frame_count_probability_ref_frame_cost_0 = 0x0204;
-  cmd->dw60.frame_count_probability_ref_frame_cost_1 = 0x006a;
-  //dw61
-  cmd->dw61.frame_count_probability_ref_frame_cost_2 = 0x0967;
-  cmd->dw61.frame_count_probability_ref_frame_cost_3 = 0x0969;
+  if (cmd->dw1.mode_cost_enable_flag == 0) {
+    cmd->dw60.frame_count_probability_ref_frame_cost_0 = 0x0204;
+    cmd->dw60.frame_count_probability_ref_frame_cost_1 = 0x006a;
+    //dw61
+    cmd->dw61.frame_count_probability_ref_frame_cost_2 = 0x0967;
+    cmd->dw61.frame_count_probability_ref_frame_cost_3 = 0x0969;
+  }
 
   //dw62
-    {
+  if (!params->brc_enabled) {
       MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
       unsigned int qp;
 
@@ -3167,18 +3172,14 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
       }
 
       cmd->dw62.average_qp_of_alt_ref_frame = qp;
-    }
+  } else {
+    cmd->dw62.average_qp_of_last_ref_frame = params->frame_update->ref_q_index[0];
+    cmd->dw62.average_qp_of_gold_ref_frame = params->frame_update->ref_q_index[1];
+    cmd->dw62.average_qp_of_alt_ref_frame  = params->frame_update->ref_q_index[2];
+  }
 
   //dw63
   cmd->dw63.intra_4x4_no_dc_penalty_segment0 = cost_table_vp8_g75[qp_seg0][6];
-
-  if (params->brc_enabled == TRUE)
-  {
-    cmd->dw62.average_qp_of_last_ref_frame = 0x16;
-    cmd->dw62.average_qp_of_gold_ref_frame = 0x16;
-    cmd->dw62.average_qp_of_alt_ref_frame = 0x16;
-    cmd->dw63.intra_4x4_no_dc_penalty_segment0 = 0;
-  }
 
   if (segmentation_enabled)
     {
@@ -4261,7 +4262,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       if (encoder_context->brc_enabled) {
 	params.buf_object = brc_init_reset_ctx->brc_history;
 	params.size = brc_init_reset_ctx->brc_history.bo_size;
-	assert(params.size = 544);
+	assert(params.size == 544);
       }
 
       params.surface_is_raw = 1;
@@ -4569,13 +4570,8 @@ media_set_curbe_vp8_brc_init_reset(struct encode_state *encode_state,
   cmd->dw10.frame_height = params->frame_height;
   cmd->dw10.avbr_accuracy = 60;
 
-  if ((params->frame_rate % 100) == 0) {
-    cmd->dw6.frame_rate_m = params->frame_rate / 100;
-    cmd->dw7.frame_rate_d = 1;
-  } else {
-    cmd->dw6.frame_rate_m = params->frame_rate;
-    cmd->dw7.frame_rate_d = 100;
-  }
+  cmd->dw6.frame_rate_m = params->frame_rate;
+  cmd->dw7.frame_rate_d = 1;
 
   params->rate_control_mode = HB_BRC_CBR;
   if (params->rate_control_mode == HB_BRC_CBR) {

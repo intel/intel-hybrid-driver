@@ -941,4 +941,21 @@ media_set_curbe_vp8_mbpak_g7 (struct encode_state *encode_state,
 
 VOID
 media_sampler_setup_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context);
+VOID
+media_set_curbe_vp8_brc_init_reset_g7(struct encode_state *encode_state,
+				      MEDIA_BRC_INIT_RESET_PARAMS_VP8 * params);
+VOID
+media_surface_state_vp8_brc_init_reset_g7(MEDIA_ENCODER_CTX * encoder_context,
+					  struct encode_state *encode_state,
+					  BRC_INIT_RESET_SURFACE_PARAMS_VP8 *surface_params);
+VOID
+media_set_curbe_vp8_brc_update_g7(struct encode_state *encode_state,
+				  MEDIA_BRC_UPDATE_PARAMS_VP8 * params);
+VOID
+media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
+				      struct encode_state *encode_state,
+				      BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params);
+VOID
+media_encode_init_brc_update_constant_data_vp8_g7(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
+
 #endif

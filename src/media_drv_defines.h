@@ -183,8 +183,6 @@
 #define     MBPAK_HYBRID_STATE_P1        1
 #define    MBPAK_HYBRID_STATE_P2     2
 
-#define VAEncMiscParameterTypeVP8SegmentMapParams -4
-
 #define CACHEABILITY_TYPE_NONE 0
 #define CACHEABILITY_TYPE_LLC 1
 #define CACHEABILITY_TYPE_L3 2

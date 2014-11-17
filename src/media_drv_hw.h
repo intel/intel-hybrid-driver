@@ -42,6 +42,18 @@ typedef struct generic_kernel_params
   UINT idrt_kernel_offset;
 }GENERIC_KERNEL_PARAMS;
 
+typedef struct _MEDIA_FRAME_UPDATE
+{
+  UINT prev_frame_size;
+  BOOL two_prev_frame_flag;
+  UINT16 ref_frame_cost[4];
+  UINT16 intra_mode_cost[4][4];
+  UINT16 inter_mode_cost[4];
+  BYTE intra_non_dc_penalty_16x16[4];
+  BYTE intra_non_dc_penalty_4x4[4];
+  BYTE ref_q_index[3];
+} MEDIA_FRAME_UPDATE;
+
 typedef struct _mbenc_constant_buffer_params_vp8
 {
   MEDIA_RESOURCE *mb_mode_cost_luma_buffer;
@@ -63,6 +75,7 @@ typedef struct _media_mbenc_curbe_params_vp8
   UINT hme_enabled;
   UINT ref_frame_ctrl;
   UINT brc_enabled;
+  MEDIA_FRAME_UPDATE *frame_update;
   VOID *curbe_cmd_buff;
 } MEDIA_MBENC_CURBE_PARAMS_VP8;
 
@@ -87,17 +100,6 @@ typedef struct _media_brc_init_reset_params_vp8
   UINT gop_pic_size;
   VOID *curbe_cmd_buff;
 } MEDIA_BRC_INIT_RESET_PARAMS_VP8;
-
-typedef struct _MEDIA_FRAME_UPDATE
-{
-  UINT prev_frame_size;
-  BOOL two_prev_frame_flag;
-  UINT16 ref_frame_cost[4];
-  UINT16 intra_mode_cost[4][4];
-  UINT16 inter_mode_cost[4];
-  BYTE intra_non_dc_penalty_16x16[4];
-  BYTE intra_non_dc_penalty_4x4[4];
-} MEDIA_FRAME_UPDATE;
 
 typedef struct _media_brc_distortion_params_vp8
 {
