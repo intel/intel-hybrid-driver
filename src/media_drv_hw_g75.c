@@ -3102,6 +3102,13 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   cmd->dw32.bilinear_enable = 0;
   cmd->dw32.intra_16x16_no_dc_penalty_segment0 =
     cost_table_vp8_g75[qp_seg0][5];
+
+  if (params->brc_enabled == TRUE)
+  {
+    cmd->dw30.mv_cost_seg_val = cmd->dw31.mv_cost_seg_val = 0;
+    cmd->dw32.intra_16x16_no_dc_penalty_segment0 = 0;
+  }
+
   if (segmentation_enabled)
     {
       cmd->dw32.intra_16x16_no_dc_penalty_segment1 =
@@ -3117,14 +3124,12 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
   media_drv_memcpy (&(cmd->dw34), 24 * sizeof (UINT),
 		    (VOID *) mv_ref_cost_context_vp8_g75, 24 * sizeof (UINT));
 
-  if (!params->brc_enabled) {
-    //dw58
-    cmd->dw58.enc_cost_16x16 = 0;
-    cmd->dw58.enc_cost_16x8 = 0x73C;
-    //dw59
-    cmd->dw59.enc_cost_8x8 = 0x365;
-    cmd->dw59.enc_cost_4x4 = 0xDC9;
-  }
+  //dw58
+  cmd->dw58.enc_cost_16x16 = 0;
+  cmd->dw58.enc_cost_16x8 = 0x73C;
+  //dw59
+  cmd->dw59.enc_cost_8x8 = 0x365;
+  cmd->dw59.enc_cost_4x4 = 0xDC9;
 
   //dw60
   if (cmd->dw1.mode_cost_enable_flag == 0) {
@@ -4559,22 +4564,21 @@ media_set_curbe_vp8_brc_init_reset(struct encode_state *encode_state,
   media_drv_memset(cmd, sizeof(MEDIA_CURBE_DATA_BRC_INIT_RESET_G75));
 
   // profile & level max frame size
-  cmd->dw0.profile_level_max_frame = 25344;
+  cmd->dw0.profile_level_max_frame = params->frame_width * params->frame_height;
 
+  // initial buffer fullness, buffer size, max and target bitrate
   cmd->dw1.init_buf_full_in_bits = params->init_vbv_buffer_fullness_in_bit;
   cmd->dw2.buf_size_in_bits = params->vbv_buffer_size_in_bit;
   cmd->dw3.average_bit_rate = (params->target_bit_rate + ENCODE_BRC_KBPS - 1) / ENCODE_BRC_KBPS * ENCODE_BRC_KBPS;
   cmd->dw4.max_bit_rate = (params->max_bit_rate + ENCODE_BRC_KBPS - 1) / ENCODE_BRC_KBPS * ENCODE_BRC_KBPS;
-  cmd->dw8.number_pframes_in_gop = params->gop_pic_size - 1;
-  cmd->dw9.frame_width = params->frame_width;
-  cmd->dw10.frame_height = params->frame_height;
-  cmd->dw10.avbr_accuracy = 60;
+  cmd->dw5.min_bit_rate = 0;
 
   cmd->dw6.frame_rate_m = params->frame_rate;
   cmd->dw7.frame_rate_d = 1;
 
-  params->rate_control_mode = HB_BRC_CBR;
+  // params->rate_control_mode = HB_BRC_CBR;
   if (params->rate_control_mode == HB_BRC_CBR) {
+    // for cbr max bitrate is same as target
     cmd->dw4.max_bit_rate = cmd->dw3.average_bit_rate;
     cmd->dw8.brc_flag = 0x0010;
   } else if (params->rate_control_mode == HB_BRC_VBR) {
@@ -4585,6 +4589,8 @@ media_set_curbe_vp8_brc_init_reset(struct encode_state *encode_state,
 
     cmd->dw8.brc_flag = 0x0020;
   }
+
+  cmd->dw8.number_pframes_in_gop = params->gop_pic_size - 1;
 
   // set dynamic thresholds
   input_bits_per_frame = ((DOUBLE)(cmd->dw4.max_bit_rate) * (DOUBLE)(cmd->dw7.frame_rate_d) / (DOUBLE)(cmd->dw6.frame_rate_m));
@@ -4816,8 +4822,6 @@ media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
 
   memset (cmd, 0, sizeof (*cmd));
 
-  cmd->dw0.target_size = (UINT)(*params->brc_init_current_target_buf_full_in_bits); // 500000 bits
-
   cmd->dw1.frame_number = params->frame_number;
   cmd->dw2.picture_header_size = 0; // matching kernel value
   cmd->dw5.target_size_flag= 0;
@@ -4826,6 +4830,8 @@ media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
     *params->brc_init_current_target_buf_full_in_bits -= (DOUBLE)params->brc_init_reset_buf_size_in_bits;
     cmd->dw5.target_size_flag = 1;
   }
+
+  cmd->dw0.target_size = (UINT)(*params->brc_init_current_target_buf_full_in_bits); // 500000 bits
 
   cmd->dw3.start_global_adjust_frame0 = 10;
   cmd->dw3.start_global_adjust_frame1 = 50;
@@ -4876,17 +4882,16 @@ media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
 
   cmd->dw15.frame_width_in_mb = params->frame_width_in_mbs;
   cmd->dw15.frame_height_in_mb = params->frame_height_in_mbs;
-  cmd->dw15.prev_flag = !params->frame_update->two_prev_frame_flag;
-
-  cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size;
+  // cmd->dw15.prev_flag = !params->frame_update->two_prev_frame_flag;
+  cmd->dw15.prev_flag = 1; /* always 1 ??? */
 
   if (params->frame_update->prev_frame_size != 0)
     cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size - 12;
 
-  if (params->frame_number == 2)
+  if (params->frame_number == 1)
     cmd->dw16.frame_byte_count -= 32;
 
-  if (params->frame_update->two_prev_frame_flag && params->frame_number == 1)
+  if (params->frame_update->two_prev_frame_flag == 1 && params->frame_number == 1)
     cmd->dw16.frame_byte_count = 0;
 
   cmd->dw17.key_frame_qp_seg0 = quant_params->quantization_index[0];
@@ -4902,17 +4907,6 @@ media_set_curbe_vp8_brc_update(struct encode_state *encode_state,
   cmd->dw19.qp = 0;
   cmd->dw19.qp_delta_plane4 = quant_params->quantization_index_delta[1];
   cmd->dw19.reserved = 9;
-
-  if (params->frame_number == 1) {
-    cmd->dw19.qp = 0x17;
-    cmd->dw19.reserved = 144;
-  } else if (params->frame_number == 2) {
-    cmd->dw19.qp = 0x16;
-  } else if (params->frame_number == 3) {
-    cmd->dw19.qp = 0x1b;
-  } else if (params->frame_number == 4) {
-    cmd->dw19.qp = 0x22;
-  }
 
   cmd->dw20.segmentation_enabled = pic_params->pic_flags.bits.segmentation_enabled;
   cmd->dw20.brc_method = 1;
