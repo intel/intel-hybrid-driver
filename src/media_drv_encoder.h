@@ -224,6 +224,8 @@ typedef struct media_encoder_ctx
   STATUS (*mediadrv_gen_state_base_address_cmd) (MEDIA_BATCH_BUFFER * batch,STATE_BASE_ADDR_PARAMS * params);
   STATUS (*mediadrv_gen_media_vfe_state_cmd) (MEDIA_BATCH_BUFFER * batch,VFE_STATE_PARAMS * params);
    STATUS (*media_object_walker_cmd) (MEDIA_BATCH_BUFFER * batch,MEDIA_OBJ_WALKER_PARAMS * params);
+  STATUS (*set_curbe_scaling) (MEDIA_GPE_CTX * gpe_context, SCALING_CURBE_PARAMS * params);
+  void (*surface_state_scaling) (struct media_encoder_ctx * encoder_context, SCALING_SURFACE_PARAMS * scaling_sutface_params);
 
 } MEDIA_ENCODER_CTX;
 
@@ -238,6 +240,10 @@ typedef struct media_encoder_vp8_surface
 void
 media_alloc_resource_scaling (VADriverContextP ctx,
 			      MEDIA_ENCODER_CTX * encoder_context);
+VOID
+media_alloc_resource_me (VADriverContextP ctx,
+			 MEDIA_ENCODER_CTX * encoder_context);
+
 void
 media_encode_mb_layout_vp8 (MEDIA_ENCODER_CTX * encoder_context, void *data,
 			    UINT * data_size);

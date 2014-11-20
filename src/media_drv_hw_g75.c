@@ -1670,6 +1670,56 @@ const UINT16 brc_skip_mv_threshold_table_vp8_g75 [128] =
   1078,1086, 1095, 1103, 1112, 1121, 1129, 1138, 1147, 1155, 1164, 1172, 1181, 1190, 1198, 1208
 };
 
+static VOID
+media_gpe_interface_setup (MEDIA_GPE_CTX *gpe_ctx)
+{
+  struct gen6_interface_descriptor_data *desc;
+  INT i;
+  dri_bo *bo;
+  BYTE *desc_ptr;
+
+  bo = gpe_ctx->dynamic_state.res.bo;
+  dri_bo_map (bo, 1);
+  MEDIA_DRV_ASSERT (bo->virtual);
+  desc_ptr = (BYTE *) bo->virtual + gpe_ctx->idrt_offset;
+
+  desc = (struct gen6_interface_descriptor_data *) desc_ptr;
+  for (i = 0; i < gpe_ctx->num_kernels; i++) {
+    MEDIA_KERNEL *kernel;
+    kernel = &gpe_ctx->kernels[i];
+    MEDIA_DRV_ASSERT (sizeof (*desc) == 32);
+    /*Setup the descritor table */
+    memset (desc, 0, sizeof (*desc));
+    desc->desc0.kernel_start_pointer = kernel->kernel_offset >> 6;
+    desc->desc2.sampler_count = 4;
+    desc->desc2.sampler_state_pointer =
+      (gpe_ctx->sampler_offset +
+       (i * gpe_ctx->sampler_size)) >> 5;;
+    desc->desc3.binding_table_entry_count = 0;
+    desc->desc3.binding_table_pointer = (BINDING_TABLE_OFFSET (0) >> 5);
+    desc->desc4.constant_urb_entry_read_offset = 0;
+    desc->desc4.constant_urb_entry_read_length = (gpe_ctx->curbe_size + 31) >> 5;
+    desc++;
+  }
+  dri_bo_unmap (bo);
+}
+
+VOID
+media_interface_setup_me (MEDIA_ENCODER_CTX * encoder_context)
+{
+  ME_CONTEXT *me_ctx = &encoder_context->me_context;
+
+  media_gpe_interface_setup (&me_ctx->gpe_context);
+}
+
+VOID
+media_interface_setup_scaling (MEDIA_ENCODER_CTX * encoder_context)
+{
+  SCALING_CONTEXT *scaling_ctx = &encoder_context->scaling_context;
+
+  media_gpe_interface_setup (&scaling_ctx->gpe_context);
+}
+
 VOID
 media_interface_setup_mbpak (MEDIA_GPE_CTX *mbpak_gpe_ctx)
 {

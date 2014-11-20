@@ -537,7 +537,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
       output_height = encoder_context->down_scaled_height_mb4x;
     }
 
-  mediadrv_set_curbe_scaling (scaling_gpe_ctx, &scaling_curbe_params);
+  encoder_context->set_curbe_scaling (scaling_gpe_ctx, &scaling_curbe_params);
 
   scaling_sutface_params.scaling_input_surface = *scaling_input_surface;
   scaling_sutface_params.input_width = input_width;
@@ -546,7 +546,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   scaling_sutface_params.output_width = output_width;
   scaling_sutface_params.output_height = output_height;
 
-  media_surface_state_scaling (encoder_context, &scaling_sutface_params);
+  encoder_context->surface_state_scaling (encoder_context, &scaling_sutface_params);
 
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   //media_batchbuffer_start_atomic(batch, 0x4000);

@@ -79,6 +79,21 @@ MEDIA_KERNEL media_hybrid_vp8_kernels_g7[] = {
    NULL,
    0},
   {
+   (BYTE *) "VP8_HME_P",
+   0,
+   MEDIA_VP8_HME_P_G7,
+   MEDIA_VP8_HME_P_SZ_G7,
+   NULL,
+   0},
+  {
+   (BYTE *) "VP8_HME_DOWNSCALE",
+   0,
+   MEDIA_VP8_HME_DOWNSCALE_G7,
+   MEDIA_VP8_HME_DOWNSCALE_SZ_G7,
+   NULL,
+   0},
+
+  {
    (BYTE *) "VP8_PAK_PHASE2",
    0,
    MEDIA_VP8_PAK_PHASE2_G7,
