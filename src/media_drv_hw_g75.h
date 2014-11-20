@@ -3635,4 +3635,11 @@ media_encode_init_brc_update_constant_data_vp8_g75(BRC_UPDATE_CONSTANT_DATA_PARA
 
 VOID
 media_add_surface_state (SURFACE_SET_PARAMS * params);
+
+VOID
+media_interface_setup_scaling (MEDIA_ENCODER_CTX * encoder_context);
+
+VOID
+media_interface_setup_me (MEDIA_ENCODER_CTX * encoder_context);
+
 #endif

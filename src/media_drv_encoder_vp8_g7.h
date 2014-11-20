@@ -40,4 +40,11 @@ media_brc_init_reset_context_init_g7(VADriverContextP ctx,
 VOID
 media_brc_update_context_init_g7(VADriverContextP ctx,
 				 MEDIA_ENCODER_CTX * encoder_context);
+VOID
+media_scaling_context_init_g7 (VADriverContextP ctx,
+			       MEDIA_ENCODER_CTX * encoder_context);
+
+VOID
+media_me_context_init_g7 (VADriverContextP ctx,
+			  MEDIA_ENCODER_CTX * encoder_context);
 #endif
