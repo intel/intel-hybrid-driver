@@ -225,7 +225,7 @@ media_encoder_context_destroy (VOID * hw_context)
 }
 
 VOID
-gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context)
+gpe_context_vfe_scoreboardinit_pak_p1 (MEDIA_ENCODER_CTX * encoder_context,MEDIA_GPE_CTX * gpe_context)
 {
   gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0xFF;
   gpe_context->vfe_state.vfe_desc5.scoreboard0.type = SCOREBOARD_NON_STALLING;
@@ -251,7 +251,7 @@ gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context)
 }
 
 VOID
-gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context)
+gpe_context_vfe_scoreboardinit_pak_p2 (MEDIA_ENCODER_CTX * encoder_context,MEDIA_GPE_CTX * gpe_context)
 {
   gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0x07;
   gpe_context->vfe_state.vfe_desc5.scoreboard0.type = SCOREBOARD_NON_STALLING;
@@ -275,28 +275,6 @@ gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context)
   gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x7 = 0;
   gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y7 = 0;
 }
-
-VOID
-media_generic_gpe_context_init (VADriverContextP ctx,
-				MEDIA_GPE_CTX * gpe_context,
-				INT num_of_kernels)
-{
-
-  gpe_context->idrt.max_entries = MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe.length = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->vfe_state.max_num_threads = 280 - 1;	//60 - 1;
-  gpe_context->vfe_state.num_urb_entries = 16;	//64;
-  gpe_context->vfe_state.gpgpu_mode = 0;
-  gpe_context->vfe_state.urb_entry_size = 121;	//16;
-  gpe_context->vfe_state.curbe_allocation_size = CURBE_ALLOCATION_SIZE - 1;
-
-  gpe_context_vfe_scoreboardinit (gpe_context);
-  gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	// * MAX_INTERFACE_DESC_GEN6;
-  gpe_context->curbe_size = CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->sampler_size = 0;
-  media_gpe_context_init (ctx, gpe_context);
-}
-
 BOOL
 media_encoder_init (VADriverContextP ctx, MEDIA_ENCODER_CTX * encoder_context)
 {
@@ -614,7 +592,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
       mbpak_gpe_ctx->surface_state_binding_table =
 	mbpak_ctx->surface_state_binding_table_mbpak_p1;
       kernel_params.idrt_kernel_offset = MBPAK_PHASE1_OFFSET;
-      gpe_context_vfe_scoreboardinit (mbpak_gpe_ctx);
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p1 (encoder_context,mbpak_gpe_ctx);
 #ifdef DEBUG
       //phase = 1;
 #endif
@@ -626,7 +604,7 @@ mediadrv_gen_encode_mbpak (VADriverContextP ctx,
 	mbpak_ctx->surface_state_binding_table_mbpak_p2;
       kernel_params.idrt_kernel_offset = MBPAK_PHASE2_OFFSET;
       //FIXME:Need to find a better way to handle this..!
-      encoder_context->gpe_context_vfe_scoreboardinit_pak (mbpak_gpe_ctx);
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p2 (encoder_context,mbpak_gpe_ctx);
 #ifdef DEBUG
       //phase = 2;
 #endif

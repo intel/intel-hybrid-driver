@@ -32,6 +32,45 @@
 #include "media_drv_hw_g7.h"
 #include "media_drv_encoder_vp8.h"
 
+VOID
+gpe_context_vfe_scoreboardinit_pak_p2_g8 (MEDIA_ENCODER_CTX * encoder_context,MEDIA_GPE_CTX * gpe_context)
+{
+  gpe_context->vfe_state.vfe_desc5.scoreboard0.type = SCOREBOARD_NON_STALLING;
+  gpe_context->vfe_state.vfe_desc5.scoreboard0.enable = 1;
+
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x0 = 0xF;
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y0 = 0;
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x1 = 0;
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y1 = 0xF;
+
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x3 = 0x0;
+  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y3 = 0x0;
+
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x4 = 0x0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y4 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x5 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y5 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x6 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y6 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x7 = 0;
+  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y7 = 0;
+
+  if (encoder_context->pic_coding_type == FRAME_TYPE_I){
+    gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0x07;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x2 = 1;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y2 = 0xE;
+    }
+  else {
+    gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0x1f;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x2 = 0x0;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y2 = 0xE;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x3 = 0x0;
+    gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y3 = 0xd;
+    gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x4 = 0x1;
+    gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y4 = 0xd;
+   }
+}
+
 VOID media_object_walker_mbenc_init_g8(BOOL mbenc_i_frame_dist_in_use,BOOL mbenc_phase_2,MEDIA_ENCODER_CTX * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params)
 {
   media_drv_memset (media_obj_walker_params,
