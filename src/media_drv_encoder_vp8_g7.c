@@ -58,6 +58,7 @@ media_me_context_init_g7 (VADriverContextP ctx,
   gpe_context_vfe_scoreboardinit_vp8 (gpe_context);
   media_gpe_load_kernels (ctx, gpe_context, &media_hybrid_vp8_kernels_g7[5], 1);
   media_gpe_context_init (ctx, gpe_context);
+  media_sampler_setup_me_g7 (encoder_context);
   media_interface_setup_me (encoder_context);
   media_alloc_resource_me (ctx, encoder_context);
 }

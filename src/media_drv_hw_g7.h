@@ -918,6 +918,91 @@ typedef struct _media_curbe_data_mbenc_p_g7
   } dw69;
 } MEDIA_CURBE_DATA_MBENC_P_G7;
 
+typedef struct _MEDIA_CURBE_DATA_ME_G7
+{
+  struct {
+    UINT skip_mode_enable:1;
+    UINT adaptive_enable:1;
+    UINT bi_mix_disable:1;
+    UINT partition_candidates_enable:1;
+    UINT early_success_enable:1;
+    UINT early_ime_success_enable:1;
+    UINT quit_inter_search_enable:1;
+    UINT t8x8_flag_for_inter_enable:1;
+    UINT early_skip_success_threshold:8;
+    UINT early_fme_success_threshold:8;
+    UINT early_ime_stop:8;
+  } dw0;
+
+  struct {
+    UINT max_num_mvs:6;
+    UINT reserved0:10;
+    UINT bi_weight:6;
+    UINT reserved1:2;
+    UINT bi_sub_mb_part_mask:4;
+    UINT uni_mix_disable:1;
+    UINT adaptiv_validation_ctrl:1;
+    UINT fb_prun_enable:1;
+    UINT repart_enable:1;
+  } dw1;
+
+  struct {
+    UINT max_len_sp:8;
+    UINT max_num_su:8;
+    UINT reserved0:16;
+  } dw2;
+
+  struct {
+    UINT fb_prun_threshold:8;
+    UINT part_tolerance_threshold:8;
+    UINT ime_too_bad:8;
+    UINT ime_too_good:8;
+  } dw3;
+
+  struct {
+    UINT reserved0:8;
+    UINT picture_height_minus1:8;
+    UINT picture_width:8;
+    UINT reserved1:8;
+  } dw4;
+
+  struct {
+    UINT src_size:2;
+    UINT reserved0:2;
+    UINT mbtyperemap:2;
+    UINT src_access:1;
+    UINT ref_access:1;
+    UINT search_ctrl:3;
+    UINT dual_search_path_option:1;
+    UINT subpel_mode:2;
+    UINT skip_type:1;
+    UINT disable_field_cache_alloc:1;
+    UINT aligned_vme_ref_fetch_disable:1;
+    UINT aligned_vme_src_fetch_disable:1;
+    UINT boundary_check_skip_enable:1;
+    UINT block_based_skip_enable:1;
+    UINT inter_sad:2;
+    UINT intra_sad:2;
+    UINT sub_mb_part_mask:7;
+    UINT reserved1:1;
+  } dw5;
+
+  struct {
+    UINT reserved0:8;
+    UINT qp_primey:8;
+    UINT ref_width:8;
+    UINT ref_height:8;
+  } dw6;
+
+  struct {
+    UINT mv_cost_scale_factor:2;
+    UINT bilinear_enable:1;
+    UINT me_modes:2;
+    UINT reserved0:11;
+    UINT max_vmvr:16;
+  } dw7;
+} MEDIA_CURBE_DATA_ME_G7;
+
 VOID
 media_set_curbe_i_vp8_mbenc_g7 (struct encode_state *encode_state,
 				MEDIA_MBENC_CURBE_PARAMS_VP8 * params);
@@ -957,5 +1042,16 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
 				      BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params);
 VOID
 media_encode_init_brc_update_constant_data_vp8_g7(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
+
+VOID
+media_set_curbe_vp8_me_g7 (VP8_ME_CURBE_PARAMS * params);
+
+VOID
+media_surface_state_vp8_me_g7 (MEDIA_ENCODER_CTX * encoder_context,
+			       struct encode_state *encode_state,
+			       ME_SURFACE_PARAMS_VP8 * me_sutface_params);
+
+VOID
+media_sampler_setup_me_g7 (MEDIA_ENCODER_CTX * encoder_context);
 
 #endif
