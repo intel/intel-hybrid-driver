@@ -217,10 +217,10 @@ typedef struct media_encoder_ctx
   void (*init_brc_update_constant_data_vp8)(BRC_UPDATE_CONSTANT_DATA_PARAMS_VP8 *params);
   void (*media_add_surface_state) (SURFACE_SET_PARAMS * params);
   void (*media_add_binding_table) (MEDIA_GPE_CTX * gpe_ctx);
-  void (*gpe_context_vfe_scoreboardinit) (MEDIA_GPE_CTX * gpe_context);
   void (*media_object_walker_pak_init)(UINT pak_phase_type,struct media_encoder_ctx * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params);
   void (*media_object_walker_mbenc_init)(BOOL mbenc_i_frame_dist_in_use,BOOL mbenc_phase_2,struct media_encoder_ctx * encoder_context,MEDIA_OBJ_WALKER_PARAMS *media_obj_walker_params);
-  void (*gpe_context_vfe_scoreboardinit_pak) (MEDIA_GPE_CTX * gpe_context);
+  void (*gpe_context_vfe_scoreboardinit_pak_p1) (struct media_encoder_ctx * encoder_context,MEDIA_GPE_CTX * gpe_context);
+  void (*gpe_context_vfe_scoreboardinit_pak_p2) (struct media_encoder_ctx * encoder_context,MEDIA_GPE_CTX * gpe_context);
   STATUS (*mediadrv_gen_state_base_address_cmd) (MEDIA_BATCH_BUFFER * batch,STATE_BASE_ADDR_PARAMS * params);
   STATUS (*mediadrv_gen_media_vfe_state_cmd) (MEDIA_BATCH_BUFFER * batch,VFE_STATE_PARAMS * params);
    STATUS (*media_object_walker_cmd) (MEDIA_BATCH_BUFFER * batch,MEDIA_OBJ_WALKER_PARAMS * params);
@@ -251,7 +251,7 @@ media_encoder_picture (VADriverContextP ctx,
 		       union codec_state *codec_state,
 		       struct hw_context *hw_context);
 void
-gpe_context_vfe_scoreboardinit (MEDIA_GPE_CTX * gpe_context);
+gpe_context_vfe_scoreboardinit_pak_p1 (MEDIA_ENCODER_CTX * encoder_context,MEDIA_GPE_CTX * gpe_context);
 void
-gpe_context_vfe_scoreboardinit_pak (MEDIA_GPE_CTX * gpe_context);
+gpe_context_vfe_scoreboardinit_pak_p2 (MEDIA_ENCODER_CTX * encoder_context,MEDIA_GPE_CTX * gpe_context);
 #endif

@@ -442,32 +442,6 @@ gpe_context_vfe_scoreboardinit_vp8 (MEDIA_GPE_CTX * gpe_context)
 }
 
 VOID
-gpe_context_vfe_scoreboardinit_pak_vp8 (MEDIA_GPE_CTX * gpe_context)
-{
-  gpe_context->vfe_state.vfe_desc5.scoreboard0.mask = 0x07;
-  gpe_context->vfe_state.vfe_desc5.scoreboard0.type = SCOREBOARD_NON_STALLING;
-  gpe_context->vfe_state.vfe_desc5.scoreboard0.enable = 1;
-
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x0 = 0xF;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y0 = 0;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x1 = 0;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y1 = 0xF;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x2 = 1;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y2 = 0xE;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_x3 = 0x0;
-  gpe_context->vfe_state.vfe_desc6.scoreboard1.delta_y3 = 0x0;
-
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x4 = 0x0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y4 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x5 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y5 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x6 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y6 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_x7 = 0;
-  gpe_context->vfe_state.vfe_desc7.scoreboard2.delta_y7 = 0;
-}
-
-VOID
 media_alloc_resource_mbpak (VADriverContextP ctx,
 			    MEDIA_ENCODER_CTX * encoder_context)
 {
@@ -1177,7 +1151,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->media_add_binding_table = media_add_binding_table;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init;
       encoder_context->media_object_walker_mbenc_init =media_object_walker_mbenc_init;
-      encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit_pak;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p1=gpe_context_vfe_scoreboardinit_pak_p1;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p2=gpe_context_vfe_scoreboardinit_pak_p2;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
@@ -1216,7 +1191,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->media_add_binding_table = media_add_binding_table;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init;
       encoder_context->media_object_walker_mbenc_init =media_object_walker_mbenc_init;
-      encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit_pak;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p1=gpe_context_vfe_scoreboardinit_pak_p1;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p2=gpe_context_vfe_scoreboardinit_pak_p2;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
@@ -1245,7 +1221,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->media_add_binding_table = media_add_binding_table_g8;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init_g8;
       encoder_context->media_object_walker_mbenc_init =media_object_walker_mbenc_init_g8;
-      encoder_context->gpe_context_vfe_scoreboardinit_pak=gpe_context_vfe_scoreboardinit;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p1=gpe_context_vfe_scoreboardinit_pak_p1;
+      encoder_context->gpe_context_vfe_scoreboardinit_pak_p2=gpe_context_vfe_scoreboardinit_pak_p2_g8;
       encoder_context->mediadrv_gen_state_base_address_cmd =
 	mediadrv_gen_state_base_address_cmd_g8;
       encoder_context->mediadrv_gen_media_vfe_state_cmd =
