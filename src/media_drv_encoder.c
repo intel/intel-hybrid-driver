@@ -546,6 +546,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   scaling_sutface_params.output_width = output_width;
   scaling_sutface_params.output_height = output_height;
 
+  encoder_context->media_add_binding_table (scaling_gpe_ctx);
   encoder_context->surface_state_scaling (encoder_context, &scaling_sutface_params);
 
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
@@ -561,7 +562,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   walker_params.use_scoreboard = 0;	//encoder_context->use_hw_scoreboard;//setting this to zero because walker_params.me_in_use == TRUE
   walker_params.me_in_use = TRUE;	//no dependency dispatch order for Scaling kernel
 
-  media_drv_add_predicate_media_obj_wallker_cmd (ctx, batch, &walker_params);
+  encoder_context->media_object_walker_cmd (batch, &walker_params);
 #if 0
 #ifdef STATUS_REPORT
   media_drv_end_status_report (ctx, batch, scaling_gpe_ctx);
@@ -1141,11 +1142,8 @@ media_encode_kernel_functions (VADriverContextP ctx,
 			       MEDIA_ENCODER_CTX * encoder_context)
 {
   VAStatus status = VA_STATUS_SUCCESS;
-  #if 0
   SCALING_KERNEL_PARAMS scaling_params;
-  scaling_params.scaling_16x_en = 0;
-  scaling_params.scaling_32x_en = 0;
-  #endif
+
   encoder_context->mbenc_curbe_set_brc_update = FALSE;
   encoder_context->mbpak_curbe_set_brc_update = FALSE;
 
@@ -1158,9 +1156,11 @@ media_encode_kernel_functions (VADriverContextP ctx,
     }
   }
 
-#if 0
   if (encoder_context->scaling_enabled == 1)
     {
+      scaling_params.scaling_16x_en = 0;
+      scaling_params.scaling_32x_en = 0;
+
       mediadrv_gen_encode_scaling (ctx, encoder_context, encode_state,
 				   &scaling_params, FALSE);
       if (encoder_context->me_16x_supported == 1)
@@ -1170,6 +1170,8 @@ media_encode_kernel_functions (VADriverContextP ctx,
 				       &scaling_params, TRUE);
 	}
     }
+
+#if 0
 
   if (encode_state->hme_enabled)
     {

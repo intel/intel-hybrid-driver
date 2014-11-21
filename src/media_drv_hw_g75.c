@@ -4508,7 +4508,6 @@ VOID
 media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
 			     SCALING_SURFACE_PARAMS * scaling_sutface_params)
 {
-#if 0
   SURFACE_SET_PARAMS params;
   SCALING_CONTEXT *scaling_ctx = &encoder_context->scaling_context;
   MEDIA_GPE_CTX *scaling_gpe_ctx = &scaling_ctx->gpe_context;
@@ -4526,7 +4525,7 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   params.media_block_raw = 1;
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;
-  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;  // FIXME: 32 ???
   params.binding_table_offset = BINDING_TABLE_OFFSET (0);
   params.surface_state_offset = SURFACE_STATE_OFFSET (0);
   params.surface_2d = &scaling_sutface_params->scaling_input_surface;
@@ -4545,8 +4544,8 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;
   params.format = STATE_SURFACEFORMAT_R8_UNORM;
-  params.binding_table_offset = BINDING_TABLE_OFFSET (1);
-  params.surface_state_offset = SURFACE_STATE_OFFSET (1);
+  params.binding_table_offset = BINDING_TABLE_OFFSET (24);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (24);
   params.surface_2d = &scaling_sutface_params->scaling_output_surface;
   params.surface_2d->width = ALIGN (scaling_sutface_params->output_width, 16);
   params.surface_2d->height =
@@ -4555,7 +4554,6 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
 
   media_unmap_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.res.
 			  bo);
-#endif
 }
 
 VOID
