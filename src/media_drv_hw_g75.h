@@ -3597,6 +3597,7 @@ void media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
 void media_set_curbe_vp8_me (VP8_ME_CURBE_PARAMS * params);
 void
 media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
+			    struct encode_state *encode_state,
 			    ME_SURFACE_PARAMS_VP8 * me_sutface_params);
 void media_set_curbe_vp8_mbpak (struct encode_state *encode_state,
 				MEDIA_MBPAK_CURBE_PARAMS_VP8 * params);

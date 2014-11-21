@@ -490,6 +490,15 @@ const UINT16 brc_skip_mv_threshold_table_vp8_g7[128] =
   0x047b, 0x0483, 0x048c, 0x0494, 0x049d, 0x04a6, 0x04ae, 0x04b8,
 };
 
+const UINT hme_vme_lut_sp_state_vp8_g7[1][32] = {
+  {
+    0x120FF10F, 0x1E22E20D, 0x20E2FF10, 0x2EDD06FC, 0x11D33FF1, 0xEB1FF33D, 0x4EF1F1F1, 0xF1F21211,
+    0x0DFFFFE0, 0x11201F1F, 0x1105F1CF, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
+  }
+};
+
 VOID
 media_sampler_setup_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context)
 {
@@ -2977,4 +2986,239 @@ media_encode_init_brc_update_constant_data_vp8_g7(BRC_UPDATE_CONSTANT_DATA_PARAM
   pbuffer += sizeof(brc_skip_mv_threshold_table_vp8_g7);
 
   media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+}
+
+VOID
+media_set_curbe_vp8_me_g7 (VP8_ME_CURBE_PARAMS * params)
+{
+  UINT me_mode = 0, scale_factor = 0;
+  MEDIA_CURBE_DATA_ME_G7 *cmd = (MEDIA_CURBE_DATA_ME_G7 *) params->curbe_cmd_buff;
+
+  media_drv_memset (cmd, sizeof (MEDIA_CURBE_DATA_ME_G7));
+
+  me_mode = params->me_16x_enabled ?
+    (params->me_16x ? ME16x_BEFORE_ME4x : ME4x_AFTER_ME16x) : ME4x_ONLY;
+  scale_factor = (me_mode == ME16x_BEFORE_ME4x) ? 16 : 4;
+
+  cmd->dw1.max_num_mvs = 0x10;
+  cmd->dw1.bi_weight = 0x20;
+
+  cmd->dw2.max_num_su = 57;
+  cmd->dw2.max_len_sp = 57;
+
+  cmd->dw3.part_tolerance_threshold = 0x8F;
+
+  cmd->dw4.picture_height_minus1 = HEIGHT_IN_MACROBLOCKS (params->frame_field_height / scale_factor) - 1;
+  cmd->dw4.picture_width = HEIGHT_IN_MACROBLOCKS (params->frame_width / scale_factor);
+
+
+  cmd->dw5.sub_mb_part_mask = 0x3f;
+  cmd->dw5.subpel_mode = 3;
+
+  cmd->dw6.ref_height = MIN(40, MAX(20, ALIGN(params->frame_field_height / scale_factor, 16)));
+  cmd->dw6.ref_width = MIN(48, MAX(20, ALIGN(params->frame_width / scale_factor, 16)));
+
+  cmd->dw7.me_modes = me_mode;
+  cmd->dw7.max_vmvr = 0x7fc;
+}
+
+VOID
+media_surface_state_vp8_me_g7 (MEDIA_ENCODER_CTX * encoder_context,
+			       struct encode_state *encode_state,
+			       ME_SURFACE_PARAMS_VP8 * me_surface_params)
+{
+  ME_CONTEXT *me_ctx = &encoder_context->me_context;
+  MEDIA_GPE_CTX *me_gpe_ctx = &me_ctx->gpe_context;
+  MEDIA_RESOURCE *mv_data_surface;
+  SURFACE_SET_PARAMS params;
+  BYTE *binding_surface_state_buf = NULL;
+  MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
+  MEDIA_RESOURCE scaled_surface;
+
+  binding_surface_state_buf =
+    (BYTE *)media_map_buffer_obj (me_surface_params->me_surface_state_binding_table->res.bo);
+  vp8_surface = encode_state->reconstructed_object->private_data;
+  MEDIA_DRV_ASSERT (vp8_surface);
+
+  if (me_surface_params->me_16x_in_use) {
+    mv_data_surface = &me_ctx->mv_data_surface_16x_me;
+    OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (scaled_surface, vp8_surface->scaled_16x_surface_obj);
+  } else {
+    mv_data_surface = &me_ctx->mv_data_surface_4x_me;
+    OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (scaled_surface, vp8_surface->scaled_4x_surface_obj);
+  }
+
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    me_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.media_block_raw = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (0);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (0);
+  params.surface_2d = mv_data_surface;
+  encoder_context->media_add_surface_state (&params);
+
+  if (me_surface_params->me_16x_enabled) {
+    //16xme in use
+    params = surface_set_params_init;
+    params.binding_surface_state.bo =
+      me_gpe_ctx->surface_state_binding_table.res.bo;
+    params.binding_surface_state.buf = binding_surface_state_buf;
+    params.surface_is_2d = 1;
+    params.media_block_raw = 1;
+    params.vert_line_stride_offset = 0;
+    params.vert_line_stride = 0;
+    params.format = STATE_SURFACEFORMAT_R8_UNORM;
+    params.binding_table_offset = BINDING_TABLE_OFFSET (8);
+    params.surface_state_offset = SURFACE_STATE_OFFSET (8);
+    params.surface_2d = &me_ctx->mv_data_surface_16x_me;
+    encoder_context->media_add_surface_state (&params);
+  }
+
+#if 0 // FIXME: not used ??? double-check it
+  if (!me_surface_params->me_16x_in_use) {
+    //me distortion
+    params = surface_set_params_init;
+    params.binding_surface_state.bo =
+      me_gpe_ctx->surface_state_binding_table.res.bo;
+    params.binding_surface_state.buf = binding_surface_state_buf;
+    params.surface_is_2d = 1;
+    params.vert_line_stride_offset = 0;
+    params.vert_line_stride = 0;
+    params.format = STATE_SURFACEFORMAT_R8_UNORM;
+    params.binding_table_offset = BINDING_TABLE_OFFSET (2);
+    params.surface_state_offset = SURFACE_STATE_OFFSET (2);
+    params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
+    encoder_context->media_add_surface_state (&params);
+
+    //me brc distortion
+    params = surface_set_params_init;
+    params.binding_surface_state.bo =
+      me_gpe_ctx->surface_state_binding_table.res.bo;
+    params.binding_surface_state.buf = binding_surface_state_buf;
+    params.surface_is_2d = 1;
+    params.vert_line_stride_offset = 0;
+    params.vert_line_stride = 0;
+    params.format = STATE_SURFACEFORMAT_R8_UNORM;
+    params.binding_table_offset = BINDING_TABLE_OFFSET (9);
+    params.surface_state_offset = SURFACE_STATE_OFFSET (9);
+    params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
+    encoder_context->media_add_surface_state (&params);
+  }
+#endif
+
+  //current picture
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    me_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.surface_is_2d = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (1);
+  params.surface_2d = &scaled_surface;
+  encoder_context->media_add_surface_state (&params);
+
+  //forward ref pic-golden/alternate/last
+  if (encode_state->ref_last_frame != NULL
+      && encode_state->ref_last_frame->bo != NULL) {
+    MEDIA_RESOURCE ref_last_scaled_surface;
+
+    vp8_surface = encode_state->ref_last_frame->private_data;
+    MEDIA_DRV_ASSERT(vp8_surface);
+
+    if (me_surface_params->me_16x_in_use) {
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (ref_last_scaled_surface, vp8_surface->scaled_16x_surface_obj);
+    } else {
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (ref_last_scaled_surface, vp8_surface->scaled_4x_surface_obj);
+    }
+
+    params = surface_set_params_init;
+    params.binding_surface_state.bo =
+      me_gpe_ctx->surface_state_binding_table.res.bo;
+    params.binding_surface_state.buf = binding_surface_state_buf;
+    params.surface_is_2d = 1;
+    params.vert_line_stride_offset = 0;
+    params.vert_line_stride = 0;
+    params.format = STATE_SURFACEFORMAT_R8_UNORM;
+    params.binding_table_offset = BINDING_TABLE_OFFSET (2);
+    params.surface_state_offset = SURFACE_STATE_OFFSET (2);
+    params.surface_2d = &ref_last_scaled_surface;
+    encoder_context->media_add_surface_state (&params);
+  }
+
+  //current picture
+  params = surface_set_params_init;
+  params.binding_surface_state.bo =
+    me_gpe_ctx->surface_state_binding_table.res.bo;
+  params.binding_surface_state.buf = binding_surface_state_buf;
+  params.advance_state = 1;
+  params.vert_line_stride_offset = 0;
+  params.vert_line_stride = 0;
+  params.format = STATE_SURFACEFORMAT_R8_UNORM;
+  params.binding_table_offset = BINDING_TABLE_OFFSET (4);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (4);
+  params.surface_2d = &scaled_surface;
+  encoder_context->media_add_surface_state (&params);
+
+  if (encode_state->ref_last_frame != NULL
+      && encode_state->ref_last_frame->bo != NULL) {
+    MEDIA_RESOURCE ref_last_scaled_surface;
+
+    vp8_surface = encode_state->ref_last_frame->private_data;
+    MEDIA_DRV_ASSERT(vp8_surface);
+
+    if (me_surface_params->me_16x_in_use) {
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (ref_last_scaled_surface, vp8_surface->scaled_16x_surface_obj);
+    } else {
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (ref_last_scaled_surface, vp8_surface->scaled_4x_surface_obj);
+    }
+
+    params = surface_set_params_init;
+    params.binding_surface_state.bo =
+      me_gpe_ctx->surface_state_binding_table.res.bo;
+    params.binding_surface_state.buf = binding_surface_state_buf;
+    params.advance_state = 1;
+    params.vert_line_stride_offset = 0;
+    params.vert_line_stride = 0;
+    params.format = STATE_SURFACEFORMAT_R8_UNORM;
+    params.binding_table_offset = BINDING_TABLE_OFFSET (5);
+    params.surface_state_offset = SURFACE_STATE_OFFSET (5);
+    params.surface_2d = &ref_last_scaled_surface;
+    encoder_context->media_add_surface_state (&params);
+  }
+
+  media_unmap_buffer_obj (me_surface_params->me_surface_state_binding_table->res.bo);
+}
+
+VOID
+media_sampler_setup_me_g7 (MEDIA_ENCODER_CTX * encoder_context)
+{
+  ME_CONTEXT *me_ctx = &encoder_context->me_context;
+  MEDIA_GPE_CTX *me_gpe_ctx = &me_ctx->gpe_context;
+  UINT sampler_size = me_gpe_ctx->sampler_size;
+  dri_bo *bo;
+  BYTE *sampler_ptr;
+  int i;
+
+  bo = me_gpe_ctx->dynamic_state.res.bo;
+  dri_bo_map (bo, 1);
+  MEDIA_DRV_ASSERT (bo->virtual);
+  sampler_ptr = (BYTE *) bo->virtual + me_gpe_ctx->sampler_offset;
+  MEDIA_DRV_ASSERT (sampler_size == 32 * sizeof(int));
+
+  for (i = 0; i < 8; i++) {
+    media_drv_memcpy (sampler_ptr, sampler_size,
+		      (BYTE *) &hme_vme_lut_sp_state_vp8_g7[0][0],
+		      sampler_size);
+    sampler_ptr += sampler_size;
+  }
+
+  dri_bo_unmap (bo);
 }

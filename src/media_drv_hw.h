@@ -172,7 +172,7 @@ typedef struct mbenc_surface_set_params_vp8
 typedef struct me_surface_set_params_vp8
 {
   BOOL me_16x_in_use;
-  BOOL me_i6x_enabled;
+  BOOL me_16x_enabled;
   SURFACE_STATE_BINDING_TABLE *me_surface_state_binding_table;
 } ME_SURFACE_PARAMS_VP8;
 typedef struct scaling_surface_set_params

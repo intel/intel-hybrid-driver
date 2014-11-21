@@ -853,18 +853,19 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
   me_curbe_params.kernel_mode = encoder_context->kernel_mode;
   buf = media_map_buffer_obj (me_gpe_ctx->dynamic_state.res.bo);
   me_curbe_params.curbe_cmd_buff = buf;
-  media_set_curbe_vp8_me (&me_curbe_params);
+  encoder_context->set_curbe_vp8_me (&me_curbe_params);
   media_unmap_buffer_obj (me_gpe_ctx->dynamic_state.res.bo);
   //batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   //_(ctx, batch, me_gpe_ctx);
 
-  me_sutface_params.me_16x_in_use = 1;
-  me_sutface_params.me_i6x_enabled = 1;
+  me_sutface_params.me_16x_in_use = me_16x;
+  me_sutface_params.me_16x_enabled = encode_state->me_16x_enabled;
   me_sutface_params.me_surface_state_binding_table =
     &me_gpe_ctx->surface_state_binding_table;
 
   //media_alloc_binding_surface_state(drv_ctx,&me_gpe_ctx->context->surface_state_binding_table);
-  media_surface_state_vp8_me (encoder_context, &me_sutface_params);
+  encoder_context->media_add_binding_table (me_gpe_ctx);
+  encoder_context->surface_state_vp8_me (encoder_context, encode_state, &me_sutface_params);
 
 
   batch = media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
@@ -890,6 +891,10 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
     down_scaled_width_mb4x;
   encoder_context->media_object_walker_cmd (batch, &media_obj_walker_params);
   media_batchbuffer_submit (batch);
+
+  if (me_16x) {
+    encode_state->me_16x_done = TRUE;
+  }
 }
 
 VOID
@@ -1171,8 +1176,6 @@ media_encode_kernel_functions (VADriverContextP ctx,
 	}
     }
 
-#if 0
-
   if (encode_state->hme_enabled)
     {
       if (encode_state->me_16x_enabled)
@@ -1181,8 +1184,6 @@ media_encode_kernel_functions (VADriverContextP ctx,
 	}
       mediadrv_gen_encode_me (ctx, encoder_context, encode_state, TRUE);
     }
-
-#endif
 
   if (encoder_context->brc_enabled) {
     if (encoder_context->brc_distortion_buffer_supported &&
@@ -1655,6 +1656,13 @@ media_encoder_free_priv_surface(void **data)
     vp8_surface->scaled_4x_surface_id = VA_INVALID_SURFACE;
     vp8_surface->scaled_4x_surface_obj = NULL;
   }
+
+  if (vp8_surface->scaled_16x_surface_obj) {
+    MEDIA_DRV_ASSERT(vp8_surface->scaled_16x_surface_id != VA_INVALID_SURFACE);
+    media_DestroySurfaces(vp8_surface->ctx, &vp8_surface->scaled_16x_surface_id, 1);
+    vp8_surface->scaled_16x_surface_id = VA_INVALID_SURFACE;
+    vp8_surface->scaled_16x_surface_obj = NULL;
+  }
 }
 
 static VOID
@@ -1665,6 +1673,7 @@ media_encoder_init_priv_surfaces(VADriverContextP ctx,
   MEDIA_DRV_CONTEXT *drv_ctx = ctx->pDriverData;
   MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
   int down_scaled_width4x, down_scaled_height4x;
+  int down_scaled_width16x, down_scaled_height16x;
 
   if (!obj_surface || obj_surface->private_data)
     return;
@@ -1682,6 +1691,16 @@ media_encoder_init_priv_surfaces(VADriverContextP ctx,
     vp8_surface->scaled_4x_surface_obj = SURFACE(vp8_surface->scaled_4x_surface_id);
     MEDIA_DRV_ASSERT(vp8_surface->scaled_4x_surface_obj &&
 		     vp8_surface->scaled_4x_surface_obj->bo);
+
+    down_scaled_width16x = encoder_context->down_scaled_width_mb16x * 16;
+    down_scaled_height16x = encoder_context->down_scaled_height_mb16x * 16;
+    media_CreateSurfaces (ctx,
+			  down_scaled_width16x, down_scaled_height16x,
+			  VA_FOURCC ('N', 'V', '1', '2'), 1,
+			  &vp8_surface->scaled_16x_surface_id);
+    vp8_surface->scaled_16x_surface_obj = SURFACE(vp8_surface->scaled_16x_surface_id);
+    MEDIA_DRV_ASSERT(vp8_surface->scaled_16x_surface_obj &&
+		     vp8_surface->scaled_16x_surface_obj->bo);
   }
 
   obj_surface->private_data = vp8_surface;

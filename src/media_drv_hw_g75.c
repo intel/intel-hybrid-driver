@@ -4379,6 +4379,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 
 VOID
 media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
+			    struct encode_state *encode_state,
 			    ME_SURFACE_PARAMS_VP8 * me_sutface_params)
 {
 
@@ -4418,7 +4419,7 @@ media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
   params.surface_2d = mv_data_surface;
   encoder_context->media_add_surface_state (&params);
 
-  if (me_sutface_params->me_i6x_enabled)
+  if (me_sutface_params->me_16x_enabled)
     {
 
       //16xme in use

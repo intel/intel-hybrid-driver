@@ -1138,6 +1138,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->set_curbe_vp8_brc_init_reset = media_set_curbe_vp8_brc_init_reset;
       encoder_context->set_curbe_vp8_brc_update = media_set_curbe_vp8_brc_update;
       encoder_context->set_curbe_scaling = mediadrv_set_curbe_scaling;
+      encoder_context->set_curbe_vp8_me = media_set_curbe_vp8_me;
       encoder_context->surface_state_vp8_mbenc =
 	media_surface_state_vp8_mbenc;
       encoder_context->surface_state_vp8_mbpak =
@@ -1148,6 +1149,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_brc_update;
       encoder_context->surface_state_scaling =
 	media_surface_state_scaling;
+      encoder_context->surface_state_vp8_me =
+	media_surface_state_vp8_me;
       encoder_context->init_brc_update_constant_data_vp8 =
 	media_encode_init_brc_update_constant_data_vp8_g75;
       encoder_context->media_add_surface_state = media_add_surface_state;
@@ -1181,6 +1184,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->set_curbe_vp8_brc_init_reset = media_set_curbe_vp8_brc_init_reset_g7;
       encoder_context->set_curbe_vp8_brc_update = media_set_curbe_vp8_brc_update_g7;
       encoder_context->set_curbe_scaling = mediadrv_set_curbe_scaling;
+      encoder_context->set_curbe_vp8_me = media_set_curbe_vp8_me_g7;
       encoder_context->surface_state_vp8_mbenc =
 	media_surface_state_vp8_mbenc_g7;
       encoder_context->surface_state_vp8_mbpak =
@@ -1191,6 +1195,8 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	media_surface_state_vp8_brc_update_g7;
       encoder_context->surface_state_scaling =
 	media_surface_state_scaling;
+      encoder_context->surface_state_vp8_me =
+	media_surface_state_vp8_me_g7;
       encoder_context->init_brc_update_constant_data_vp8 =
 	media_encode_init_brc_update_constant_data_vp8_g7;
       encoder_context->media_add_surface_state = media_add_surface_state;
@@ -1220,12 +1226,15 @@ media_encoder_init_vp8 (VADriverContextP ctx,
       encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc;
       encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak;
       encoder_context->set_curbe_scaling = mediadrv_set_curbe_scaling;
+      encoder_context->set_curbe_vp8_me = media_set_curbe_vp8_me;
       encoder_context->surface_state_vp8_mbenc =
 	media_surface_state_vp8_mbenc_g8;
       encoder_context->surface_state_vp8_mbpak =
 	media_surface_state_vp8_mbpak_g8;
       encoder_context->surface_state_scaling =
 	media_surface_state_scaling;
+      encoder_context->surface_state_vp8_me =
+	media_surface_state_vp8_me;
       encoder_context->media_add_surface_state = media_add_surface_state_g8;
       encoder_context->media_add_binding_table = media_add_binding_table_g8;
       encoder_context->media_object_walker_pak_init=media_object_walker_pak_init_g8;
