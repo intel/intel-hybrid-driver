@@ -3643,4 +3643,7 @@ media_interface_setup_scaling (MEDIA_ENCODER_CTX * encoder_context);
 VOID
 media_interface_setup_me (MEDIA_ENCODER_CTX * encoder_context);
 
+VOID
+media_hw_context_init_g75(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx);
+
 #endif

@@ -1054,4 +1054,7 @@ media_surface_state_vp8_me_g7 (MEDIA_ENCODER_CTX * encoder_context,
 VOID
 media_sampler_setup_me_g7 (MEDIA_ENCODER_CTX * encoder_context);
 
+VOID
+media_hw_context_init_g7(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx);
+
 #endif

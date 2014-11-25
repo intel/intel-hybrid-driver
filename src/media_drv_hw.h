@@ -297,7 +297,7 @@ typedef struct scaling_curbe_params
 
 typedef struct _media_hw_context
 {
-  MEDIA_GPE_CTX gpe_context;
+  UINT vp8_me_mv_data_size_multiplier;
 } MEDIA_HW_CONTEXT;
 
 typedef struct _vp8_me_curbe_params
@@ -310,5 +310,8 @@ typedef struct _vp8_me_curbe_params
   UINT picture_coding_type;
   VOID *curbe_cmd_buff;
 } VP8_ME_CURBE_PARAMS;
+
+VOID
+media_hw_context_init(VADriverContextP ctx);
 
 #endif

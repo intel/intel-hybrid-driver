@@ -43,6 +43,7 @@
 #include "va_private.h"
 #include "object_heap.h"
 #include "media_drv_render.h"
+#include "media_drv_hw.h"
 
 #define I965_PACKED_HEADER_BASE         0
 #define I965_PACKED_MISC_HEADER_BASE    3
@@ -196,6 +197,7 @@ typedef struct _media_drv_context
   VAContextID current_context_id;
   struct media_render_state render_state;
   struct va_dri_output *dri_output;
+  MEDIA_HW_CONTEXT hw_context;
 } MEDIA_DRV_CONTEXT;
 
 typedef struct _config_attr_list

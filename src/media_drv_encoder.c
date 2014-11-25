@@ -278,6 +278,8 @@ gpe_context_vfe_scoreboardinit_pak_p2 (MEDIA_ENCODER_CTX * encoder_context,MEDIA
 BOOL
 media_encoder_init (VADriverContextP ctx, MEDIA_ENCODER_CTX * encoder_context)
 {
+  media_hw_context_init(ctx);
+
   switch (encoder_context->codec)
     {
     case CODEC_VP8:

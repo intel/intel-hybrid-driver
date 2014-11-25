@@ -372,4 +372,8 @@ media_interface_setup_mbenc_g8 (MEDIA_ENCODER_CTX * encoder_context);
 
 VOID
 media_interface_setup_mbpak_g8 (MEDIA_GPE_CTX * mbpak_gpe_ctx);
+
+VOID
+media_hw_context_init_g8(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx);
+
 #endif
