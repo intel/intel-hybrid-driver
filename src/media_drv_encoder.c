@@ -493,22 +493,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   else
     scaling_gpe_ctx->surface_state_binding_table =
       scaling_ctx->surface_state_binding_table_scaling_16x;
-  if (params->scaling_32x_en)
-    {
-      down_scaled_width_mb = encoder_context->down_scaled_width_mb32x;
-      down_scaled_height_mb = encoder_context->down_scaled_height_mb32x;
-      scaling_curbe_params.input_pic_width =
-	ALIGN ((seq_param->frame_width / SCALE_FACTOR_16x), 16);
-      scaling_curbe_params.input_pic_height =
-	ALIGN ((seq_param->frame_height / SCALE_FACTOR_16x), 16);
-      scaling_input_surface = &scaling_ctx->scaled_16x_surface;
-      scaling_output_surface = &scaling_ctx->scaled_32x_surface;
-      input_width = encoder_context->down_scaled_width_mb16x;
-      input_height = encoder_context->down_scaled_height_mb16x;
-      output_width = encoder_context->down_scaled_width_mb32x;
-      output_height = encoder_context->down_scaled_height_mb32x;
-    }
-  else if (params->scaling_16x_en)
+  if (params->scaling_16x_en)
     {
       down_scaled_width_mb = encoder_context->down_scaled_width_mb16x;
       down_scaled_height_mb = encoder_context->down_scaled_height_mb16x;
