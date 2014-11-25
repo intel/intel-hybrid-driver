@@ -1057,4 +1057,7 @@ media_sampler_setup_me_g7 (MEDIA_ENCODER_CTX * encoder_context);
 VOID
 media_hw_context_init_g7(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx);
 
+VOID
+media_init_brc_distortion_buffer_g7 (MEDIA_ENCODER_CTX * encoder_context);
+
 #endif

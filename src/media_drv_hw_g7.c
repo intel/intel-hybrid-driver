@@ -981,10 +981,10 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   cmd->dw1.ref_ctrl = params->ref_frame_ctrl;
   cmd->dw1.enable_segmentation = segmentation_enabled;
   cmd->dw1.enable_segmentation_info_update = 0;
-  cmd->dw1.multi_reference_qp_check = 1;
+  cmd->dw1.multi_reference_qp_check = 0;
   cmd->dw1.mode_cost_enable_flag = 0;
   cmd->dw1.enable_debug_dumps = 0;
-  cmd->dw1.all_fractional = 0;
+  cmd->dw1.all_fractional = 1;
   cmd->dw1.enable_coeff_clamp = 0;
 
   if (params->brc_enabled)
@@ -1006,6 +1006,10 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
       cmd->dw5.lambda_intra_segment3 = (quant_dc_vp8_g75[qp_seg3]);
       cmd->dw5.lambda_inter_segment3 = (quant_dc_vp8_g75[qp_seg3] >> 2);
     }
+
+  if (params->brc_enabled) {
+    cmd->dw2.lambda_intra_segment0 = cmd->dw3.lambda_intra_segment1 = cmd->dw4.lambda_intra_segment2 = cmd->dw5.lambda_intra_segment3 = 0;
+  }
 
   cmd->dw6.reference_frame_sign_bias_3 = sign_bias_golden;
   cmd->dw6.reference_frame_sign_bias_2 = sign_bias_alternate;
@@ -1154,9 +1158,9 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
     cmd->dw40.average_qp_of_gold_ref_frame = quant_dc_vp8_g75[qp_seg0];	//0x0f;
     cmd->dw40.average_qp_of_last_ref_frame = quant_dc_vp8_g75[qp_seg0];	//0x0f; may have to change this later
   } else {
-    cmd->dw40.average_qp_of_alt_ref_frame = params->frame_update->ref_q_index[0];
-    cmd->dw40.average_qp_of_gold_ref_frame = params->frame_update->ref_q_index[1];
-    cmd->dw40.average_qp_of_last_ref_frame = params->frame_update->ref_q_index[2];
+    cmd->dw40.average_qp_of_alt_ref_frame = 0x13; // params->frame_update->ref_q_index[0];
+    cmd->dw40.average_qp_of_gold_ref_frame = 0x13; // params->frame_update->ref_q_index[1];
+    cmd->dw40.average_qp_of_last_ref_frame = 0x13; //  params->frame_update->ref_q_index[2];
   }
 
   //dw41
@@ -1234,14 +1238,14 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   cmd->dw50.current_pic_uv_surface_bti = 1;
   cmd->dw51.hme_data_surface_bti = 3;
   cmd->dw52.mv_data_surface_bti = 4;
-  cmd->dw53.seg_map_bti = 5;
-  cmd->dw54.inter_pred_dis_bti = 6;
-  cmd->dw55.mode_cost_update_bti = 7;
-  cmd->dw56.near_cnt_bti = 7;
-  cmd->dw57.cnt_index_2spindex_bti = 7;
-  cmd->dw58.vme_inter_pred_last_ref_frame_bti = 10;
-  cmd->dw59.vme_inter_pred_gold_ref_frame_bti = 12;
-  cmd->dw60.vme_inter_pred_alt_ref_frame_bti = 14;
+  cmd->dw53.seg_map_bti = 7;
+  cmd->dw54.inter_pred_dis_bti = 8;
+  cmd->dw55.mode_cost_update_bti = 9;
+  cmd->dw56.near_cnt_bti = 10;
+  cmd->dw57.cnt_index_2spindex_bti = 11;
+  cmd->dw58.vme_inter_pred_last_ref_frame_bti = 12;
+  cmd->dw59.vme_inter_pred_gold_ref_frame_bti = 14;
+  cmd->dw60.vme_inter_pred_alt_ref_frame_bti = 16;
   cmd->dw69.kernel_debug_dump_bti = 16;
 
 }
@@ -1259,6 +1263,16 @@ media_set_curbe_vp8_mbpak_g7 (struct encode_state *encode_state,
   UINT shift_factor, mul_factor;
   UINT16 y_quanta_ac_idx, y_quanta_dc_idx, uv_quanta_dc_idx,
     uv_quanta_ac_idx, y2_quanta_ac_idx, y2_quanta_dc_idx;
+  /* FIXME: hard-coded value, double check it */
+  pic_params->ref_lf_delta[0] = 8;
+  pic_params->ref_lf_delta[1] = 10;
+  pic_params->ref_lf_delta[2] = 30;
+  pic_params->ref_lf_delta[3] = 20;
+  pic_params->mode_lf_delta[0] = 6;
+  pic_params->mode_lf_delta[1] = 14;
+  pic_params->mode_lf_delta[2] = 22;
+  pic_params->mode_lf_delta[3] = 18;
+
   // qIndex should be the sum of base and delta qp values.
   y_quanta_ac_idx = quant_params->quantization_index[0];	/* Use entry 0 as for BDW segmentation is disabled */
   y_quanta_dc_idx =
@@ -1784,8 +1798,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 {
   MBENC_CONTEXT *mbenc_ctx = &encoder_context->mbenc_context;
   MEDIA_GPE_CTX *mbenc_gpe_ctx = &mbenc_ctx->gpe_context;
-  BRC_INIT_RESET_CONTEXT *brc_init_reset_ctx = &encoder_context->brc_init_reset_context;
-  //ME_CONTEXT *me_ctx = &encoder_context->me_context;
+  ME_CONTEXT *me_ctx = &encoder_context->me_context;
   #if 0
   UINT kernel_dump_offset = 0;
   #endif
@@ -1949,8 +1962,8 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	params.format = STATE_SURFACEFORMAT_R8_UNORM;
 	params.binding_table_offset = BINDING_TABLE_OFFSET (12);
 	params.surface_state_offset = SURFACE_STATE_OFFSET (12);
-	params.surface_2d = &brc_init_reset_ctx->brc_distortion;
-	media_add_surface_state (&params);
+	params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
+	encoder_context->media_add_surface_state (&params);
 
 	vp8_surface = encode_state->reconstructed_object->private_data;
 
@@ -1969,7 +1982,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
 	  params.cacheability_control = mbenc_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 
 	  params = surface_set_params_init;
 	  params.binding_surface_state.bo =
@@ -1984,7 +1997,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.surface_2d = &surface_2d;
 	  params.uv_direction = VDIRECTION_FULL_FRAME;
 	  params.cacheability_control = mbenc_sutface_params->cacheability_control;
-	  media_add_surface_state (&params);
+	  encoder_context->media_add_surface_state (&params);
 	}
       }
     }
@@ -2008,28 +2021,38 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       params.cacheability_control =
 	mbenc_sutface_params->cacheability_control;
       encoder_context->media_add_surface_state (&params);
-      if (mbenc_sutface_params->hme_enabled)
-	{
-	  /*need to add me mv data buffer surface states here later */
+      if (mbenc_sutface_params->hme_enabled) {
+	params = surface_set_params_init;
+	params.binding_surface_state.bo =
+	  mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	params.binding_surface_state.buf = binding_surface_state_buf;
+	params.surface_is_2d = 1;
+	params.media_block_raw = 1;
+	params.vert_line_stride_offset = 0;
+	params.vert_line_stride = 0;
+	params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	params.binding_table_offset = BINDING_TABLE_OFFSET (3);
+	params.surface_state_offset = SURFACE_STATE_OFFSET (3);
+	params.surface_2d = &me_ctx->mv_data_surface_4x_me;
+	params.surface_2d->surface_array_spacing = 1;
+	params.cacheability_control = mbenc_sutface_params->cacheability_control;
+	encoder_context->media_add_surface_state (&params);
 
-	}
-      //current picture VME inter prediction surface..!i
-      params = surface_set_params_init;
-      params.binding_surface_state.bo =
-	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
-      params.binding_surface_state.buf = binding_surface_state_buf;
-      params.advance_state = 1;
-      params.format = STATE_SURFACEFORMAT_R8_UNORM;
-      params.binding_table_offset = BINDING_TABLE_OFFSET (10);
-      params.surface_state_offset = SURFACE_STATE_OFFSET (10);
-      obj_surface = encode_state->input_yuv_object;
-      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
-      params.surface_2d = &surface_2d;
-      params.uv_direction = VDIRECTION_FULL_FRAME;
-      params.cacheability_control =
-	mbenc_sutface_params->cacheability_control;
-      encoder_context->media_add_surface_state (&params);
-
+	params = surface_set_params_init;
+	params.binding_surface_state.bo =
+	  mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+	params.binding_surface_state.buf = binding_surface_state_buf;
+	params.surface_is_2d = 1;
+	params.vert_line_stride_offset = 0;
+	params.vert_line_stride = 0;
+	params.format = STATE_SURFACEFORMAT_R8_UNORM;
+	params.binding_table_offset = BINDING_TABLE_OFFSET (8);
+	params.surface_state_offset = SURFACE_STATE_OFFSET (8);
+	params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
+	params.surface_2d->surface_array_spacing = 1;
+	params.cacheability_control = mbenc_sutface_params->cacheability_control;
+	encoder_context->media_add_surface_state (&params);
+      }
       //current picture VME inter prediction surface..!i
       params = surface_set_params_init;
       params.binding_surface_state.bo =
@@ -2064,6 +2087,23 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	mbenc_sutface_params->cacheability_control;
       encoder_context->media_add_surface_state (&params);
 
+      //current picture VME inter prediction surface..!i
+      params = surface_set_params_init;
+      params.binding_surface_state.bo =
+	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
+      params.binding_surface_state.buf = binding_surface_state_buf;
+      params.advance_state = 1;
+      params.format = STATE_SURFACEFORMAT_R8_UNORM;
+      params.binding_table_offset = BINDING_TABLE_OFFSET (16);
+      params.surface_state_offset = SURFACE_STATE_OFFSET (16);
+      obj_surface = encode_state->input_yuv_object;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      params.surface_2d = &surface_2d;
+      params.uv_direction = VDIRECTION_FULL_FRAME;
+      params.cacheability_control =
+	mbenc_sutface_params->cacheability_control;
+      encoder_context->media_add_surface_state (&params);
+
       //last ref
       if (encode_state->ref_last_frame != NULL
 	  && encode_state->ref_last_frame->bo != NULL)
@@ -2074,8 +2114,8 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.binding_surface_state.buf = binding_surface_state_buf;
 	  params.advance_state = 1;
 	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
-	  params.binding_table_offset = BINDING_TABLE_OFFSET (11);
-	  params.surface_state_offset = SURFACE_STATE_OFFSET (11);
+	  params.binding_table_offset = BINDING_TABLE_OFFSET (13);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET (13);
 	  obj_surface = encode_state->ref_last_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
@@ -2095,8 +2135,8 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.binding_surface_state.buf = binding_surface_state_buf;
 	  params.advance_state = 1;
 	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
-	  params.binding_table_offset = BINDING_TABLE_OFFSET (13);
-	  params.surface_state_offset = SURFACE_STATE_OFFSET (13);
+	  params.binding_table_offset = BINDING_TABLE_OFFSET (15);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET (15);
 	  obj_surface = encode_state->ref_gf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
@@ -2116,8 +2156,8 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
 	  params.binding_surface_state.buf = binding_surface_state_buf;
 	  params.advance_state = 1;
 	  params.format = STATE_SURFACEFORMAT_R8_UNORM;
-	  params.binding_table_offset = BINDING_TABLE_OFFSET (15);
-	  params.surface_state_offset = SURFACE_STATE_OFFSET (15);
+	  params.binding_table_offset = BINDING_TABLE_OFFSET (17);
+	  params.surface_state_offset = SURFACE_STATE_OFFSET (17);
 	  obj_surface = encode_state->ref_arf_frame;
 	  OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
 	  params.surface_2d = &surface_2d;
@@ -2618,6 +2658,7 @@ media_surface_state_vp8_brc_init_reset_g7(MEDIA_ENCODER_CTX * encoder_context,
 					  BRC_INIT_RESET_SURFACE_PARAMS_VP8 *surface_params)
 {
   BRC_INIT_RESET_CONTEXT *ctx = &encoder_context->brc_init_reset_context;
+  ME_CONTEXT *me_context = &encoder_context->me_context;
   MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
   SURFACE_SET_PARAMS params;
   BYTE *binding_surface_state_buf = NULL;
@@ -2651,7 +2692,7 @@ media_surface_state_vp8_brc_init_reset_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.format = STATE_SURFACEFORMAT_R8_UNORM;
   params.binding_table_offset = BINDING_TABLE_OFFSET (1);
   params.surface_state_offset = SURFACE_STATE_OFFSET (1);
-  params.surface_2d = &ctx->brc_distortion;
+  params.surface_2d = &me_context->mv_distortion_surface_4x_me;
   media_add_surface_state (&params);
 
   media_unmap_buffer_obj (gpe_ctx->surface_state_binding_table.res.bo);
@@ -2736,7 +2777,7 @@ media_set_curbe_vp8_brc_update_g7(struct encode_state *encode_state,
     cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size - 12;
 
   if (params->frame_number == 1)
-    cmd->dw16.frame_byte_count -= 32;
+    cmd->dw16.frame_byte_count = 32;
 
   if (params->frame_update->two_prev_frame_flag == 1 && params->frame_number == 1)
     cmd->dw16.frame_byte_count = 0;
@@ -2751,7 +2792,7 @@ media_set_curbe_vp8_brc_update_g7(struct encode_state *encode_state,
   cmd->dw18.qp_delta_plane2 = quant_params->quantization_index_delta[3];
   cmd->dw18.qp_delta_plane3 = quant_params->quantization_index_delta[2];
 
-  cmd->dw19.qp = 0;
+  cmd->dw19.qp = quant_params->quantization_index[0];
   cmd->dw19.qp_delta_plane4 = quant_params->quantization_index_delta[1];
   cmd->dw19.reserved = 9;
 
@@ -2777,6 +2818,7 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
 				      BRC_UPDATE_SURFACE_PARAMS_VP8 *surface_params)
 {
   BRC_UPDATE_CONTEXT *ctx = &encoder_context->brc_update_context;
+  ME_CONTEXT *me_context = &encoder_context->me_context;
   MEDIA_GPE_CTX *gpe_ctx = &ctx->gpe_context;
   SURFACE_SET_PARAMS params;
   BYTE *binding_surface_state_buf = NULL;
@@ -2881,7 +2923,7 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.format = STATE_SURFACEFORMAT_R8_UNORM;
   params.binding_table_offset = BINDING_TABLE_OFFSET (6);
   params.surface_state_offset = SURFACE_STATE_OFFSET (6);
-  params.surface_2d = &brc_init_reset_ctx->brc_distortion;
+  params.surface_2d = &me_context->mv_distortion_surface_4x_me;
   media_add_surface_state (&params);
 
   /* 7 BRC Constant buffer */
@@ -3012,7 +3054,7 @@ media_set_curbe_vp8_me_g7 (VP8_ME_CURBE_PARAMS * params)
   cmd->dw4.picture_width = HEIGHT_IN_MACROBLOCKS (params->frame_width / scale_factor);
 
 
-  cmd->dw5.sub_mb_part_mask = 0x3f;
+  cmd->dw5.sub_mb_part_mask = 0x77;
   cmd->dw5.subpel_mode = 3;
 
   cmd->dw6.ref_height = MIN(40, MAX(20, ALIGN(params->frame_field_height / scale_factor, 16)));
@@ -3020,6 +3062,7 @@ media_set_curbe_vp8_me_g7 (VP8_ME_CURBE_PARAMS * params)
 
   cmd->dw7.me_modes = me_mode;
   cmd->dw7.max_vmvr = 0x7fc;
+  cmd->dw7.reserved0 = 0x28;
 }
 
 VOID
@@ -3079,8 +3122,9 @@ media_surface_state_vp8_me_g7 (MEDIA_ENCODER_CTX * encoder_context,
     encoder_context->media_add_surface_state (&params);
   }
 
-#if 0 // FIXME: not used ??? double-check it
   if (!me_surface_params->me_16x_in_use) {
+    ME_CONTEXT *me_context = &encoder_context->me_context;
+#if 0
     //me distortion
     params = surface_set_params_init;
     params.binding_surface_state.bo =
@@ -3094,22 +3138,22 @@ media_surface_state_vp8_me_g7 (MEDIA_ENCODER_CTX * encoder_context,
     params.surface_state_offset = SURFACE_STATE_OFFSET (2);
     params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
     encoder_context->media_add_surface_state (&params);
-
+#endif
     //me brc distortion
     params = surface_set_params_init;
     params.binding_surface_state.bo =
       me_gpe_ctx->surface_state_binding_table.res.bo;
     params.binding_surface_state.buf = binding_surface_state_buf;
     params.surface_is_2d = 1;
+    params.media_block_raw = 1;
     params.vert_line_stride_offset = 0;
     params.vert_line_stride = 0;
     params.format = STATE_SURFACEFORMAT_R8_UNORM;
     params.binding_table_offset = BINDING_TABLE_OFFSET (9);
     params.surface_state_offset = SURFACE_STATE_OFFSET (9);
-    params.surface_2d = &me_ctx->mv_distortion_surface_4x_me;
+    params.surface_2d = &me_context->mv_distortion_surface_4x_me;
     encoder_context->media_add_surface_state (&params);
   }
-#endif
 
   //current picture
   params = surface_set_params_init;
@@ -3227,4 +3271,17 @@ VOID
 media_hw_context_init_g7(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx)
 {
   hw_ctx->vp8_me_mv_data_size_multiplier = 3;
+}
+
+VOID
+media_init_brc_distortion_buffer_g7 (MEDIA_ENCODER_CTX * encoder_context)
+{
+  ME_CONTEXT *me_context = &encoder_context->me_context;
+  BYTE *me_distortion_data = NULL;
+
+  me_distortion_data = (BYTE *) media_map_buffer_obj (me_context->mv_distortion_surface_4x_me.bo);
+  media_drv_memset (me_distortion_data,
+		    me_context->mv_distortion_surface_4x_me.pitch *
+		    me_context->mv_distortion_surface_4x_me.height);
+  media_unmap_buffer_obj (me_context->mv_distortion_surface_4x_me.bo);
 }
