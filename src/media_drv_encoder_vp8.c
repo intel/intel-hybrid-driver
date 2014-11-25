@@ -645,12 +645,13 @@ media_alloc_resource_me (VADriverContextP ctx,
 			 MEDIA_ENCODER_CTX * encoder_context)
 {
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+  MEDIA_HW_CONTEXT *hw_ctx = &drv_ctx->hw_context;
   ME_CONTEXT *me_context = &encoder_context->me_context;
 
   me_context->mv_data_surface_4x_me.width =
     ALIGN ((encoder_context->down_scaled_width_mb4x * 32), 64);
   me_context->mv_data_surface_4x_me.height =
-    encoder_context->down_scaled_height_mb4x * 4;
+    encoder_context->down_scaled_height_mb4x * 4 * hw_ctx->vp8_me_mv_data_size_multiplier;
   me_context->mv_data_surface_4x_me.surface_array_spacing = 0x1;
   me_context->mv_data_surface_4x_me.tiling = I915_TILING_NONE;
   me_context->mv_data_surface_4x_me.pitch =
@@ -658,15 +659,15 @@ media_alloc_resource_me (VADriverContextP ctx,
   media_allocate_resource (&me_context->mv_data_surface_4x_me,
 			   drv_ctx->drv_data.bufmgr,
 			   (const BYTE *) "mv data surface 4x_me",
-			   (me_context->mv_data_surface_4x_me.width *
+			   (me_context->mv_data_surface_4x_me.pitch *
 			    me_context->mv_data_surface_4x_me.height), 4096);
   MEDIA_DRV_ASSERT (me_context->mv_data_surface_4x_me.bo);
 
 
   me_context->mv_distortion_surface_4x_me.width =
-    encoder_context->down_scaled_width_mb4x * 8;
+    ALIGN ((encoder_context->down_scaled_width_mb4x * 8), 64);
   me_context->mv_distortion_surface_4x_me.height =
-    ALIGN ((encoder_context->down_scaled_height_mb4x * 4 * 4), 8);
+    ALIGN ((encoder_context->down_scaled_height_mb4x * 4), 8);  // TODO: check it when enable DS+HME for HSW
   me_context->mv_distortion_surface_4x_me.surface_array_spacing = 0x1;
   me_context->mv_distortion_surface_4x_me.tiling = I915_TILING_NONE;
   me_context->mv_distortion_surface_4x_me.pitch =
@@ -674,21 +675,23 @@ media_alloc_resource_me (VADriverContextP ctx,
   media_allocate_resource (&me_context->mv_distortion_surface_4x_me,
 			   drv_ctx->drv_data.bufmgr,
 			   (const BYTE *) "mv distortion surface 4x_me",
-			   0x1000, 4096);
+			   (me_context->mv_distortion_surface_4x_me.pitch *
+			    me_context->mv_distortion_surface_4x_me.height), 4096);
   MEDIA_DRV_ASSERT (me_context->mv_distortion_surface_4x_me.bo);
 
   me_context->mv_data_surface_16x_me.width =
-    encoder_context->down_scaled_width_mb16x * 32;
+    ALIGN ((encoder_context->down_scaled_width_mb16x * 32), 64);
   me_context->mv_data_surface_16x_me.height =
-    encoder_context->down_scaled_height_mb16x * 4;
+    encoder_context->down_scaled_height_mb16x * 4 * hw_ctx->vp8_me_mv_data_size_multiplier;
   me_context->mv_data_surface_16x_me.surface_array_spacing = 0x1;
   me_context->mv_data_surface_16x_me.tiling = I915_TILING_NONE;
   me_context->mv_data_surface_16x_me.pitch =
     ALIGN (me_context->mv_data_surface_16x_me.width, 64);
   media_allocate_resource (&me_context->mv_data_surface_16x_me,
 			   drv_ctx->drv_data.bufmgr,
-			   (const BYTE *) "mv data surface 16x_me", 0x1000,
-			   4096);
+			   (const BYTE *) "mv data surface 16x_me",
+			   (me_context->mv_data_surface_16x_me.pitch *
+			    me_context->mv_data_surface_16x_me.height), 4096);
   MEDIA_DRV_ASSERT (me_context->mv_data_surface_16x_me.bo);
 
 }

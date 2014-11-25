@@ -4514,7 +4514,7 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   MEDIA_GPE_CTX *scaling_gpe_ctx = &scaling_ctx->gpe_context;
   BYTE *binding_surface_state_buf = NULL;
   binding_surface_state_buf =
-    (CHAR *)
+    (BYTE *)
     media_map_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.
 			  res.bo);
   //input buffer
@@ -5057,4 +5057,10 @@ media_encode_init_brc_update_constant_data_vp8_g75(BRC_UPDATE_CONSTANT_DATA_PARA
   pbuffer += sizeof(brc_skip_mv_threshold_table_vp8_g75);
 
   media_unmap_buffer_obj (params->brc_update_constant_data->bo);
+}
+
+VOID
+media_hw_context_init_g75(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx)
+{
+  hw_ctx->vp8_me_mv_data_size_multiplier = 1;
 }

@@ -1264,3 +1264,9 @@ VOID media_surface_state_vp8_mbpak_g8 (MEDIA_ENCODER_CTX * encoder_context,
   media_unmap_buffer_obj (mbpak_gpe_ctx->surface_state_binding_table.res.bo);
 
 }
+
+VOID
+media_hw_context_init_g8(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx)
+{
+  hw_ctx->vp8_me_mv_data_size_multiplier = 1;
+}
