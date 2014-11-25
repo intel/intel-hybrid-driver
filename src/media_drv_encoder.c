@@ -474,7 +474,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   SCALING_CURBE_PARAMS scaling_curbe_params;
   MEDIA_DRV_CONTEXT *drv_ctx = ctx->pDriverData;
   SCALING_CONTEXT *scaling_ctx = &encoder_context->scaling_context;
-  MEDIA_RESOURCE *scaling_input_surface, *scaling_output_surface, surface_2d;
+  MEDIA_RESOURCE *scaling_input_surface, *scaling_output_surface, surface_2d, surface_2d_out;
   struct object_surface *obj_surface;
   MEDIA_BATCH_BUFFER *batch;
   UINT input_width, input_height, output_width, output_height;
@@ -486,6 +486,7 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
     (VAEncSequenceParameterBufferVP8 *) encode_state->seq_param_ext->buffer;
   VAEncPictureParameterBufferVP8 *pic_param =
     (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
+  MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
   pic_coding_type = pic_param->pic_flags.bits.frame_type;
   if (!phase_16x)
     scaling_gpe_ctx->surface_state_binding_table =
@@ -501,8 +502,14 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
 	ALIGN ((seq_param->frame_width / SCALE_FACTOR_4x), 16);
       scaling_curbe_params.input_pic_height =
 	ALIGN ((seq_param->frame_height / SCALE_FACTOR_4x), 16);
-      scaling_input_surface = &scaling_ctx->scaled_4x_surface;
-      scaling_output_surface = &scaling_ctx->scaled_16x_surface;
+      vp8_surface = encode_state->reconstructed_object->private_data;
+      obj_surface = vp8_surface->scaled_4x_surface_obj;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
+      scaling_input_surface = &surface_2d;
+      vp8_surface = encode_state->reconstructed_object->private_data;
+      obj_surface = vp8_surface->scaled_16x_surface_obj;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d_out, obj_surface);
+      scaling_output_surface = &surface_2d_out;
       input_width = encoder_context->down_scaled_width_mb4x;
       input_height = encoder_context->down_scaled_height_mb4x;
       output_width = encoder_context->down_scaled_width_mb16x;
@@ -517,7 +524,10 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
       obj_surface = encode_state->input_yuv_object;
       OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
       scaling_input_surface = &surface_2d;
-      scaling_output_surface = &scaling_ctx->scaled_4x_surface;
+      vp8_surface = encode_state->reconstructed_object->private_data;
+      obj_surface = vp8_surface->scaled_4x_surface_obj;
+      OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d_out, obj_surface);
+      scaling_output_surface = &surface_2d_out;
       input_width = seq_param->frame_width;
       input_height = seq_param->frame_height;
       output_width = encoder_context->down_scaled_width_mb4x;
@@ -767,14 +777,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
 
       if (encoder_context->init_brc_distortion_buffer &&
 	  mbenc_i_frame_dist_in_use) {
-	  BRC_INIT_RESET_CONTEXT *brc_init_reset_context = &encoder_context->brc_init_reset_context;
-	  BYTE *brc_distortion_data = NULL;
-
-	  brc_distortion_data = (BYTE *) media_map_buffer_obj (brc_init_reset_context->brc_distortion.bo);
-	  media_drv_memset (brc_distortion_data,
-			    brc_init_reset_context->brc_distortion.pitch *
-			    brc_init_reset_context->brc_distortion.height);
-	  media_unmap_buffer_obj (brc_init_reset_context->brc_distortion.bo);
+	  encoder_context->initialize_brc_distortion_buffer(encoder_context);
       }
     }
 

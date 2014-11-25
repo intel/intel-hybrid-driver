@@ -4526,13 +4526,10 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
   params.media_block_raw = 1;
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;
-  params.format = STATE_SURFACEFORMAT_R8_UNORM;  // FIXME: 32 ???
+  params.format = STATE_SURFACEFORMAT_R32_UNORM;
   params.binding_table_offset = BINDING_TABLE_OFFSET (0);
   params.surface_state_offset = SURFACE_STATE_OFFSET (0);
   params.surface_2d = &scaling_sutface_params->scaling_input_surface;
-  params.surface_2d->width = ALIGN (scaling_sutface_params->input_width, 16);
-  params.surface_2d->height =
-    ALIGN (scaling_sutface_params->input_height, 16);
   encoder_context->media_add_surface_state (&params);
 
   //destination
@@ -5063,4 +5060,17 @@ VOID
 media_hw_context_init_g75(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx)
 {
   hw_ctx->vp8_me_mv_data_size_multiplier = 1;
+}
+
+VOID
+media_init_brc_distortion_buffer_g75 (MEDIA_ENCODER_CTX * encoder_context)
+{
+  BRC_INIT_RESET_CONTEXT *brc_init_reset_context = &encoder_context->brc_init_reset_context;
+  BYTE *brc_distortion_data = NULL;
+
+  brc_distortion_data = (BYTE *) media_map_buffer_obj (brc_init_reset_context->brc_distortion.bo);
+  media_drv_memset (brc_distortion_data,
+		    brc_init_reset_context->brc_distortion.pitch *
+		    brc_init_reset_context->brc_distortion.height);
+  media_unmap_buffer_obj (brc_init_reset_context->brc_distortion.bo);
 }

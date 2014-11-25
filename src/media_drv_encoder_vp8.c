@@ -730,7 +730,7 @@ media_encoder_context_params_init (MEDIA_DRV_CONTEXT * drv_ctx,
   if (encoder_context->hme_supported == 1)
     {
       encoder_context->scaling_enabled = 1;
-      encoder_context->me_16x_supported = 1;
+      // encoder_context->me_16x_supported = 1;
     }
   encoder_context->mbenc_chroma_kernel = TRUE;
   encoder_context->mbenc_curbe_set_brc_update = FALSE;
@@ -1168,6 +1168,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	mediadrv_gen_media_vfe_state_cmd;
       encoder_context->media_object_walker_cmd=
         media_object_walker_cmd;
+      encoder_context->initialize_brc_distortion_buffer = media_init_brc_distortion_buffer_g75;
     }
   else if (IS_GEN7 (drv_ctx->drv_data.device_id))
     {
@@ -1214,6 +1215,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	mediadrv_gen_media_vfe_state_cmd;
       encoder_context->media_object_walker_cmd=
         media_object_walker_cmd;
+      encoder_context->initialize_brc_distortion_buffer = media_init_brc_distortion_buffer_g7;
     }
   else if (IS_GEN8 (drv_ctx->drv_data.device_id))
     {
@@ -1250,6 +1252,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 	mediadrv_gen_media_vfe_state_cmd_g8;
       encoder_context->media_object_walker_cmd=
         media_object_walker_cmd_g8;
+      encoder_context->initialize_brc_distortion_buffer = media_init_brc_distortion_buffer_g75;
       }
   else
     {

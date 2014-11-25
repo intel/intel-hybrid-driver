@@ -230,6 +230,7 @@ typedef struct media_encoder_ctx
   void (*surface_state_vp8_me) (struct media_encoder_ctx * encoder_context,
 				struct encode_state *encode_state,
 				ME_SURFACE_PARAMS_VP8 * me_sutface_params);
+  void (*initialize_brc_distortion_buffer) (struct media_encoder_ctx * encoder_context);
 
 } MEDIA_ENCODER_CTX;
 
