@@ -1263,15 +1263,6 @@ media_set_curbe_vp8_mbpak_g7 (struct encode_state *encode_state,
   UINT shift_factor, mul_factor;
   UINT16 y_quanta_ac_idx, y_quanta_dc_idx, uv_quanta_dc_idx,
     uv_quanta_ac_idx, y2_quanta_ac_idx, y2_quanta_dc_idx;
-  /* FIXME: hard-coded value, double check it */
-  pic_params->ref_lf_delta[0] = 8;
-  pic_params->ref_lf_delta[1] = 10;
-  pic_params->ref_lf_delta[2] = 30;
-  pic_params->ref_lf_delta[3] = 20;
-  pic_params->mode_lf_delta[0] = 6;
-  pic_params->mode_lf_delta[1] = 14;
-  pic_params->mode_lf_delta[2] = 22;
-  pic_params->mode_lf_delta[3] = 18;
 
   // qIndex should be the sum of base and delta qp values.
   y_quanta_ac_idx = quant_params->quantization_index[0];	/* Use entry 0 as for BDW segmentation is disabled */
@@ -2589,7 +2580,7 @@ media_set_curbe_vp8_brc_init_reset_g7(struct encode_state *encode_state,
   cmd->dw10.frame_height = params->frame_height;
   cmd->dw10.avbr_accuracy = 30;
   cmd->dw11.avbr_convergence = 150;
-  cmd->dw11.min_qp = 1; // hardcoded to match
+  cmd->dw11.min_qp = 9; // hardcoded to match
   cmd->dw12.max_qp = 106; // hardcoded to match
   cmd->dw12.level_qp = 60; // hardcoded to match kernel cmodel
 

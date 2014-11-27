@@ -719,7 +719,10 @@ media_encoder_context_params_init (MEDIA_DRV_CONTEXT * drv_ctx,
   encoder_context->use_hw_scoreboard = 1;
   encoder_context->scaling_enabled = 0;
   encoder_context->me_16x_supported = 0;
-  encoder_context->hme_supported = 0;
+  if (IS_GEN7 (drv_ctx->drv_data.device_id))
+    encoder_context->hme_supported = 1;
+  else
+    encoder_context->hme_supported = 0;
   encoder_context->kernel_dump_enable = 0;
   encoder_context->brc_enabled =
     (encoder_context->internal_rate_mode == HB_BRC_CBR
