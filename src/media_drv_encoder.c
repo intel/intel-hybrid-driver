@@ -919,7 +919,7 @@ mediadrv_gen_encode_brc_init_reset(VADriverContextP ctx,
   curbe_params.brc_initted = encoder_context->brc_initted;
   curbe_params.brc_mb_enabled = encoder_context->brc_mb_enabled;
   curbe_params.frame_rate = encoder_context->frame_rate;
-  curbe_params.rate_control_mode = encoder_context->rate_control_mode;
+  curbe_params.rate_control_mode = encoder_context->internal_rate_mode;
   curbe_params.target_bit_rate = encoder_context->target_bit_rate;
   curbe_params.max_bit_rate = encoder_context->max_bit_rate;
   curbe_params.min_bit_rate = encoder_context->min_bit_rate;
@@ -1671,7 +1671,7 @@ media_encoder_init_priv_surfaces(VADriverContextP ctx,
   vp8_surface = media_drv_alloc_memory(sizeof(MEDIA_ENCODER_VP8_SURFACE));
   vp8_surface->ctx = ctx;
 
-  if (encoder_context->brc_enabled) {
+  if (encoder_context->scaling_enabled) {
     down_scaled_width4x = encoder_context->down_scaled_width_mb4x * 16;
     down_scaled_height4x = encoder_context->down_scaled_height_mb4x * 16;
     media_CreateSurfaces (ctx,
@@ -1767,10 +1767,12 @@ VOID
 media_scaling_kernel_pic_resource_dinit (MEDIA_ENCODER_CTX * encoder_context)
 {
   SCALING_CONTEXT *scaling_ctx = &encoder_context->scaling_context;
+  MEDIA_GPE_CTX *scaling_gpe_ctx = &scaling_ctx->gpe_context;
   media_free_binding_surface_state
     (&scaling_ctx->surface_state_binding_table_scaling);
   media_free_binding_surface_state
     (&scaling_ctx->surface_state_binding_table_scaling_16x);
+  scaling_gpe_ctx->surface_state_binding_table.res.bo = NULL;
 }
 
 VOID
