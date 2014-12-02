@@ -69,8 +69,8 @@ struct object_surface
 {
   struct object_base base;
   VASurfaceStatus status;
-  VASubpictureID subpic[MEDIA_GEN_MAX_SUBPIC_FORMATS];
-  struct object_subpic *obj_subpic[MEDIA_GEN_MAX_SUBPIC_FORMATS];
+  VASubpictureID subpic[MEDIA_GEN_MAX_SUBPIC];
+  struct object_subpic *obj_subpic[MEDIA_GEN_MAX_SUBPIC];
   UINT subpic_render_idx;
 
   INT width;			/* the pitch of plane 0 in bytes in horizontal direction */

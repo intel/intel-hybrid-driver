@@ -214,6 +214,13 @@ media_put_surface_dri(
 
   media_render_put_surface(ctx, obj_surface, src_rect, dst_rect, pp_flag);
 
+  for (i = 0; i < MEDIA_GEN_MAX_SUBPIC; i++) {
+    if (obj_surface->obj_subpic[i] != NULL) {
+      obj_surface->subpic_render_idx = i;
+      media_render_put_subpicture(ctx, obj_surface, src_rect, dst_rect);
+    }
+  }
+
 
   dri_vtable->swap_buffer(ctx, dri_drawable);
 

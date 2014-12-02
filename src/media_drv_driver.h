@@ -257,4 +257,7 @@ VOID
 media_destroy_context (struct object_heap *heap, struct object_base *obj);
 VOID media_destroy_buffer (struct object_heap *heap, struct object_base *obj);
 VOID media_release_buffer_store (struct buffer_store **ptr);
+
+void media_destroy_subpic (struct object_heap *heap, struct object_base *obj);
+
 #endif

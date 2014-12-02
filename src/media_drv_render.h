@@ -31,6 +31,10 @@
 #define _MEDIA__DRIVER_RENDER_H
 
 #define NUM_RENDER_KERNEL       3
+
+#define MEDIA_SURFACEFORMAT_B8G8R8A8_UNORM                 0x0C0
+#define MEDIA_SURFACEFORMAT_R8G8B8A8_UNORM                 0x0C7
+
 struct media_render_kernel
 {
   CHAR *name;
@@ -137,6 +141,10 @@ struct media_render_state
                              unsigned int flags);
   void (*render_terminate)(VADriverContextP ctx);
 
+  void (*render_put_subpicture)(VADriverContextP ctx, struct object_surface *,
+                                const VARectangle *src_rec,
+                                const VARectangle *dst_rect);
+
 };
 
 
@@ -149,6 +157,14 @@ media_render_put_surface(
     const VARectangle *src_rect,
     const VARectangle *dst_rect,
     unsigned int       flags
+);
+
+extern void
+media_render_put_subpicture(
+    VADriverContextP   ctx,
+    struct object_surface *obj_surface,
+    const VARectangle *src_rect,
+    const VARectangle *dst_rect
 );
 
 BOOL media_render_init (VADriverContextP ctx);

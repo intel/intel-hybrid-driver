@@ -146,6 +146,17 @@ format_to_fourcc (UINT format)
 }
 
 VAStatus
+media_DestroyImage (VADriverContextP ctx, VAImageID image);
+
+VAStatus
+media_CreateBuffer (VADriverContextP ctx, VAContextID context,	/* in */
+                    VABufferType type,   /* in */
+                    UINT size,           /* in */
+                    UINT num_elements,   /* in */
+                    VOID * data,         /* in */
+                    VABufferID * buf_id);    /* out */
+
+VAStatus
 media_QueryVideoProcPipelineCaps (VADriverContextP ctx, VAContextID context, VABufferID * filters, UINT num_filters, VAProcPipelineCaps * pipeline_cap	/* out */
   )
 {
@@ -383,13 +394,82 @@ media_QueryDisplayAttributes (VADriverContextP ctx, VADisplayAttribute * attribs
   return VA_STATUS_SUCCESS;
 }
 
+
+/* List of supported subpicture formats */
+typedef struct {
+  unsigned int        type;
+  unsigned int        format;
+  VAImageFormat       va_format;
+  unsigned int        va_flags;
+} media_subpic_format_map_t;
+
+#define COMMON_SUBPICTURE_FLAGS                 \
+    (VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD| \
+     VA_SUBPICTURE_GLOBAL_ALPHA)
+
+enum {
+  MEDIA_SURFACETYPE_RGBA = 1,
+  MEDIA_SURFACETYPE_YUV,
+  MEDIA_SURFACETYPE_INDEXED
+};
+static const media_subpic_format_map_t
+media_subpic_formats_map[2] = {
+    { MEDIA_SURFACETYPE_RGBA, MEDIA_SURFACEFORMAT_B8G8R8A8_UNORM,
+      { VA_FOURCC_BGRA, VA_LSB_FIRST, 32,
+        32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 },
+      COMMON_SUBPICTURE_FLAGS },
+    { MEDIA_SURFACETYPE_RGBA, MEDIA_SURFACEFORMAT_R8G8B8A8_UNORM,
+      { VA_FOURCC_RGBA, VA_LSB_FIRST, 32,
+        32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 },
+      COMMON_SUBPICTURE_FLAGS },
+};
+
+static const media_subpic_format_map_t *
+get_subpic_format(const VAImageFormat *va_format)
+{
+  unsigned int i;
+
+  for (i = 0; media_subpic_formats_map[i].type != 0; i++) {
+    const media_subpic_format_map_t * const m = &media_subpic_formats_map[i];
+    if (m->va_format.fourcc == va_format->fourcc &&
+        (m->type == MEDIA_SURFACETYPE_RGBA ?
+         (m->va_format.byte_order == va_format->byte_order &&
+          m->va_format.red_mask   == va_format->red_mask   &&
+          m->va_format.green_mask == va_format->green_mask &&
+          m->va_format.blue_mask  == va_format->blue_mask  &&
+          m->va_format.alpha_mask == va_format->alpha_mask) : 1))
+       return m;
+  }
+  return NULL;
+}
+
+
 VAStatus
 media_DeassociateSubpicture (VADriverContextP ctx,
 			     VASubpictureID subpicture,
 			     VASurfaceID * target_surfaces, INT num_surfaces)
 {
-  return VA_STATUS_SUCCESS;
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_subpic *obj_subpic = SUBPIC(subpicture);
+  int i, j;
 
+  if (!obj_subpic)
+      return VA_STATUS_ERROR_INVALID_SUBPICTURE;
+
+  for (i = 0; i < num_surfaces; i++) {
+    struct object_surface *obj_surface = SURFACE(target_surfaces[i]);
+    if (!obj_surface)
+      return VA_STATUS_ERROR_INVALID_SURFACE;
+
+    for(j = 0; j < MEDIA_GEN_MAX_SUBPIC; j ++){
+      if (obj_surface->subpic[j] == subpicture) {
+        obj_surface->subpic[j] = VA_INVALID_ID;
+        obj_surface->obj_subpic[j] = NULL;
+        break;
+      }
+    }
+  }
+  return VA_STATUS_SUCCESS;
 }
 
 VAStatus
@@ -403,15 +483,64 @@ media_AssociateSubpicture (VADriverContextP ctx, VASubpictureID subpicture, VASu
 			    */
 			   UINT flags)
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_subpic *obj_subpic = SUBPIC(subpicture);
+  int i, j;
 
+  if (!obj_subpic)
+    return VA_STATUS_ERROR_INVALID_SUBPICTURE;
+
+  if (obj_subpic->obj_image == NULL)
+    return VA_STATUS_ERROR_INVALID_SUBPICTURE;
+
+  obj_subpic->src_rect.x      = src_x;
+  obj_subpic->src_rect.y      = src_y;
+  obj_subpic->src_rect.width  = src_width;
+  obj_subpic->src_rect.height = src_height;
+  obj_subpic->dst_rect.x      = dest_x;
+  obj_subpic->dst_rect.y      = dest_y;
+  obj_subpic->dst_rect.width  = dest_width;
+  obj_subpic->dst_rect.height = dest_height;
+  obj_subpic->flags           = flags;
+
+  for (i = 0; i < num_surfaces; i++) {
+    struct object_surface *obj_surface = SURFACE(target_surfaces[i]);
+    if (!obj_surface)
+      return VA_STATUS_ERROR_INVALID_SURFACE;
+
+    for(j = 0; j < MEDIA_GEN_MAX_SUBPIC; j ++){
+      if(obj_surface->subpic[j] == VA_INVALID_ID){
+        assert(obj_surface->obj_subpic[j] == NULL);
+        obj_surface->subpic[j] = subpicture;
+        obj_surface->obj_subpic[j] = obj_subpic;
+        break;
+      }
+    }
+
+    if(j == MEDIA_GEN_MAX_SUBPIC){
+      return VA_STATUS_ERROR_MAX_NUM_EXCEEDED;
+    }
+
+  }
   return VA_STATUS_SUCCESS;
-
 }
 
 VAStatus
 media_SetSubpictureGlobalAlpha (VADriverContextP ctx,
 				VASubpictureID subpicture, float global_alpha)
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_subpic *obj_subpic = SUBPIC(subpicture);
+
+  if(global_alpha > 1.0 || global_alpha < 0.0){
+    return VA_STATUS_ERROR_INVALID_PARAMETER;
+  }
+
+  if (!obj_subpic)
+    return VA_STATUS_ERROR_INVALID_SUBPICTURE;
+
+  obj_subpic->global_alpha  = global_alpha;
+
   return VA_STATUS_SUCCESS;
 }
 
@@ -436,13 +565,44 @@ media_SetSubpictureImage (VADriverContextP ctx,
 VAStatus
 media_DestroySubpicture (VADriverContextP ctx, VASubpictureID subpicture)
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_subpic *obj_subpic = SUBPIC(subpicture);
 
+  if (!obj_subpic)
+    return VA_STATUS_ERROR_INVALID_SUBPICTURE;
+
+  media_destroy_subpic(&drv_ctx->subpic_heap, (struct object_base *)obj_subpic);
   return VA_STATUS_SUCCESS;
 }
 
 VAStatus
 media_CreateSubpicture (VADriverContextP ctx, VAImageID image, VASubpictureID * subpicture)	/* out */
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  VASubpictureID subpicID = NEW_SUBPIC_ID()
+  struct object_subpic *obj_subpic = SUBPIC(subpicID);
+  struct object_image *obj_image;
+
+  if (!obj_subpic)
+    return VA_STATUS_ERROR_ALLOCATION_FAILED;
+
+  obj_image = IMAGE(image);
+  if (!obj_image)
+    return VA_STATUS_ERROR_INVALID_IMAGE;
+
+  const media_subpic_format_map_t * const m = get_subpic_format(&obj_image->image.format);
+  if (!m)
+    return VA_STATUS_ERROR_UNKNOWN; /* XXX: VA_STATUS_ERROR_UNSUPPORTED_FORMAT? */
+
+  *subpicture = subpicID;
+  obj_subpic->image  = image;
+  obj_subpic->obj_image = obj_image;
+  obj_subpic->format = m->format;
+  obj_subpic->width  = obj_image->image.width;
+  obj_subpic->height = obj_image->image.height;
+  obj_subpic->pitch  = obj_image->image.pitches[0];
+  obj_subpic->bo     = obj_image->bo;
+  obj_subpic->global_alpha = 1.0;
 
   return VA_STATUS_SUCCESS;
 }
@@ -486,8 +646,77 @@ media_SetImagePalette (VADriverContextP ctx, VAImageID image, BYTE * palette)
 VAStatus
 media_CreateImage (VADriverContextP ctx, VAImageFormat * format, INT width, INT height, VAImage * out_image)	/* out */
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_image *obj_image;
+  VAStatus va_status = VA_STATUS_ERROR_OPERATION_FAILED;
+  VAImageID image_id;
+  unsigned int size, awidth, aheight;
 
+  out_image->image_id = VA_INVALID_ID;
+  out_image->buf      = VA_INVALID_ID;
+
+  image_id = NEW_IMAGE_ID();
+  if (image_id == VA_INVALID_ID)
+    return VA_STATUS_ERROR_ALLOCATION_FAILED;
+
+  obj_image = IMAGE(image_id);
+  if (!obj_image)
+    return VA_STATUS_ERROR_ALLOCATION_FAILED;
+  obj_image->bo         = NULL;
+  obj_image->palette    = NULL;
+  obj_image->derived_surface = VA_INVALID_ID;
+
+  VAImage * const image = &obj_image->image;
+  image->image_id       = image_id;
+  image->buf            = VA_INVALID_ID;
+
+  awidth = ALIGN(width, 16);
+
+  aheight = ALIGN(height, 16);
+  size    = awidth * aheight;
+
+  image->num_palette_entries = 0;
+  image->entry_bytes         = 0;
+  memset(image->component_order, 0, sizeof(image->component_order));
+
+  switch (format->fourcc) {
+  case VA_FOURCC_BGRA:
+  case VA_FOURCC_RGBA:
+    image->num_planes = 1;
+    image->pitches[0] = awidth * 4;
+    image->offsets[0] = 0;
+    image->data_size  = image->offsets[0] + image->pitches[0] * aheight;
+    break;
+  default:
+    goto image_error;
+  }
+
+  va_status = media_CreateBuffer(ctx, 0, VAImageBufferType,
+                                image->data_size, 1, NULL, &image->buf);
+  if (va_status != VA_STATUS_SUCCESS)
+    goto image_error;
+
+  struct object_buffer *obj_buffer = BUFFER(image->buf);
+
+  if (!obj_buffer ||
+      !obj_buffer->buffer_store ||
+      !obj_buffer->buffer_store->bo)
+    return VA_STATUS_ERROR_ALLOCATION_FAILED;
+
+  obj_image->bo = obj_buffer->buffer_store->bo;
+  dri_bo_reference(obj_image->bo);
+
+  image->image_id             = image_id;
+  image->format               = *format;
+  image->width                = width;
+  image->height               = height;
+
+  *out_image                  = *image;
   return VA_STATUS_SUCCESS;
+
+image_error:
+  media_DestroyImage(ctx, image_id);
+  return va_status;
 }
 
 VOID

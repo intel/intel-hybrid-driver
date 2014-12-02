@@ -60,6 +60,10 @@
 
 #define NEW_IMAGE_ID() object_heap_allocate(&drv_ctx->image_heap);
 #define IMAGE(id) ((struct object_image *)object_heap_lookup(&drv_ctx->image_heap, id))
+
+#define NEW_SUBPIC_ID() object_heap_allocate(&drv_ctx->subpic_heap);
+#define SUBPIC(id) ((struct object_subpic *)object_heap_lookup(&drv_ctx->subpic_heap, id))
+
 struct coded_buffer_segment
 {
   VACodedBufferSegment base;
@@ -83,6 +87,22 @@ struct buffer_store
   dri_bo *bo;
   INT ref_count;
   INT num_elements;
+};
+
+struct object_subpic
+{
+  struct object_base base;
+  VAImageID image;
+  struct object_image *obj_image;
+  VARectangle src_rect;
+  VARectangle dst_rect;
+  unsigned int format;
+  int width;
+  int height;
+  int pitch;
+  float global_alpha;
+  dri_bo *bo;
+  unsigned int flags;
 };
 
 struct object_image

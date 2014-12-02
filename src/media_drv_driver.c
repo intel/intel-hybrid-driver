@@ -182,6 +182,10 @@ media_driver_data_init (VADriverContextP ctx)
 			sizeof (struct object_image), IMAGE_ID_OFFSET))
     goto err_image_heap;
 
+  if (object_heap_init (&drv_ctx->subpic_heap,
+                        sizeof (struct object_subpic), IMAGE_ID_OFFSET))
+    goto err_subpic_heap;
+
   drv_ctx->batch =
     media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   drv_ctx->pp_batch =
@@ -192,6 +196,9 @@ media_driver_data_init (VADriverContextP ctx)
   media_drv_mutex_init (&drv_ctx->pp_mutex);
 
   return true;
+
+err_subpic_heap:
+  object_heap_destroy(&drv_ctx->subpic_heap);
 
 err_image_heap:
   object_heap_destroy (&drv_ctx->buffer_heap);
@@ -347,6 +354,14 @@ media_destroy_buffer (struct object_heap *heap, struct object_base *obj)
   object_heap_free (heap, obj);
 }
 
+
+void
+media_destroy_subpic(struct object_heap *heap, struct object_base *obj)
+{
+  object_heap_free(heap, obj);
+}
+
+
 VOID
 media_driver_data_terminate (VADriverContextP ctx)
 {
@@ -371,4 +386,5 @@ media_driver_data_terminate (VADriverContextP ctx)
   media_destroy_heap (&drv_ctx->surface_heap, media_destroy_surface);
   media_destroy_heap (&drv_ctx->context_heap, media_destroy_context);
   media_destroy_heap (&drv_ctx->config_heap, media_destroy_config);
+  media_destroy_heap (&drv_ctx->subpic_heap, media_destroy_subpic);
 }

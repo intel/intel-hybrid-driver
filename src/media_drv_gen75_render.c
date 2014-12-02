@@ -66,6 +66,12 @@ static const uint32_t ps_kernel_static_gen7_haswell[][4] = {
 #include "shaders/render/exa_wm_write.g7b"
 };
 
+static const uint32_t ps_subpic_kernel_static_haswell[][4] = {
+#include "shaders/render/exa_wm_src_affine.g7b"
+#include "shaders/render/exa_wm_src_sample_argb.g7b"
+#include "shaders/render/exa_wm_write.g7b"
+};
+
 #define RENDER_SURFACE_STATE_SIZE      sizeof(struct gen7_surface_state)
 
 #define RENDER_SURFACE_STATE_OFFSET(index)     (RENDER_SURFACE_STATE_SIZE * index)
@@ -87,6 +93,13 @@ static struct media_render_kernel render_kernels_gen7_haswell[] = {
         sizeof(ps_kernel_static_gen7_haswell),
         NULL
     },
+    {
+        "PS_SUBPIC",
+        PS_SUBPIC_KERNEL,
+        ps_subpic_kernel_static_haswell,
+        sizeof(ps_subpic_kernel_static_haswell),
+        NULL
+    }
 
 };
 
@@ -1199,6 +1212,120 @@ gen7_render_emit_states(VADriverContextP ctx, int kernel)
     media_batchbuffer_end_atomic(batch);
 }
 
+static void
+i965_subpic_render_src_surfaces_state(VADriverContextP ctx,
+                                      struct object_surface *obj_surface)
+{
+    dri_bo *subpic_region;
+    unsigned int index = obj_surface->subpic_render_idx;
+    struct object_subpic *obj_subpic = obj_surface->obj_subpic[index];
+    struct object_image *obj_image = obj_subpic->obj_image;
+
+    subpic_region = obj_image->bo;
+    /*subpicture surface*/
+    i965_render_src_surface_state(ctx, 1, subpic_region, 0, obj_subpic->width, obj_subpic->height, obj_subpic->pitch, obj_subpic->format, 0);
+    i965_render_src_surface_state(ctx, 2, subpic_region, 0, obj_subpic->width, obj_subpic->height, obj_subpic->pitch, obj_subpic->format, 0);
+
+}
+
+static void
+gen7_subpicture_render_blend_state(VADriverContextP ctx)
+{
+    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+    struct media_render_state *render_state = &drv_ctx->render_state;
+    struct gen6_blend_state *blend_state;
+
+    dri_bo_unmap(render_state->cc.state);
+    dri_bo_map(render_state->cc.blend, 1);
+    assert(render_state->cc.blend->virtual);
+    blend_state = render_state->cc.blend->virtual;
+    memset(blend_state, 0, sizeof(*blend_state));
+    blend_state->blend0.dest_blend_factor = I965_BLENDFACTOR_INV_SRC_ALPHA;
+    blend_state->blend0.source_blend_factor = I965_BLENDFACTOR_SRC_ALPHA;
+    blend_state->blend0.blend_func = I965_BLENDFUNCTION_ADD;
+    blend_state->blend0.blend_enable = 1;
+    blend_state->blend1.post_blend_clamp_enable = 1;
+    blend_state->blend1.pre_blend_clamp_enable = 1;
+    blend_state->blend1.clamp_range = 0; /* clamp range [0, 1] */
+    dri_bo_unmap(render_state->cc.blend);
+}
+
+static void
+i965_subpic_render_upload_constants(VADriverContextP ctx,
+                                    struct object_surface *obj_surface)
+{
+    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+    struct media_render_state *render_state = &drv_ctx->render_state;
+    float *constant_buffer;
+    float global_alpha = 1.0;
+    unsigned int index = obj_surface->subpic_render_idx;
+    struct object_subpic *obj_subpic = obj_surface->obj_subpic[index];
+
+    if (obj_subpic->flags & VA_SUBPICTURE_GLOBAL_ALPHA) {
+        global_alpha = obj_subpic->global_alpha;
+    }
+
+    dri_bo_map(render_state->curbe.bo, 1);
+
+    assert(render_state->curbe.bo->virtual);
+    constant_buffer = render_state->curbe.bo->virtual;
+    *constant_buffer = global_alpha;
+
+    dri_bo_unmap(render_state->curbe.bo);
+}
+
+static void
+i965_subpic_render_upload_vertex(VADriverContextP ctx,
+                                 struct object_surface *obj_surface,
+                                 const VARectangle *output_rect)
+{
+    unsigned int index = obj_surface->subpic_render_idx;
+    struct object_subpic     *obj_subpic   = obj_surface->obj_subpic[index];
+    float tex_coords[4], vid_coords[4];
+    VARectangle dst_rect;
+
+    if (obj_subpic->flags & VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD)
+        dst_rect = obj_subpic->dst_rect;
+    else {
+        const float sx  = (float)output_rect->width  / obj_surface->orig_width;
+        const float sy  = (float)output_rect->height / obj_surface->orig_height;
+        dst_rect.x      = output_rect->x + sx * obj_subpic->dst_rect.x;
+        dst_rect.y      = output_rect->y + sy * obj_subpic->dst_rect.y;
+        dst_rect.width  = sx * obj_subpic->dst_rect.width;
+        dst_rect.height = sy * obj_subpic->dst_rect.height;
+    }
+
+    tex_coords[0] = (float)obj_subpic->src_rect.x / obj_subpic->width;
+    tex_coords[1] = (float)obj_subpic->src_rect.y / obj_subpic->height;
+    tex_coords[2] = (float)(obj_subpic->src_rect.x + obj_subpic->src_rect.width) / obj_subpic->width;
+    tex_coords[3] = (float)(obj_subpic->src_rect.y + obj_subpic->src_rect.height) / obj_subpic->height;
+
+    vid_coords[0] = dst_rect.x;
+    vid_coords[1] = dst_rect.y;
+    vid_coords[2] = (float)(dst_rect.x + dst_rect.width);
+    vid_coords[3] = (float)(dst_rect.y + dst_rect.height);
+
+    i965_fill_vertex_buffer(ctx, tex_coords, vid_coords);
+}
+
+static void
+gen7_subpicture_render_setup_states(
+    VADriverContextP   ctx,
+    struct object_surface *obj_surface,
+    const VARectangle *src_rect,
+    const VARectangle *dst_rect
+)
+{
+    i965_render_dest_surface_state(ctx, 0);
+    i965_subpic_render_src_surfaces_state(ctx, obj_surface);
+    gen7_render_sampler(ctx);
+    i965_render_cc_viewport(ctx);
+    gen7_render_color_calc_state(ctx);
+    gen7_subpicture_render_blend_state(ctx);
+    gen7_render_depth_stencil_state(ctx);
+    i965_subpic_render_upload_constants(ctx, obj_surface);
+    i965_subpic_render_upload_vertex(ctx, obj_surface, dst_rect);
+}
 
 static void
 gen7_render_put_surface(
@@ -1219,6 +1346,24 @@ gen7_render_put_surface(
     media_batchbuffer_flush(batch);
 }
 
+static void
+gen7_render_put_subpicture(
+    VADriverContextP   ctx,
+    struct object_surface *obj_surface,
+    const VARectangle *src_rect,
+    const VARectangle *dst_rect
+)
+{
+    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+    MEDIA_BATCH_BUFFER *batch = drv_ctx->render_batch;
+
+    gen7_render_initialize(ctx);
+    gen7_subpicture_render_setup_states(ctx, obj_surface, src_rect, dst_rect);
+    gen7_render_emit_states(ctx, PS_SUBPIC_KERNEL);
+    media_batchbuffer_flush(batch);
+}
+
+
 
 void
 media_render_put_surface(
@@ -1236,6 +1381,21 @@ media_render_put_surface(
         render_state->render_put_surface(ctx, obj_surface, src_rect, dst_rect, flags);
 
     return;
+}
+
+void
+media_render_put_subpicture(
+    VADriverContextP   ctx,
+    struct object_surface *obj_surface,
+    const VARectangle *src_rect,
+    const VARectangle *dst_rect
+)
+{
+    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+    struct media_render_state *render_state = &drv_ctx->render_state;
+
+    if (render_state->render_put_subpicture)
+        render_state->render_put_subpicture(ctx, obj_surface, src_rect, dst_rect);
 }
 
 static void
@@ -1295,6 +1455,7 @@ media_drv_gen75_render_init(VADriverContextP ctx)
         memcpy(render_state->render_kernels, render_kernels_gen7_haswell,
                sizeof(render_state->render_kernels));
         render_state->render_put_surface = gen7_render_put_surface;
+        render_state->render_put_subpicture = gen7_render_put_subpicture;
     } else {
         return false;
     }
