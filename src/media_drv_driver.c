@@ -289,6 +289,21 @@ media_destroy_context (struct object_heap *heap, struct object_base *obj)
       media_drv_free_memory (obj_context->codec_state.encode.
 			     slice_params_ext);
     }
+    else if (obj_context->codec_type == CODEC_DEC)
+    {
+      media_release_buffer_store(&obj_context->codec_state.decode.pic_param);
+      media_release_buffer_store(&obj_context->codec_state.decode.iq_matrix);
+      media_release_buffer_store(&obj_context->codec_state.decode.bit_plane);
+      media_release_buffer_store(&obj_context->codec_state.decode.huffman_table);
+
+      for (i = 0; i < obj_context->codec_state.decode.num_slice_params; i++) {
+        media_release_buffer_store(&obj_context->codec_state.decode.slice_params[i]);
+        media_release_buffer_store(&obj_context->codec_state.decode.slice_datas[i]);
+      }
+
+      media_drv_free_memory (obj_context->codec_state.decode.slice_params);
+      media_drv_free_memory (obj_context->codec_state.decode.slice_datas);
+    }
 
   media_drv_free_memory (obj_context->render_targets);
   object_heap_free (heap, obj);
