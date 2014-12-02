@@ -515,15 +515,20 @@ media_sampler_setup_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context)
 #if 0
   //For MBENC I LUMA
   sampler_ptr = sampler_start_ptr + (sampler_size * MBENC_ILUMA_START_OFFSET);
-  media_drv_memcpy (sampler_ptr, sampler_size * 8,
+  media_drv_memcpy (sampler_ptr, sampler_size,
 		    (BYTE *) & vme_lut_sp_state_vp8_g7[0][0],
-		    sampler_size * 8);
+		    sampler_size);
 #endif
   //For MBENC P
   sampler_ptr = sampler_start_ptr + (sampler_size * MBENC_P_START_OFFSET);
-  media_drv_memcpy (sampler_ptr, sampler_size * 8,
+  media_drv_memcpy (sampler_ptr, sampler_size,
 		    (BYTE *) & vme_lut_sp_state_vp8_g7[0][0],
-		    sampler_size * 8);
+		    sampler_size);
+
+  //For IFrame Dist
+  sampler_ptr = sampler_start_ptr + (sampler_size * MBENC_IFRAME_DIST_OFFSET);
+  media_drv_memset(sampler_ptr, sampler_size);
+
   dri_bo_unmap (bo);
 }
 
@@ -935,7 +940,7 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   UINT16 luma_dc_seg0, luma_dc_seg1, luma_dc_seg2, luma_dc_seg3;
   UINT16 qp_seg0, qp_seg1, qp_seg2, qp_seg3;
 
-  media_drv_memset (cmd, sizeof (MEDIA_CURBE_DATA_MBENC_P_G75));
+  media_drv_memset (cmd, sizeof (*cmd));
 
   luma_dc_seg0 =
     quant_params->quantization_index[0] +
@@ -1177,11 +1182,6 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   cmd->dw43.intra_16x16_no_dc_penalty_segment0 =
     cost_table_vp8_g7[qp_seg0][5];
 
-  if (params->brc_enabled == TRUE)
-  {
-    cmd->dw43.intra_16x16_no_dc_penalty_segment0 = 0;
-  }
-
   if (segmentation_enabled)
     {
       cmd->dw43.intra_16x16_no_dc_penalty_segment1 =
@@ -1246,7 +1246,7 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   cmd->dw58.vme_inter_pred_last_ref_frame_bti = 12;
   cmd->dw59.vme_inter_pred_gold_ref_frame_bti = 14;
   cmd->dw60.vme_inter_pred_alt_ref_frame_bti = 16;
-  cmd->dw69.kernel_debug_dump_bti = 16;
+  cmd->dw69.kernel_debug_dump_bti = 21;
 
 }
 
@@ -1294,7 +1294,7 @@ media_set_curbe_vp8_mbpak_g7 (struct encode_state *encode_state,
       cmd->dw0.frame_width = (seq_params->frame_width + 15) & (~0xF);	/* kernel require MB boundary aligned dimensions */
       cmd->dw0.frame_height = (seq_params->frame_height + 15) & (~0xF);
 
-      cmd->dw1.frame_type = 1;	/* phase1 is always for P frames only */
+      cmd->dw1.frame_type = pic_params->pic_flags.bits.frame_type;	/* phase1 is always for P frames only */
       cmd->dw1.recon_filter_type =
 	(pic_params->pic_flags.bits.version == 0) ? 0 /*6-tap filter */ :
 	((pic_params->pic_flags.bits.version == 3) ? 2
@@ -2005,7 +2005,7 @@ media_surface_state_vp8_mbenc_g7 (MEDIA_ENCODER_CTX * encoder_context,
       OBJECT_SURFACE_TO_MEDIA_RESOURCE_STRUCT (surface_2d, obj_surface);
       params.buf_object = surface_2d;
       params.media_block_raw = 1;
-      //params.surface_is_raw = 1;
+      params.surface_is_raw = 1;
       params.offset = encoder_context->mv_offset;
       params.size = encoder_context->mv_in_bytes;
 
@@ -2886,7 +2886,7 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.binding_table_offset = BINDING_TABLE_OFFSET (4);
   params.surface_state_offset = SURFACE_STATE_OFFSET (4);
   params.buf_object = mbenc_gpe_ctx->dynamic_state.res;
-  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G75), sizeof(MEDIA_CURBE_DATA_MBENC_I_G75)), 64);
+  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G7), sizeof(MEDIA_CURBE_DATA_MBENC_I_G7)), 64);
   params.cacheability_control = surface_params->cacheability_control;
   media_add_surface_state (&params);
 
@@ -2898,7 +2898,7 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.binding_table_offset = BINDING_TABLE_OFFSET (5);
   params.surface_state_offset = SURFACE_STATE_OFFSET (5);
   params.buf_object = mbenc_gpe_ctx->dynamic_state.res;
-  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G75), sizeof(MEDIA_CURBE_DATA_MBENC_I_G75)), 64);
+  params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G7), sizeof(MEDIA_CURBE_DATA_MBENC_I_G7)), 64);
   params.cacheability_control = surface_params->cacheability_control;
   media_add_surface_state (&params);
 
@@ -2925,7 +2925,7 @@ media_surface_state_vp8_brc_update_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.binding_table_offset = BINDING_TABLE_OFFSET (7);
   params.surface_state_offset = SURFACE_STATE_OFFSET (7);
   params.buf_object = brc_init_reset_ctx->brc_constant_data;
-  params.size = 2880;
+  params.size = 1600;
   params.cacheability_control =
     surface_params->cacheability_control;
   media_add_surface_state (&params);
