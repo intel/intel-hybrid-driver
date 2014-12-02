@@ -95,19 +95,20 @@
 /* Preversion of the driver */
 #define INTEL_DRIVER_PRE_VERSION 0
 
-#define DOUBLE double
-#define FLOAT float
-#define ULONG unsigned long
-#define DWORD unsigned int
-#define UINT unsigned int
-#define UINT16 unsigned short
-#define INT16 short
-#define INT int
-#define BYTE unsigned char
-#define CHAR char
-#define BOOL bool
-#define STATUS bool
-#define VOID void
+typedef double DOUBLE;
+typedef float FLOAT;
+typedef unsigned long ULONG;
+typedef unsigned int DWORD;
+typedef unsigned int UINT;
+typedef unsigned short UINT16;
+typedef short INT16;
+typedef int INT;
+typedef unsigned char BYTE;
+typedef char CHAR;
+typedef bool BOOL;
+typedef bool STATUS;
+typedef void VOID;
+
 #define TRUE 1
 #define FALSE 0
 #define ERROR -1
