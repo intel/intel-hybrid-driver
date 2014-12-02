@@ -956,4 +956,361 @@ enum
     PS_SUBPIC_KERNEL
 };
 
+struct gen8_interface_descriptor_data
+{
+  struct {
+    unsigned int pad0:6;
+    unsigned int kernel_start_pointer:26;
+  } desc0;
+
+  struct {
+    unsigned int kernel_start_pointer_high:16;
+    unsigned int pad0:16;
+  } desc1;
+
+  struct {
+    unsigned int pad0:7;
+    unsigned int software_exception_enable:1;
+    unsigned int pad1:3;
+    unsigned int maskstack_exception_enable:1;
+    unsigned int pad2:1;
+    unsigned int illegal_opcode_exception_enable:1;
+    unsigned int pad3:2;
+    unsigned int floating_point_mode:1;
+    unsigned int thread_priority:1;
+    unsigned int single_program_flow:1;
+    unsigned int denorm_mode:1;
+    unsigned int pad4:12;
+  } desc2;
+
+  struct {
+    unsigned int pad0:2;
+    unsigned int sampler_count:3;
+    unsigned int sampler_state_pointer:27;
+  } desc3;
+
+  struct {
+    unsigned int binding_table_entry_count:5;
+    unsigned int binding_table_pointer:11;
+    unsigned int pad0: 16;
+  } desc4;
+
+  struct {
+    unsigned int constant_urb_entry_read_offset:16;
+    unsigned int constant_urb_entry_read_length:16;
+  } desc5;
+
+  struct {
+    unsigned int num_threads_in_tg:10;
+    unsigned int pad0:5;
+    unsigned int global_barrier_enable:1;
+    unsigned int shared_local_memory_size:5;
+    unsigned int barrier_enable:1;
+    unsigned int rounding_mode:2;
+    unsigned int pad1:8;
+  } desc6;
+
+  struct {
+    unsigned int cross_thread_constant_data_read_length:8;
+    unsigned int pad0:24;
+  } desc7;
+};
+
+struct gen8_surface_state
+{
+  struct {
+    unsigned int cube_pos_z:1;
+    unsigned int cube_neg_z:1;
+    unsigned int cube_pos_y:1;
+    unsigned int cube_neg_y:1;
+    unsigned int cube_pos_x:1;
+    unsigned int cube_neg_x:1;
+    unsigned int media_boundary_pixel_mode:2;
+    unsigned int render_cache_read_write:1;
+    unsigned int sampler_l2bypass_disable:1;
+    unsigned int vert_line_stride_ofs:1;
+    unsigned int vert_line_stride:1;
+    unsigned int tile_walk:1;
+    unsigned int tiled_surface:1;
+    unsigned int horizontal_alignment:2;
+    /* Field 16 */
+    unsigned int vertical_alignment:2;
+    unsigned int surface_format:9;     /**< BRW_SURFACEFORMAT_x */
+    unsigned int pad0:1;
+    unsigned int is_array:1;
+    unsigned int surface_type:3;       /**< BRW_SURFACE_1D/2D/3D/CUBE */
+  } ss0;
+
+  struct {
+    unsigned int surface_qpitch:15;
+    unsigned int pad0:4;
+    unsigned int base_mip_level:5;
+    unsigned int surface_mocs:7;
+    unsigned int pad1:1;
+  } ss1;
+
+  struct {
+    unsigned int width:14;
+    unsigned int pad0:2;
+    unsigned int height:14;
+    unsigned int pad1:2;
+  } ss2;
+
+  struct {
+    unsigned int pitch:18;
+    unsigned int pad:3;
+    unsigned int depth:11;
+  } ss3;
+
+  struct {
+    unsigned int multisample_position_palette_index:3;
+    unsigned int num_multisamples:3;
+    unsigned int multisampled_surface_storage_format:1;
+    unsigned int render_target_view_extent:11;
+    unsigned int min_array_elt:11;
+    unsigned int rotation:2;
+    unsigned int force_ncmp_reduce_type:1;
+  } ss4;
+
+  struct {
+    unsigned int mip_count:4;
+    unsigned int min_lod:4;
+    unsigned int pad0:4;
+    unsigned int pad1:2;
+    unsigned int coherence_type:1;
+    unsigned int pad2:3;
+    unsigned int pad3:2;
+    unsigned int ewa_disable_cube:1;
+    unsigned int y_offset:3;
+    unsigned int pad4:1;
+    unsigned int x_offset:7;
+  } ss5;
+
+  struct {
+    unsigned int y_offset_uv_plane:14;
+    unsigned int pad0:2;
+    unsigned int x_offset_uv_plane:14;
+    unsigned int pad1:1;
+    unsigned int separate_uv_plane:1;
+  } ss6;
+
+  struct {
+    unsigned int resource_min_lod:12;
+    unsigned int pad0:4;
+    unsigned int shader_chanel_select_a:3;
+    unsigned int shader_chanel_select_b:3;
+    unsigned int shader_chanel_select_g:3;
+    unsigned int shader_chanel_select_r:3;
+    unsigned int alpha_clear_color:1;
+    unsigned int blue_clear_color:1;
+    unsigned int green_clear_color:1;
+    unsigned int red_clear_color:1;
+  } ss7;
+
+  struct {
+    unsigned int base_addr;
+  } ss8;
+
+  struct {
+    unsigned int base_addr_high:16;
+    unsigned int pad0:16;
+  } ss9;
+
+  struct {
+    unsigned int pad0:12;
+    unsigned int aux_base_addr:20;
+  } ss10;
+
+  union {
+    struct {
+      unsigned int y_offset_v_plane:14;
+      unsigned int pad0:2;
+      unsigned int x_offset_v_plane:14;
+      unsigned int pad1:2;
+    } planar;
+    struct {
+      unsigned int aux_base_addr_high:16;
+      unsigned int pad2:16;
+    } aux_buffer;
+  } ss11;
+
+  struct {
+    unsigned int hier_depth_clear;
+  } ss12;
+
+  struct {
+    unsigned int pad0;
+  } ss13;
+
+  struct {
+    unsigned int pad0;
+  } ss14;
+
+  struct {
+    unsigned int pad0;
+  } ss15;
+};
+
+struct gen8_sampler_state
+{
+  struct
+  {
+    unsigned int aniso_algorithm:1;
+    unsigned int lod_bias:13;
+    unsigned int min_filter:3;
+    unsigned int mag_filter:3;
+    unsigned int mip_filter:2;
+    unsigned int base_level:5;
+    unsigned int lod_preclamp:2;
+    unsigned int default_color_mode:1;
+    unsigned int pad0:1;
+    unsigned int disable:1;
+  } ss0;
+
+  struct
+  {
+    unsigned int cube_control_mode:1;
+    unsigned int shadow_function:3;
+    unsigned int chroma_key_mode:1;
+    unsigned int chroma_key_index:2;
+    unsigned int chroma_key_enable:1;
+    unsigned int max_lod:12;
+    unsigned int min_lod:12;
+  } ss1;
+
+  struct
+  {
+    unsigned int lod_clamp_mag_mode:1; /* MIPNONE or MIPFILTER */
+    unsigned int flex_filter_vert_align:1;
+    unsigned int flex_filter_hort_align:1;
+    unsigned int flex_filter_coff_size:1; /* coff8 or coff 16 */
+    unsigned int flex_filter_mode:1;
+    unsigned int pad0:1;
+    unsigned int indirect_state_pointer:18; /* point to the SAMPLE_INDIRECT_STATE */
+    union {
+      unsigned char nonsep_filter_footer_highmask;
+      struct {
+        unsigned char pad1:2;
+        unsigned char sep_filter_height:2;
+        unsigned char sep_filter_width:2;
+        unsigned char sep_filter_coff_size:2;
+      } sep_filter;
+    } ss2_byte3;
+  } ss2;
+
+  struct
+  {
+    unsigned int r_wrap_mode:3;
+    unsigned int t_wrap_mode:3;
+    unsigned int s_wrap_mode:3;
+    unsigned int pad0:1;
+    unsigned int non_normalized_coord:1;
+    unsigned int trilinear_quality:2;
+    unsigned int address_round:6;
+    unsigned int max_aniso:3;
+    unsigned int pad1:2;
+    unsigned int nonsep_filter_foot_lowmask:8;
+  } ss3;
+};
+
+struct gen8_global_blend_state
+{
+  unsigned int pad0:19;
+  unsigned int ydither_offset:2;
+  unsigned int xdither_offset:2;
+  unsigned int color_dither_enable:1;
+  unsigned int alpha_test_func:3;
+  unsigned int alpha_test_enable:1;
+  unsigned int alpha_to_coverage_dither:1;
+  unsigned int alpha_to_one:1;
+  unsigned int ia_blend_enable:1;
+  unsigned int alpha_to_coverage:1;
+};
+
+struct gen8_blend_state_rt {
+  struct {
+    unsigned int blue_write_dis:1;
+    unsigned int green_write_dis:1;
+    unsigned int red_write_dis:1;
+    unsigned int alpha_write_dis:1;
+    unsigned int pad0:1;
+    unsigned int alpha_blend_func:3;
+    unsigned int ia_dest_blend_factor:5;
+    unsigned int ia_src_blend_factor:5;
+    unsigned int color_blend_func:3;
+    unsigned int dest_blend_factor:5;
+    unsigned int src_blend_factor:5;
+    unsigned int colorbuf_blend:1;
+  } blend0;
+
+  struct {
+    unsigned int post_blend_clamp_enable:1;
+    unsigned int pre_blend_clamp_enable:1;
+    unsigned int clamp_range:2;
+    unsigned int pre_blend_src_clamp:1;
+    unsigned int pad0:22;
+    unsigned int logic_op_func:4;
+    unsigned int logic_op_enable:1;
+  } blend1;
+};
+
+#define GEN8_3DSTATE_RASTER			RENDER_CMD(3, 0, 0x50)
+# define GEN8_3DSTATE_RASTER_CULL_BOTH			(0 << 16)
+# define GEN8_3DSTATE_RASTER_CULL_NONE			(1 << 16)
+# define GEN8_3DSTATE_RASTER_CULL_FRONT			(2 << 16)
+# define GEN8_3DSTATE_RASTER_CULL_BACK			(3 << 16)
+
+/* Gen8 WM_HZ_OP */
+#define GEN8_3DSTATE_WM_HZ_OP			RENDER_CMD(3, 0, 0x52)
+
+#define GEN8_3DSTATE_MULTISAMPLE		RENDER_CMD(3, 0, 0x0d)
+#define GEN8_3DSTATE_SAMPLE_PATTERN		RENDER_CMD(3, 1, 0x1C)
+
+# define GEN8_PUSH_CONSTANT_BUFFER_OFFSET_SHIFT	16
+# define GEN8_PUSH_CONSTANT_BUFFER_SIZE_SHIFT	0
+
+# define GEN8_SBE_FORCE_URB_ENTRY_READ_LENGTH  (1 << 29)
+# define GEN8_SBE_FORCE_URB_ENTRY_READ_OFFSET  (1 << 28)
+
+# define GEN8_SBE_URB_ENTRY_READ_OFFSET_SHIFT   5
+#define GEN8_3DSTATE_SBE_SWIZ                    RENDER_CMD(3, 0, 0x51)
+
+# define GEN8_PS_MAX_THREADS_SHIFT                      23
+
+#define GEN8_3DSTATE_PSEXTRA				RENDER_CMD(3, 0, 0x4f)
+/* DW1 */
+# define GEN8_PSX_PIXEL_SHADER_VALID                    (1 << 31)
+# define GEN8_PSX_PSCDEPTH_OFF                          (0 << 26)
+# define GEN8_PSX_PSCDEPTH_ON                           (1 << 26)
+# define GEN8_PSX_PSCDEPTH_ON_GE                        (2 << 26)
+# define GEN8_PSX_PSCDEPTH_ON_LE                        (3 << 26)
+# define GEN8_PSX_ATTRIBUTE_ENABLE			(1 << 8)
+
+#define GEN8_3DSTATE_PSBLEND				RENDER_CMD(3, 0, 0x4d)
+/* DW1 */
+# define GEN8_PS_BLEND_ALPHA_TO_COVERAGE_ENABLE         (1 << 31)
+# define GEN8_PS_BLEND_HAS_WRITEABLE_RT                 (1 << 30)
+# define GEN8_PS_BLEND_COLOR_BUFFER_BLEND_ENABLE        (1 << 29)
+# define GEN8_PS_BLEND_SRC_ALPHA_BLEND_FACTOR_MASK      INTEL_MASK(28, 24)
+# define GEN8_PS_BLEND_SRC_ALPHA_BLEND_FACTOR_SHIFT     24
+# define GEN8_PS_BLEND_DST_ALPHA_BLEND_FACTOR_MASK      INTEL_MASK(23, 19)
+# define GEN8_PS_BLEND_DST_ALPHA_BLEND_FACTOR_SHIFT     19
+# define GEN8_PS_BLEND_SRC_BLEND_FACTOR_MASK            INTEL_MASK(18, 14)
+# define GEN8_PS_BLEND_SRC_BLEND_FACTOR_SHIFT           14
+# define GEN8_PS_BLEND_DST_BLEND_FACTOR_MASK            INTEL_MASK(13, 9)
+# define GEN8_PS_BLEND_DST_BLEND_FACTOR_SHIFT           9
+# define GEN8_PS_BLEND_ALPHA_TEST_ENABLE                (1 << 8)
+# define GEN8_PS_BLEND_INDEPENDENT_ALPHA_BLEND_ENABLE   (1 << 7)
+
+#define GEN8_3DSTATE_WM_DEPTH_STENCIL			RENDER_CMD(3, 0, 0x4e)
+
+#define GEN8_VE0_VERTEX_BUFFER_INDEX_SHIFT      26 /* for GEN8 */
+#define GEN8_VE0_VALID                  (1 << 25)  /* for GEN8 */
+#define GEN8_VB0_BUFFER_INDEX_SHIFT     26
+#define GEN8_VB0_MOCS_SHIFT		16
+
+#define GEN8_3DSTATE_VF_TOPOLOGY	RENDER_CMD(3, 0, 0x4b)
+
+#define GEN8_XY_COLOR_BLT_CMD                   (RCMD_2D | (0x50 << 22) | 0x05)
+
 #endif /* _MEDIA_RENDER_COMMON_H_ */

@@ -72,6 +72,7 @@ source_c = \
         media_drv_surface.c  \
         media_drv_decoder.c  \
         media_drv_gen75_render.c   \
+        media_drv_gen8_render.c   \
         $(NULL)
 
 source_h = \

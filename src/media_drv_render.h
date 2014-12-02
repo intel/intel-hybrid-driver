@@ -169,4 +169,7 @@ media_render_put_subpicture(
 
 BOOL media_render_init (VADriverContextP ctx);
 VOID media_render_terminate (VADriverContextP ctx);
+
+extern bool media_drv_gen8_render_init(VADriverContextP ctx);
+
 #endif
