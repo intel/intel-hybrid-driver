@@ -36,6 +36,7 @@
 #include "media_drv_encoder.h"
 #include "media_drv_driver.h"
 #include "media_drv_init.h"
+#include "media_drv_decoder.h"
 
 //#define DEBUG 
 #define DEFAULT_BRIGHTNESS      0
@@ -965,9 +966,32 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
 			       &obj_context->codec_state,
 			       obj_context->hw_context);
     }
-  else
+  else if (obj_context->codec_type == CODEC_DEC) {
+    if (obj_context->codec_state.decode.pic_param == NULL) {
+      return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
+    if (obj_context->codec_state.decode.num_slice_params <=0) {
+      return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
+    if (obj_context->codec_state.decode.num_slice_datas <=0) {
+      return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
+
+    if (obj_context->codec_state.decode.num_slice_params !=
+            obj_context->codec_state.decode.num_slice_datas) {
+      return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
+
+    if (obj_context->hw_context && obj_context->hw_context->run)
+      return obj_context->hw_context->run(ctx, obj_config->profile,
+                                        &obj_context->codec_state,
+                                        obj_context->hw_context);
+    else
+      return VA_STATUS_ERROR_UNIMPLEMENTED;
+
+  } else
     {
-      /*Only encoder (vp8)is supported currently */
+      /*VPP is not supported currently */
       status = VA_STATUS_ERROR_INVALID_PARAMETER;
     }
 
@@ -1023,6 +1047,21 @@ MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (picture_parameter_ext,
 // MEDIA_DEF_RENDER_ENCODE_MULTI_BUFFER_FUNC(slice_parameter, slice_params)
   MEDIA_DEF_RENDER_ENCODE_MULTI_BUFFER_FUNC (slice_parameter_ext,
 					   slice_params_ext)
+
+
+#define MEDIA_RENDER_DECODE_BUFFER(name) MEDIA_RENDER_BUFFER(decode, name)
+#define MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(name, member) DEF_RENDER_SINGLE_BUFFER_FUNC(decode, name, member)
+MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(picture_parameter, pic_param)
+MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(iq_matrix, iq_matrix)
+MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(bit_plane, bit_plane)
+MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(huffman_table, huffman_table)
+MEDIA_DEF_RENDER_DECODE_SINGLE_BUFFER_FUNC(probability_data, probability_data)
+
+#define MEDIA_DEF_RENDER_DECODE_MULTI_BUFFER_FUNC(name, member) DEF_RENDER_MULTI_BUFFER_FUNC(decode, name, member)
+MEDIA_DEF_RENDER_DECODE_MULTI_BUFFER_FUNC(slice_parameter, slice_params)
+MEDIA_DEF_RENDER_DECODE_MULTI_BUFFER_FUNC(slice_data, slice_datas)
+
+
      static VAStatus
        media_encoder_render_packed_header_data_buffer (VADriverContextP ctx,
 						       struct object_context
@@ -1236,6 +1275,64 @@ media_encoder_render_picture (VADriverContextP ctx,
   return vaStatus;
 }
 
+static VAStatus
+media_decoder_render_picture(VADriverContextP ctx,
+                            VAContextID context,
+                            VABufferID *buffers,
+                            int num_buffers)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;;
+  struct object_context *obj_context = CONTEXT(context);
+  VAStatus vaStatus = VA_STATUS_SUCCESS;
+  int i;
+
+  if (!obj_context)
+    return VA_STATUS_ERROR_INVALID_CONTEXT;
+
+  for (i = 0; i < num_buffers && vaStatus == VA_STATUS_SUCCESS; i++) {
+    struct object_buffer *obj_buffer = BUFFER(buffers[i]);
+
+    if (!obj_buffer)
+      return VA_STATUS_ERROR_INVALID_BUFFER;
+
+    switch (obj_buffer->type) {
+    case VAPictureParameterBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(picture_parameter);
+      break;
+
+    case VAIQMatrixBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(iq_matrix);
+      break;
+
+    case VABitPlaneBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(bit_plane);
+      break;
+
+    case VASliceParameterBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(slice_parameter);
+      break;
+
+    case VASliceDataBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(slice_data);
+      break;
+
+    case VAHuffmanTableBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(huffman_table);
+      break;
+
+    case VAProbabilityBufferType:
+      vaStatus = MEDIA_RENDER_DECODE_BUFFER(probability_data);
+      break;
+
+    default:
+      vaStatus = VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE;
+      break;
+    }
+  }
+
+  return vaStatus;
+}
+
 VAStatus
 media_RenderPicture (VADriverContextP ctx,
 		     VAContextID context,
@@ -1265,7 +1362,10 @@ media_RenderPicture (VADriverContextP ctx,
       vaStatus =
 	media_encoder_render_picture (ctx, context, buffers, num_buffers);
     }
-  else
+  else if (obj_config->entrypoint == VAEntrypointVLD) {
+      vaStatus =
+        media_decoder_render_picture (ctx, context, buffers, num_buffers);
+  } else
     {
       printf ("media_RenderPicture:entrypoint %d not supported\n",
 	      obj_config->entrypoint);
@@ -1340,6 +1440,20 @@ media_BeginPicture (VADriverContextP ctx,
       obj_context->codec_state.encode.num_slice_params_ext = 0;
       obj_context->codec_state.encode.current_render_target = render_target;	/*This is input new frame */
       obj_context->codec_state.encode.last_packed_header_type = 0;
+    } else if (obj_context->codec_type == CODEC_DEC) {
+      obj_context->codec_state.decode.current_render_target = render_target;
+      media_release_buffer_store(&obj_context->codec_state.decode.pic_param);
+      media_release_buffer_store(&obj_context->codec_state.decode.iq_matrix);
+      media_release_buffer_store(&obj_context->codec_state.decode.bit_plane);
+      media_release_buffer_store(&obj_context->codec_state.decode.huffman_table);
+
+      for (i = 0; i < obj_context->codec_state.decode.num_slice_params; i++) {
+        media_release_buffer_store(&obj_context->codec_state.decode.slice_params[i]);
+        media_release_buffer_store(&obj_context->codec_state.decode.slice_datas[i]);
+      }
+
+      obj_context->codec_state.decode.num_slice_params = 0;
+      obj_context->codec_state.decode.num_slice_datas = 0;
     }
   return status;
 }
@@ -1575,7 +1689,19 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
 	    media_enc_context_init (ctx, obj_config, picture_width,
 				    picture_height);
 
-	}
+        } else if (obj_config->entrypoint == VAEntrypointVLD) {
+          obj_context->codec_type = CODEC_DEC;
+          memset(&obj_context->codec_state.decode, 0, sizeof(obj_context->codec_state.decode));
+          obj_context->codec_state.decode.current_render_target = -1;
+          obj_context->codec_state.decode.max_slice_params = NUM_SLICES;
+          obj_context->codec_state.decode.max_slice_datas = NUM_SLICES;
+          obj_context->codec_state.decode.slice_params = calloc(obj_context->codec_state.decode.max_slice_params,
+                                                             sizeof(*obj_context->codec_state.decode.slice_params));
+          obj_context->codec_state.decode.slice_datas = calloc(obj_context->codec_state.decode.max_slice_datas,
+                                                            sizeof(*obj_context->codec_state.decode.slice_datas));
+
+          obj_context->hw_context = media_dec_hw_context_init(ctx, obj_config);
+        }
     }
   /* Error recovery */
   if (VA_STATUS_SUCCESS != status)

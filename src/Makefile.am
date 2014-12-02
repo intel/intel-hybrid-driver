@@ -70,6 +70,7 @@ source_c = \
         media_drv_output_dri.c \
         media_drv_render.c   \
         media_drv_surface.c  \
+        media_drv_decoder.c  \
         $(NULL)
 
 source_h = \
@@ -103,6 +104,7 @@ source_h = \
         media_drv_output_dri.h  \
         media_drv_render.h  \
         media_drv_surface.h   \
+        media_drv_decoder.h   \
        $(NULL)
 
 hybrid_drv_video_la_LTLIBRARIES= hybrid_drv_video.la
