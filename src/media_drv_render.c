@@ -30,88 +30,8 @@
 #include <va/va_drmcommon.h>
 #include "media_drv_util.h"
 #include "media_drv_driver.h"
-#include"media_drv_render.h"
-
-enum
-{
-  SF_KERNEL = 0,
-  PS_KERNEL,
-  PS_SUBPIC_KERNEL
-};
-/* programs for Ivybridge */
-static const UINT sf_kernel_static_gen7[][4] = {
-};
-
-static const uint32_t ps_kernel_static_gen7[][4] = {
-#include "shaders/render/exa_wm_src_affine.g7b"
-#include "shaders/render/exa_wm_src_sample_planar.g7b"
-#include "shaders/render/exa_wm_yuv_color_balance.g7b"
-#include "shaders/render/exa_wm_yuv_rgb.g7b"
-#include "shaders/render/exa_wm_write.g7b"
-};
-
-/* Programs for Haswell */
-static const UINT ps_kernel_static_gen7_haswell[][4] = {
-#include "shaders/render/exa_wm_src_affine.g7b"
-#include "shaders/render/exa_wm_src_sample_planar.g7b.haswell"
-#include "shaders/render/exa_wm_yuv_color_balance.g7b.haswell"
-#include "shaders/render/exa_wm_yuv_rgb.g7b"
-#include "shaders/render/exa_wm_write.g7b"
-};
-
-static const UINT ps_subpic_kernel_static_gen7[][4] = {
-#include "shaders/render/exa_wm_src_affine.g7b"
-#include "shaders/render/exa_wm_src_sample_argb.g7b"
-#include "shaders/render/exa_wm_write.g7b"
-};
-
-static struct media_render_kernel render_kernels_gen7[] = {
-  {
-   "SF",
-   SF_KERNEL,
-   sf_kernel_static_gen7,
-   sizeof (sf_kernel_static_gen7),
-   NULL}
-  ,
-  {
-   "PS",
-   PS_KERNEL,
-   ps_kernel_static_gen7,
-   sizeof (ps_kernel_static_gen7),
-   NULL}
-  ,
-
-  {
-   "PS_SUBPIC",
-   PS_SUBPIC_KERNEL,
-   ps_subpic_kernel_static_gen7,
-   sizeof (ps_subpic_kernel_static_gen7),
-   NULL}
-};
-
-static struct media_render_kernel render_kernels_gen7_haswell[] = {
-  {
-   "SF",
-   SF_KERNEL,
-   sf_kernel_static_gen7,
-   sizeof (sf_kernel_static_gen7),
-   NULL}
-  ,
-  {
-   "PS",
-   PS_KERNEL,
-   ps_kernel_static_gen7_haswell,
-   sizeof (ps_kernel_static_gen7_haswell),
-   NULL}
-  ,
-
-  {
-   "PS_SUBPIC",
-   PS_SUBPIC_KERNEL,
-   ps_subpic_kernel_static_gen7,
-   sizeof (ps_subpic_kernel_static_gen7),
-   NULL}
-};
+#include "media_drv_render.h"
+#include "media_drv_hw.h"
 
 BOOL
 media_render_init (VADriverContextP ctx)
@@ -121,69 +41,8 @@ media_render_init (VADriverContextP ctx)
   MEDIA_DRV_ASSERT (ctx);
   struct media_render_state *render_state = &drv_ctx->render_state;
 
-
-  /* kernel */
-  /*MEDIA_DRV_ASSERT(NUM_RENDER_KERNEL == (sizeof(render_kernels_gen6) / 
-     sizeof(render_kernels_gen6[0]))); */
-
-
-  if (IS_GEN75 (drv_ctx->drv_data.device_id))
-    memcpy (render_state->render_kernels, render_kernels_gen7_haswell,
-	    sizeof (render_state->render_kernels));
-
-  else if (IS_GEN7 (drv_ctx->drv_data.device_id))
-    memcpy (render_state->render_kernels, render_kernels_gen7,
-	    sizeof (render_state->render_kernels));
-  else
-    {
-      printf
-	("This device is not supported by driver:loading render kernel failed\n");
-      MEDIA_DRV_ASSERT (0);
-    }
-
-  for (i = 0; i < NUM_RENDER_KERNEL; i++)
-    {
-      struct media_render_kernel *kernel = &render_state->render_kernels[i];
-
-      if (!kernel->size)
-	continue;
-
-      kernel->bo = dri_bo_alloc (drv_ctx->drv_data.bufmgr,
-				 kernel->name, kernel->size, 0x1000);
-      MEDIA_DRV_ASSERT (kernel->bo);
-      dri_bo_subdata (kernel->bo, 0, kernel->size, kernel->bin);
-    }
-
-  /* constant buffer */
-  render_state->curbe.bo = dri_bo_alloc (drv_ctx->drv_data.bufmgr,
-					 "constant buffer", 4096, 64);
-  MEDIA_DRV_ASSERT (render_state->curbe.bo);
-
-  if (IS_HSW_GT1 (drv_ctx->drv_data.device_id))
-    {
-      render_state->max_wm_threads = 102;
-    }
-  else if (IS_HSW_GT2 (drv_ctx->drv_data.device_id))
-    {
-      render_state->max_wm_threads = 204;
-    }
-  else if (IS_HSW_GT3 (drv_ctx->drv_data.device_id))
-    {
-      render_state->max_wm_threads = 408;
-    }
-  else if (IS_IVB_GT1 (drv_ctx->drv_data.device_id)
-	   || IS_BAYTRAIL (drv_ctx->drv_data.device_id))
-    {
-      render_state->max_wm_threads = 48;
-    }
-  else if (IS_IVB_GT2 (drv_ctx->drv_data.device_id))
-    {
-      render_state->max_wm_threads = 172;
-    }
-  else
-    {
-      MEDIA_DRV_ASSERT (0);
-    }
+  if (drv_ctx->codec_info && drv_ctx->codec_info->render_init)
+    drv_ctx->codec_info->render_init(ctx);
 
   return true;
 }
@@ -197,41 +56,6 @@ media_render_terminate (VADriverContextP ctx)
   struct media_render_state *render_state = &drv_ctx->render_state;
 
 
-  dri_bo_unreference (render_state->curbe.bo);
-  render_state->curbe.bo = NULL;
-
-  for (i = 0; i < NUM_RENDER_KERNEL; i++)
-    {
-      struct media_render_kernel *kernel = &render_state->render_kernels[i];
-
-      dri_bo_unreference (kernel->bo);
-      kernel->bo = NULL;
-    }
-
-  dri_bo_unreference (render_state->vb.vertex_buffer);
-  render_state->vb.vertex_buffer = NULL;
-  dri_bo_unreference (render_state->vs.state);
-  render_state->vs.state = NULL;
-  dri_bo_unreference (render_state->sf.state);
-  render_state->sf.state = NULL;
-  dri_bo_unreference (render_state->wm.sampler);
-  render_state->wm.sampler = NULL;
-  dri_bo_unreference (render_state->wm.state);
-  render_state->wm.state = NULL;
-  dri_bo_unreference (render_state->wm.surface_state_binding_table_bo);
-  dri_bo_unreference (render_state->cc.viewport);
-  render_state->cc.viewport = NULL;
-  dri_bo_unreference (render_state->cc.state);
-  render_state->cc.state = NULL;
-  dri_bo_unreference (render_state->cc.blend);
-  render_state->cc.blend = NULL;
-  dri_bo_unreference (render_state->cc.depth_stencil);
-  render_state->cc.depth_stencil = NULL;
-
-  if (render_state->draw_region)
-    {
-      dri_bo_unreference (render_state->draw_region->bo);
-      free (render_state->draw_region);
-      render_state->draw_region = NULL;
-    }
+  if (render_state->render_terminate)
+    render_state->render_terminate(ctx);
 }

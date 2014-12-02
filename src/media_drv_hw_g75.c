@@ -33,6 +33,7 @@
 #include "media_drv_defines.h"
 #include "media_drv_common.h"
 #include "media_drv_surface.h"
+#include "media_drv_render.h"
 #include <va/va_enc_vp8.h>
 #include <math.h>
 
@@ -43,7 +44,8 @@ struct hw_codec_info gen75_hw_codec_info = {
   .vp8_enc_hybrid_support = 1,
   .tiled_surface = 1,
   .vp8_enc_hybrid_support=1,
-  .ratecontrol= VA_RC_CBR | VA_RC_CQP | VA_RC_VBR
+  .ratecontrol= VA_RC_CBR | VA_RC_CQP | VA_RC_VBR,
+  .render_init = media_drv_gen75_render_init,
  };
 
 const SURFACE_SET_PARAMS surface_set_params_init = {

@@ -27,21 +27,39 @@
  *
  */
 
-
+#include <va/va_backend.h>
 #include <va/va_dricommon.h>
+#include "media_drv_driver.h"
 #include "media_drv_output_dri.h"
 #include "media_drv_init.h"
 #include "dso_utils.h"
 #include "media_drv_util.h"
+#include "media_drv_surface.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <drm.h>
+#include <i915_drm.h>
+#include <intel_bufmgr.h>
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
 
 typedef struct dri_drawable *(*dri_get_drawable_func) (VADriverContextP ctx,
-						       XID drawable);
+                                                       XID drawable);
 typedef union dri_buffer *(*dri_get_rendering_buffer_func) (VADriverContextP
-							    ctx,
-							    struct
-							    dri_drawable * d);
+                                                            ctx,
+                                                            struct dri_drawable * d);
+
 typedef VOID (*dri_swap_buffer_func) (VADriverContextP ctx,
-				      struct dri_drawable * d);
+                                      struct dri_drawable * d);
 
 struct dri_vtable
 {
@@ -115,4 +133,91 @@ media_output_dri_init (VADriverContextP ctx)
 error:
   media_output_dri_terminate (ctx);
   return false;
+}
+
+# define VA_CHECK_DRM_AUTH_TYPE(ctx, type) \
+    (((struct drm_state *)(ctx)->drm_state)->auth_type == (type))
+
+VAStatus
+media_put_surface_dri(
+  VADriverContextP    ctx,
+  VASurfaceID         surface,
+  void               *draw,
+  const VARectangle  *src_rect,
+  const VARectangle  *dst_rect,
+  const VARectangle  *cliprects,
+  unsigned int        num_cliprects,
+  unsigned int        flags
+)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx = ctx->pDriverData;
+  struct dri_vtable * const dri_vtable = &drv_ctx->dri_output->vtable;
+  struct media_render_state * const render_state = &drv_ctx->render_state;
+  struct dri_drawable *dri_drawable;
+  union dri_buffer *buffer;
+  struct region *dest_region;
+  struct object_surface *obj_surface;
+  unsigned int pp_flag = 0;
+  bool new_region = false;
+  uint32_t name;
+  int i, ret;
+  unsigned int color_flag = 0;
+
+  /* Currently don't support DRI1 */
+  if (!VA_CHECK_DRM_AUTH_TYPE(ctx, VA_DRM_AUTH_DRI2))
+    return VA_STATUS_ERROR_UNKNOWN;
+
+  obj_surface = SURFACE(surface);
+
+  if (!obj_surface || !obj_surface->bo)
+    return VA_STATUS_ERROR_INVALID_SURFACE;
+
+  _i965LockMutex(&drv_ctx->render_mutex);
+
+  dri_drawable = dri_vtable->get_drawable(ctx, (Drawable)draw);
+
+  buffer = dri_vtable->get_rendering_buffer(ctx, dri_drawable);
+
+  dest_region = render_state->draw_region;
+
+  if (dest_region) {
+    dri_bo_flink(dest_region->bo, &name);
+
+    if (buffer->dri2.name != name) {
+      new_region = True;
+      dri_bo_unreference(dest_region->bo);
+    }
+  } else {
+    dest_region = (struct region *)calloc(1, sizeof(*dest_region));
+    render_state->draw_region = dest_region;
+    new_region = True;
+  }
+
+  if (new_region) {
+    dest_region->x = dri_drawable->x;
+    dest_region->y = dri_drawable->y;
+    dest_region->width = dri_drawable->width;
+    dest_region->height = dri_drawable->height;
+    dest_region->cpp = buffer->dri2.cpp;
+    dest_region->pitch = buffer->dri2.pitch;
+
+    dest_region->bo = intel_bo_gem_create_from_name(drv_ctx->drv_data.bufmgr, "rendering buffer", buffer->dri2.name);
+
+    ret = dri_bo_get_tiling(dest_region->bo, &(dest_region->tiling), &(dest_region->swizzle));
+  }
+
+  color_flag = flags & VA_SRC_COLOR_MASK;
+  if (color_flag == 0)
+    color_flag = VA_SRC_BT601;
+
+  pp_flag = color_flag;
+
+  media_render_put_surface(ctx, obj_surface, src_rect, dst_rect, pp_flag);
+
+
+  dri_vtable->swap_buffer(ctx, dri_drawable);
+
+  _i965UnlockMutex(&drv_ctx->render_mutex);
+
+  return VA_STATUS_SUCCESS;
 }

@@ -204,6 +204,7 @@ typedef struct _media_drv_context
   MEDIA_DRV_MUTEX ctxmutex;
   MEDIA_BATCH_BUFFER *batch;
   MEDIA_BATCH_BUFFER *pp_batch;
+  MEDIA_BATCH_BUFFER *render_batch;
   MEDIA_DRV_MUTEX render_mutex;
   MEDIA_DRV_MUTEX pp_mutex;
   CHAR drv_version[256];

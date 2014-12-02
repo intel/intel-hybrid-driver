@@ -27,6 +27,7 @@
  *
  */
 
+#include "media_drv_driver.h"
 #include "media_drv_batchbuffer.h"
 #include "media_drv_gpe_utils.h"
 #include "media_drv_util.h"
@@ -235,4 +236,101 @@ media_unmap_buffer_obj (dri_bo * bo)
 {
   dri_bo_unmap (bo);
   return SUCCESS;
+}
+
+void
+media_batchbuffer_emit_mi_flush (MEDIA_BATCH_BUFFER * batch)
+{
+  struct media_driver_data *drv_data = batch->drv_data;
+
+  if (IS_GEN75(drv_data->device_id) ||
+      IS_GEN8(drv_data->device_id)) {
+      if (batch->flag == I915_EXEC_RENDER) {
+          if (IS_GEN8(drv_data->device_id)) {
+              BEGIN_BATCH(batch, 6);
+              OUT_BATCH(batch, CMD_PIPE_CONTROL | (6 - 2));
+
+              OUT_BATCH(batch,
+                        CMD_PIPE_CONTROL_CS_STALL |
+                        CMD_PIPE_CONTROL_WC_FLUSH |
+                        CMD_PIPE_CONTROL_TC_FLUSH |
+                        CMD_PIPE_CONTROL_DC_FLUSH |
+                        CMD_PIPE_CONTROL_NOWRITE);
+              OUT_BATCH(batch, 0); /* write address */
+              OUT_BATCH(batch, 0);
+              OUT_BATCH(batch, 0); /* write data */
+              OUT_BATCH(batch, 0);
+              ADVANCE_BATCH(batch);
+          } else {
+              BEGIN_BATCH(batch, 4);
+              OUT_BATCH(batch, CMD_PIPE_CONTROL | (4 - 2));
+
+              OUT_BATCH(batch,
+                        CMD_PIPE_CONTROL_WC_FLUSH |
+                        CMD_PIPE_CONTROL_TC_FLUSH |
+                        CMD_PIPE_CONTROL_DC_FLUSH |
+                        CMD_PIPE_CONTROL_NOWRITE);
+              OUT_BATCH(batch, 0); /* write address */
+              OUT_BATCH(batch, 0); /* write data */
+              ADVANCE_BATCH(batch);
+          }
+
+      } else {
+          if (batch->flag == I915_EXEC_BLT) {
+              __BEGIN_BATCH(batch, 4, I915_EXEC_BLT);
+              OUT_BATCH(batch, MI_FLUSH_DW);
+              OUT_BATCH(batch, 0);
+              OUT_BATCH(batch, 0);
+              OUT_BATCH(batch, 0);
+              ADVANCE_BATCH(batch);
+          } else if (batch->flag == I915_EXEC_BSD) {
+              __BEGIN_BATCH(batch, 4, I915_EXEC_BSD);
+              OUT_BATCH(batch, MI_FLUSH_DW | MI_FLUSH_DW_VIDEO_PIPELINE_CACHE_INVALIDATE);
+              OUT_BATCH(batch, 0);
+              OUT_BATCH(batch, 0);
+              OUT_BATCH(batch, 0);
+              ADVANCE_BATCH(batch);
+          }
+      }
+  }
+}
+
+static void
+media_batchbuffer_start_atomic_helper(MEDIA_BATCH_BUFFER *batch,
+                                      int flag,
+                                      unsigned int size)
+{
+    media_batchbuffer_check_flag(batch, flag);
+    media_batchbuffer_require_space(batch, size);
+    batch->atomic = 1;
+}
+
+void
+media_batchbuffer_start_atomic(MEDIA_BATCH_BUFFER *batch, unsigned int size)
+{
+    media_batchbuffer_start_atomic_helper(batch, I915_EXEC_RENDER, size);
+}
+
+void
+media_batchbuffer_start_atomic_blt(MEDIA_BATCH_BUFFER *batch, unsigned int size)
+{
+    media_batchbuffer_start_atomic_helper(batch, I915_EXEC_BLT, size);
+}
+
+void
+media_batchbuffer_start_atomic_bcs(MEDIA_BATCH_BUFFER *batch, unsigned int size)
+{
+    media_batchbuffer_start_atomic_helper(batch, I915_EXEC_BSD, size);
+}
+
+void
+media_batchbuffer_start_atomic_veb(MEDIA_BATCH_BUFFER *batch, unsigned int size)
+{
+    media_batchbuffer_start_atomic_helper(batch, I915_EXEC_VEBOX, size);
+}
+
+void
+media_batchbuffer_end_atomic(MEDIA_BATCH_BUFFER *batch)
+{
+    batch->atomic = 0;
 }

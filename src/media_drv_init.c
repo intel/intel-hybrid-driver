@@ -26,6 +26,7 @@
  * Xiang Haihao <haihao.xiang@intel.com> 
  */
 
+#include "sysdeps.h"
 #include "media_drv_util.h"
 #include "media_drv_defines.h"
 #include "media_drv_output_dri.h"
@@ -886,7 +887,24 @@ media_PutSurface (VADriverContextP ctx, VASurfaceID surface, VOID * draw,	/* X D
 		  UINT number_cliprects,	/* number of clip rects in the clip list */
 		  UINT flags)	/* de-interlacing flags */
 {
-  return VA_STATUS_SUCCESS;
+#ifdef HAVE_VA_X11
+  if (((ctx)->display_type & VA_DISPLAY_MAJOR_MASK) == VA_DISPLAY_X11) {
+    VARectangle src_rect, dst_rect;
+    src_rect.x      = srcx;
+    src_rect.y      = srcy;
+    src_rect.width  = srcw;
+    src_rect.height = srch;
+
+    dst_rect.x      = destx;
+    dst_rect.y      = desty;
+    dst_rect.width  = destw;
+    dst_rect.height = desth;
+
+    return media_put_surface_dri(ctx, surface, draw, &src_rect, &dst_rect,
+                                cliprects, number_cliprects, flags);
+    }
+#endif
+  return VA_STATUS_ERROR_UNIMPLEMENTED;
 }
 
 VAStatus
@@ -2111,10 +2129,8 @@ media_drv_init (VADriverContextP ctx)
     goto data_init_err;
   if (!media_display_attributes_init (ctx))
     goto dis_attr_err;
-  #if 0
   if (!media_render_init (ctx))
     goto render_init_err;
-  #endif
   if (!media_output_dri_init (ctx))
     goto dri_init_error;
 
@@ -2130,9 +2146,7 @@ media_drv_init (VADriverContextP ctx)
   return VA_STATUS_SUCCESS;
 
 dri_init_error:media_output_dri_terminate (ctx);
-#if 0
 render_init_err:media_render_terminate (ctx);
-#endif
 dis_attr_err:media_display_attributes_terminate (ctx);
 data_init_err:media_driver_data_terminate (ctx);
 dri_init_err:media_driver_terminate (ctx);

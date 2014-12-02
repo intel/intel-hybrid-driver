@@ -104,4 +104,12 @@ BOOL media_unmap_buffer_obj (dri_bo * bo);
 VOID media_batchbuffer_submit (MEDIA_BATCH_BUFFER * batch);
 VOID media_batchbuffer_flush (MEDIA_BATCH_BUFFER * batch);
 VOID media_batchbuffer_free (MEDIA_BATCH_BUFFER * batch);
+
+void media_batchbuffer_emit_mi_flush (MEDIA_BATCH_BUFFER * batch);
+void media_batchbuffer_start_atomic(MEDIA_BATCH_BUFFER *batch, unsigned int size);
+void media_batchbuffer_start_atomic_bcs(MEDIA_BATCH_BUFFER *batch, unsigned int size);
+void media_batchbuffer_start_atomic_blt(MEDIA_BATCH_BUFFER *batch, unsigned int size);
+void media_batchbuffer_start_atomic_veb(MEDIA_BATCH_BUFFER *batch, unsigned int size);
+void media_batchbuffer_end_atomic(MEDIA_BATCH_BUFFER *batch);
+
 #endif

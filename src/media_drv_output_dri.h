@@ -33,4 +33,17 @@
 #define LIBVA_X11_NAME "libva-x11.so.1"
 VOID media_output_dri_terminate (VADriverContextP ctx);
 BOOL media_output_dri_init (VADriverContextP ctx);
+
+VAStatus
+media_put_surface_dri(
+    VADriverContextP    ctx,
+    VASurfaceID         surface,
+    void               *draw,
+    const VARectangle  *src_rect,
+    const VARectangle  *dst_rect,
+    const VARectangle  *cliprects,
+    unsigned int        num_cliprects,
+    unsigned int        flags
+);
+
 #endif

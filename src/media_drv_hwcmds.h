@@ -145,4 +145,13 @@ STATUS mediadrv_gen_pipe_ctrl_cmd (MEDIA_BATCH_BUFFER * batch,
 STATUS
 media_object_cmd (MEDIA_BATCH_BUFFER *batch,
                   MEDIA_OBJECT_PARAMS *params);
+
+
+#define MI_FLUSH                                (CMD_MI | (0x4 << 23))
+#define   MI_FLUSH_STATE_INSTRUCTION_CACHE_INVALIDATE   (0x1 << 0)
+#define MI_FLUSH_DW                             (CMD_MI | (0x26 << 23) | 0x2)
+#define   MI_FLUSH_DW_VIDEO_PIPELINE_CACHE_INVALIDATE   (0x1 << 7)
+
+#define CMD_PIPE_CONTROL_WC_FLUSH               (1 << 12)
+
 #endif

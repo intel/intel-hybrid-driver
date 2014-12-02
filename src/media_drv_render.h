@@ -29,7 +29,6 @@
 
 #ifndef _MEDIA__DRIVER_RENDER_H
 #define _MEDIA__DRIVER_RENDER_H
-#include "media_drv_defines.h"
 
 #define NUM_RENDER_KERNEL       3
 struct media_render_kernel
@@ -42,6 +41,7 @@ struct media_render_kernel
   UINT kernel_offset;
 };
 
+struct object_surface;
 
 struct media_render_state
 {
@@ -131,7 +131,26 @@ struct media_render_state
   UINT scissor_offset;
   INT scissor_size;
 
+  void (*render_put_surface)(VADriverContextP ctx, struct object_surface *,
+                             const VARectangle *src_rec,
+                             const VARectangle *dst_rect,
+                             unsigned int flags);
+  void (*render_terminate)(VADriverContextP ctx);
+
 };
+
+
+extern bool media_drv_gen75_render_init(VADriverContextP ctx);
+
+extern void
+media_render_put_surface(
+    VADriverContextP   ctx,
+    struct object_surface *obj_surface,
+    const VARectangle *src_rect,
+    const VARectangle *dst_rect,
+    unsigned int       flags
+);
+
 BOOL media_render_init (VADriverContextP ctx);
 VOID media_render_terminate (VADriverContextP ctx);
 #endif

@@ -186,6 +186,8 @@ media_driver_data_init (VADriverContextP ctx)
     media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   drv_ctx->pp_batch =
     media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
+  drv_ctx->render_batch =
+    media_batchbuffer_new (&drv_ctx->drv_data, I915_EXEC_RENDER, 0);
   media_drv_mutex_init (&drv_ctx->render_mutex);
   media_drv_mutex_init (&drv_ctx->pp_mutex);
 
@@ -360,6 +362,9 @@ media_driver_data_terminate (VADriverContextP ctx)
 
   if (drv_ctx->pp_batch)
     media_batchbuffer_free (drv_ctx->pp_batch);
+
+  if (drv_ctx->render_batch)
+    media_batchbuffer_free (drv_ctx->render_batch);
 
   media_destroy_heap (&drv_ctx->image_heap, media_destroy_image);
   media_destroy_heap (&drv_ctx->buffer_heap, media_destroy_buffer);

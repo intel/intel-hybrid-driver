@@ -203,6 +203,7 @@ struct hw_codec_info
   UINT tiled_surface:1;
   UINT vp8_enc_hybrid_support:1;
   UINT ratecontrol;
+  bool (*render_init)(VADriverContextP);
 };
 
 typedef struct mi_store_data_imm_params
