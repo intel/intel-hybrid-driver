@@ -169,6 +169,10 @@ media_QueryVideoProcFilters (VADriverContextP ctx,
 
 
 static VAStatus
+media_validate_config(VADriverContextP ctx, VAProfile profile,
+    VAEntrypoint entrypoint);
+
+static VAStatus
 media_CreateSurfaces2 (VADriverContextP ctx,
 		       UINT format,
 		       UINT width,
@@ -1521,13 +1525,11 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
       return status;
     }
   render_state->interleaved_uv = 1;
-  if ((obj_config->profile != VAProfileVP8Version0_3)
-      && (!drv_ctx->codec_info->vp8_enc_hybrid_support))
+
+  status = media_validate_config(ctx, obj_config->profile, obj_config->entrypoint);
+
+  if (status != VA_STATUS_SUCCESS)
     return VA_STATUS_ERROR_UNSUPPORTED_PROFILE;
-  else
-    {
-      /*FIXME:Revisit and see how to handle this else statement */
-    }
 
   *context = contextID;
   obj_context->flags = flag;
@@ -1687,6 +1689,78 @@ media_DestroyConfig (VADriverContextP ctx, VAConfigID config_id)
 
 }
 
+static VAStatus
+media_validate_config(VADriverContextP ctx, VAProfile profile,
+    VAEntrypoint entrypoint)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx;
+  VAStatus va_status;
+  drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+
+  /* Validate profile & entrypoint */
+  switch (profile) {
+  case VAProfileVP8Version0_3:
+    if ((entrypoint == VAEntrypointEncSlice) &&
+        drv_ctx->codec_info->vp8_enc_hybrid_support) {
+      va_status = VA_STATUS_SUCCESS;
+    } else {
+      va_status = VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
+    }
+    break;
+  default:
+    va_status = VA_STATUS_ERROR_UNSUPPORTED_PROFILE;
+    break;
+  }
+  return va_status;
+}
+
+static VAConfigAttrib *
+media_lookup_config_attribute(struct object_config *obj_config,
+    VAConfigAttribType type)
+{
+  int i;
+
+  for (i = 0; i < obj_config->num_attribs; i++) {
+    VAConfigAttrib * const attrib = &obj_config->attrib_list[i];
+    if (attrib->type == type)
+      return attrib;
+  }
+  return NULL;
+}
+
+
+static VAStatus
+media_append_config_attribute(struct object_config *obj_config,
+    const VAConfigAttrib *new_attrib)
+{
+  VAConfigAttrib *attrib;
+
+  if (obj_config->num_attribs >= MEDIA_GEN_MAX_CONFIG_ATTRIBUTES)
+    return VA_STATUS_ERROR_MAX_NUM_EXCEEDED;
+
+  attrib = &obj_config->attrib_list[obj_config->num_attribs++];
+  attrib->type = new_attrib->type;
+  attrib->value = new_attrib->value;
+  return VA_STATUS_SUCCESS;
+}
+
+
+static VAStatus
+media_ensure_config_attribute(struct object_config *obj_config,
+    const VAConfigAttrib *new_attrib)
+{
+  VAConfigAttrib *attrib;
+
+  /* Check for existing attributes */
+  attrib = media_lookup_config_attribute(obj_config, new_attrib->type);
+  if (attrib) {
+    /* Update existing attribute */
+    attrib->value = new_attrib->value;
+    return VA_STATUS_SUCCESS;
+  }
+  return media_append_config_attribute(obj_config, new_attrib);
+}
+
 VAStatus
 media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entrypoint, VAConfigAttrib * attrib_list, INT num_attribs, VAConfigID * config_id)	/* out */
 {
@@ -1700,6 +1774,12 @@ media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entryp
   MEDIA_DRV_ASSERT (ctx);
   MEDIA_DRV_ASSERT (config_id);
   MEDIA_DRV_ASSERT (drv_ctx);
+
+  status = media_validate_config(ctx, profile, entrypoint);
+  if (VA_STATUS_SUCCESS != status) {
+    return status;
+  }
+
   attr_table_sz =
     sizeof (config_attributes_list) / sizeof (config_attributes_list[0]);
   for (i = 0; i < attr_table_sz; i++)
@@ -1718,30 +1798,39 @@ media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entryp
 	    break;
 	}
     }
-  if (i < attr_table_sz)
-    {
-      configID = NEW_CONFIG_ID ();
-      obj_config = CONFIG (configID);
-      obj_config->profile = profile;
-      obj_config->entrypoint = entrypoint;
-      //obj_config->attrib_list[0].type = VAConfigAttribRTFormat;
-      //obj_config->attrib_list[0].value = VA_RT_FORMAT_YUV420;
-      obj_config->num_attribs = num_attribs;
-      for (j = 0; j < num_attribs; j++)
-	{
-	  obj_config->attrib_list[j].type = attrib_list[j].type;
-	  obj_config->attrib_list[j].value = attrib_list[j].value;
-	}
 
-      *config_id = configID;
-      status = VA_STATUS_SUCCESS;
-    }
-  else
-    {
-      status = VA_STATUS_ERROR_MAX_NUM_EXCEEDED;
-    }
+  configID = NEW_CONFIG_ID ();
+  obj_config = CONFIG (configID);
+  obj_config->profile = profile;
+  obj_config->entrypoint = entrypoint;
+
+  obj_config->num_attribs = 0;
+
+  for (i = 0; i < num_attribs; i++) {
+    status = media_ensure_config_attribute(obj_config, &attrib_list[i]);
+    if (status != VA_STATUS_SUCCESS)
+      break;
+  }
+
+  if (status == VA_STATUS_SUCCESS) {
+    VAConfigAttrib attrib, *attrib_found;
+    attrib.type = VAConfigAttribRTFormat;
+    attrib.value = VA_RT_FORMAT_YUV420;
+    attrib_found = media_lookup_config_attribute(obj_config, attrib.type);
+    if (!attrib_found)
+      status = media_append_config_attribute(obj_config, &attrib);
+    else if (attrib_found->value != attrib.value)
+      status = VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT;
+  }
+
+  /* Error recovery */
+  if (VA_STATUS_SUCCESS != status) {
+    media_destroy_config(&drv_ctx->config_heap, (struct object_base *)obj_config);
+  } else {
+    *config_id = configID;
+    status = VA_STATUS_SUCCESS;
+  }
   return status;
-
 }
 
 VAStatus
