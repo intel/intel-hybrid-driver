@@ -4538,16 +4538,13 @@ media_surface_state_scaling (MEDIA_ENCODER_CTX * encoder_context,
     scaling_gpe_ctx->surface_state_binding_table.res.bo;
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.surface_is_2d = 1;
-  params.media_block_raw = 1;
+  // params.media_block_raw = 1;
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;
   params.format = STATE_SURFACEFORMAT_R8_UNORM;
-  params.binding_table_offset = BINDING_TABLE_OFFSET (24);
-  params.surface_state_offset = SURFACE_STATE_OFFSET (24);
+  params.binding_table_offset = BINDING_TABLE_OFFSET (1);
+  params.surface_state_offset = SURFACE_STATE_OFFSET (1);
   params.surface_2d = &scaling_sutface_params->scaling_output_surface;
-  params.surface_2d->width = ALIGN (scaling_sutface_params->output_width, 16);
-  params.surface_2d->height =
-    ALIGN (scaling_sutface_params->output_height, 16);
   encoder_context->media_add_surface_state (&params);
 
   media_unmap_buffer_obj (scaling_gpe_ctx->surface_state_binding_table.res.

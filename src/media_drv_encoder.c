@@ -484,10 +484,8 @@ mediadrv_gen_encode_scaling (VADriverContextP ctx,
   GENERIC_KERNEL_PARAMS kernel_params;
   VAEncSequenceParameterBufferVP8 *seq_param =
     (VAEncSequenceParameterBufferVP8 *) encode_state->seq_param_ext->buffer;
-  VAEncPictureParameterBufferVP8 *pic_param =
-    (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
   MEDIA_ENCODER_VP8_SURFACE *vp8_surface;
-  pic_coding_type = pic_param->pic_flags.bits.frame_type;
+  pic_coding_type = encoder_context->pic_coding_type;
   if (!phase_16x)
     scaling_gpe_ctx->surface_state_binding_table =
       scaling_ctx->surface_state_binding_table_scaling;
@@ -788,6 +786,7 @@ mediadrv_gen_encode_mbenc (VADriverContextP ctx,
   mbenc_sutface_params.iframe_dist_in_use = mbenc_i_frame_dist_in_use;
   mbenc_sutface_params.cacheability_control = CACHEABILITY_TYPE_LLC;
   mbenc_sutface_params.kernel_dump = 1;
+  mbenc_sutface_params.hme_enabled = encode_state->hme_enabled;
  encoder_context->media_add_binding_table (&mbenc_ctx->gpe_context);
 
   encoder_context->surface_state_vp8_mbenc (encoder_context, encode_state,
@@ -821,9 +820,7 @@ mediadrv_gen_encode_me (VADriverContextP ctx,
   MEDIA_GPE_CTX *me_gpe_ctx = &me_ctx->gpe_context;
   VAEncSequenceParameterBufferVP8 *seq_param =
     (VAEncSequenceParameterBufferVP8 *) encode_state->seq_param_ext->buffer;
-  VAEncPictureParameterBufferVP8 *pic_param =
-    (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
-  UINT pic_coding_type = pic_param->pic_flags.bits.frame_type;
+  UINT pic_coding_type = encoder_context->pic_coding_type;
   GENERIC_KERNEL_PARAMS kernel_params;
   if (me_phase)
     {
@@ -1339,16 +1336,17 @@ media_get_pic_params_vp8_encode (VADriverContextP ctx,
 
   VAEncPictureParameterBufferVP8 *pic_param =
     (VAEncPictureParameterBufferVP8 *) encode_state->pic_param_ext->buffer;
-  INT picture_coding_type = pic_param->pic_flags.bits.frame_type;
+  INT picture_coding_type;
   struct object_surface *obj_surface;
   CHAR *coded_buf;
 
+  encoder_context->pic_coding_type =
+    pic_param->pic_flags.bits.frame_type ? FRAME_TYPE_P : FRAME_TYPE_I;
+  picture_coding_type = encoder_context->pic_coding_type;
   encode_state->hme_enabled = encoder_context->hme_supported
     && picture_coding_type != FRAME_TYPE_I;
   encode_state->me_16x_enabled = encoder_context->me_16x_supported
     && picture_coding_type != FRAME_TYPE_I;
-  encoder_context->pic_coding_type =
-    picture_coding_type ? FRAME_TYPE_P : FRAME_TYPE_I;
   if (encode_state->me_16x_enabled)
     {
       encode_state->me_16x_done = FALSE;
@@ -1357,7 +1355,7 @@ media_get_pic_params_vp8_encode (VADriverContextP ctx,
     {
       encode_state->hme_done = FALSE;
     }
-  if (pic_param->pic_flags.bits.frame_type == 0)
+  if (picture_coding_type == FRAME_TYPE_I)
     {
       encoder_context->ref_frame_ctrl = 0;
     }

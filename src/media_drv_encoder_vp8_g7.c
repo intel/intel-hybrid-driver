@@ -97,7 +97,7 @@ media_mbenc_context_init_g7 (VADriverContextP ctx,
 			  5);
   gpe_context->idrt_size = sizeof (struct media_interface_descriptor_data);	//* MAX_INTERFACE_DESC_GEN6;
   gpe_context->curbe_size = /*0x140 */ CURBE_TOTAL_DATA_LENGTH;
-  gpe_context->sampler_size = /*0 */ 0x80;
+  gpe_context->sampler_size = /*0 */ 8 * 0x80;
   media_gpe_context_init (ctx, gpe_context);
   media_sampler_setup_mbenc_g7 (encoder_context);
   media_interface_setup_mbenc (encoder_context);

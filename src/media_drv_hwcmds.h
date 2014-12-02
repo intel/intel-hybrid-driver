@@ -116,8 +116,8 @@
 //#define DEGREE_46 3
 typedef struct media_curbe_scaling_data
 {
-  UINT input_pic_height:16;
   UINT input_pic_width:16;
+  UINT input_pic_height:16;
   UINT src_planar_y:32;
   UINT dest_planar_y:32;
 } CURBE_SCALING_DATA;
