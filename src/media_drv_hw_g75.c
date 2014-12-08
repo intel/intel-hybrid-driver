@@ -3178,9 +3178,9 @@ media_set_curbe_p_vp8_mbenc (struct encode_state *encode_state,
 
       cmd->dw62.average_qp_of_alt_ref_frame = qp;
   } else {
-    cmd->dw62.average_qp_of_last_ref_frame = params->frame_update->ref_q_index[0];
-    cmd->dw62.average_qp_of_gold_ref_frame = params->frame_update->ref_q_index[1];
-    cmd->dw62.average_qp_of_alt_ref_frame  = params->frame_update->ref_q_index[2];
+    cmd->dw62.average_qp_of_last_ref_frame = quant_dc_vp8_g75[params->frame_update->ref_q_index[0]];
+    cmd->dw62.average_qp_of_gold_ref_frame = quant_dc_vp8_g75[params->frame_update->ref_q_index[1]];
+    cmd->dw62.average_qp_of_alt_ref_frame  = quant_dc_vp8_g75[params->frame_update->ref_q_index[2]];
   }
 
   //dw63
