@@ -999,6 +999,7 @@ mediadrv_gen_encode_brc_update(VADriverContextP ctx,
   mbenc_curbe_params.updated = 0; // encoder_context->mbenc_curbe_set_brc_update;
   mbenc_curbe_params.hme_enabled = encode_state->hme_enabled;
   mbenc_curbe_params.brc_enabled = encoder_context->brc_enabled;
+  mbenc_curbe_params.frame_update = &encoder_context->frame_update;
 
   if (encoder_context->pic_coding_type == FRAME_TYPE_P) {
     ref_frame_flag = 0x07;
