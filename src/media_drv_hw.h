@@ -47,10 +47,10 @@ typedef struct _MEDIA_FRAME_UPDATE
   UINT prev_frame_size;
   BOOL two_prev_frame_flag;
   UINT16 ref_frame_cost[4];
-  UINT16 intra_mode_cost[4][4];
+  UINT16 intra_mode_cost[4];
   UINT16 inter_mode_cost[4];
-  BYTE intra_non_dc_penalty_16x16[4];
-  BYTE intra_non_dc_penalty_4x4[4];
+  UINT16 intra_non_dc_penalty_16x16;
+  UINT16 intra_non_dc_penalty_4x4;
   BYTE ref_q_index[3];
 } MEDIA_FRAME_UPDATE;
 

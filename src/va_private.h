@@ -47,10 +47,10 @@ typedef struct _VAEncMiscParameterVP8HybridFrameUpdate
     unsigned int    prev_frame_size;
     bool            two_prev_frame_size;
     unsigned short  ref_frame_cost[4];
-    unsigned short  intra_mode_cost[4][4];
+    unsigned short  intra_mode_cost[4];
     unsigned short  inter_mode_cost[4];
-    unsigned char   intra_non_dc_penalty_16x16[4];
-    unsigned char   intra_non_dc_penalty_4x4[4];
+    unsigned short   intra_non_dc_penalty_16x16;
+    unsigned short   intra_non_dc_penalty_4x4;
     unsigned char   ref_q_index[3];
 } VAEncMiscParameterVP8HybridFrameUpdate;
 
