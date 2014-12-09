@@ -2706,10 +2706,9 @@ media_set_curbe_vp8_brc_update_g7(struct encode_state *encode_state,
 
   cmd->dw15.frame_width_in_mb = params->frame_width_in_mbs;
   cmd->dw15.frame_height_in_mb = params->frame_height_in_mbs;
-  // cmd->dw15.prev_flag = !params->frame_update->two_prev_frame_flag;
-  cmd->dw15.prev_flag = 1; /* always 1 ??? */
+  cmd->dw15.prev_flag = !params->frame_update->two_prev_frame_flag;
 
-  if (params->frame_update->prev_frame_size != 0)
+   if (params->frame_update->prev_frame_size != 0)
     cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size - 12;
 
   if (params->frame_number == 1)
