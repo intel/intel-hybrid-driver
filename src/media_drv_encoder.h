@@ -183,6 +183,7 @@ typedef struct media_encoder_ctx
   DOUBLE brc_init_reset_input_bits_per_frame;
   UINT brc_init_reset_buf_size_in_bits;
   UINT target_bit_rate;
+  UINT prev_target_bit_rate;
   UINT max_bit_rate;
   UINT min_bit_rate;
   UINT gop_pic_size;
