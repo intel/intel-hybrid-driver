@@ -1140,13 +1140,11 @@ media_encode_kernel_functions (VADriverContextP ctx,
   encoder_context->mbpak_curbe_set_brc_update = FALSE;
 
   if (encoder_context->brc_enabled) {
-    if (encoder_context->pic_coding_type == FRAME_TYPE_I) {
-      if (!encoder_context->brc_initted ||
+       if (!encoder_context->brc_initted ||
 	  encoder_context->brc_need_reset) {
 	mediadrv_gen_encode_brc_init_reset(ctx, encoder_context, encode_state);
       }
     }
-  }
 
   if (encoder_context->scaling_enabled == 1)
     {
@@ -1497,6 +1495,10 @@ media_get_rate_control_params_vp8_encode (VADriverContextP ctx,
   if (encoder_context->rate_control_mode == VA_RC_CBR) {
     encoder_context->internal_rate_mode = HB_BRC_CBR;
     encoder_context->min_bit_rate = encoder_context->max_bit_rate;
+    if(encoder_context->prev_target_bit_rate!=encoder_context->target_bit_rate){
+      encoder_context->brc_need_reset = 1;
+      encoder_context->prev_target_bit_rate=encoder_context->target_bit_rate;
+    }
   } else if (encoder_context->rate_control_mode == VA_RC_VBR) {
     encoder_context->internal_rate_mode = HB_BRC_VBR;
     encoder_context->min_bit_rate = encoder_context->max_bit_rate * (2 * misc->target_percentage - 100) / 100;

@@ -1123,6 +1123,7 @@ media_encoder_init_vp8 (VADriverContextP ctx,
 {
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   encoder_context->codec = CODEC_VP8;
+  encoder_context->prev_target_bit_rate=0;
   //encoder_context->picture_width = picture_width;
   //encoder_context->picture_height = picture_height;
 
