@@ -178,6 +178,8 @@ media_driver_data_init (VADriverContextP ctx)
     drv_ctx->codec_info = &gen7_hw_codec_info;
   else if (IS_GEN8(drv_ctx->drv_data.device_id))
     drv_ctx->codec_info = &gen8_hw_codec_info;
+  else if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id))
+    drv_ctx->codec_info = &chv_hw_codec_info;
   else
     return false;
 

@@ -244,9 +244,11 @@ media_batchbuffer_emit_mi_flush (MEDIA_BATCH_BUFFER * batch)
   struct media_driver_data *drv_data = batch->drv_data;
 
   if (IS_GEN75(drv_data->device_id) ||
+      IS_CHERRYVIEW(drv_data->device_id) ||
       IS_GEN8(drv_data->device_id)) {
       if (batch->flag == I915_EXEC_RENDER) {
-          if (IS_GEN8(drv_data->device_id)) {
+          if (IS_GEN8(drv_data->device_id) ||
+              IS_CHERRYVIEW(drv_data->device_id)) {
               BEGIN_BATCH(batch, 6);
               OUT_BATCH(batch, CMD_PIPE_CONTROL | (6 - 2));
 

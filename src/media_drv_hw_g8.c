@@ -44,6 +44,14 @@ struct hw_codec_info gen8_hw_codec_info = {
   .render_init = media_drv_gen8_render_init,
  };
 
+struct hw_codec_info chv_hw_codec_info = {
+  .max_width = 4096,
+  .max_height = 4096,
+  .tiled_surface = 1,
+  .render_init = media_drv_gen8_render_init,
+ };
+
+
 MEDIA_KERNEL media_hybrid_vp8_kernels_g8[] = {
   {
    (BYTE *) "VP8_MBENC_I",

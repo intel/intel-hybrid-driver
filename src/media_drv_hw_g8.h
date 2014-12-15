@@ -38,6 +38,7 @@
 
 extern MEDIA_KERNEL media_hybrid_vp8_kernels_g8[NUM_OF_VP8_KERNELS_G8];
 extern struct hw_codec_info gen8_hw_codec_info;
+extern struct hw_codec_info chv_hw_codec_info;
 
 
 typedef struct surface_state_g8
