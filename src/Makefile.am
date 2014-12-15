@@ -28,6 +28,7 @@ AM_CPPFLAGS = \
 	$(DRM_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
 	-I$(top_srcdir)/src/cmrt	\
+	-I$(top_srcdir)/src/vp9h	\
 	$(NULL)
 
 driver_cflags = \
@@ -76,6 +77,7 @@ driver_files = \
         media_drv_gen75_render.c   \
         media_drv_gen8_render.c   \
         test_add.cpp   \
+        media_drv_hybrid_vp9_common.cpp   \
         $(NULL)
 
 driver_headers = \
@@ -112,6 +114,7 @@ driver_headers = \
         media_drv_decoder.h   \
         media_render_common.h  \
         test_add.h  \
+        media_drv_hybrid_vp9_common.h   \
        $(NULL)
 
 hybrid_drv_video_la_LTLIBRARIES= hybrid_drv_video.la
