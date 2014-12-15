@@ -53,7 +53,13 @@ typedef int object_heap_iterator;
 
 /*
  * Return 0 on success, -1 on error
+ *
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int object_heap_init( object_heap_p heap, int object_size, int id_offset);
 
 /*
@@ -89,5 +95,10 @@ void object_heap_free( object_heap_p heap, object_base_p obj );
  * Destroys a heap, the heap must be empty.
  */
 void object_heap_destroy( object_heap_p heap );
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _OBJECT_HEAP_H_ */

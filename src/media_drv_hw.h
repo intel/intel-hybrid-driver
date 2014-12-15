@@ -31,8 +31,18 @@
 #include "media_drv_util.h"
 #include <stddef.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <i915_drm.h>
 #include <xf86drm.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 #include "media_drv_gpe_utils.h"
 
 #define STATUS_QUERY_END_FLAG   0xFF

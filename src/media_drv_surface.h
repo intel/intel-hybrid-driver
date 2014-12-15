@@ -30,9 +30,19 @@
 #ifndef _MEDIA__DRIVER_SURFACE_H
 #define _MEDIA__DRIVER_SURFACE_H
 #include <va/va_drmcommon.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <drm.h>
 #include <i915_drm.h>
 #include <intel_bufmgr.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 #include "object_heap.h"
 #include "media_drv_defines.h"
 #include <va/va_backend.h>
@@ -278,11 +288,22 @@ VOID
 media_destroy_surface (struct object_heap *heap, struct object_base *obj);
 VAStatus
 media_sync_surface (MEDIA_DRV_CONTEXT * drv_ctx, VASurfaceID render_target);
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 VOID
 media_alloc_surface_bo (VADriverContextP ctx,
 			struct object_surface *obj_surface,
 			INT tiled,
 			UINT fourcc, UINT subsampling);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 VAStatus
 media_drv_create_surface (VADriverContextP ctx, input_surf_params * params);
 #endif

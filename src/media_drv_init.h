@@ -36,9 +36,20 @@
 #include <va/va_vpp.h>
 #include <va/va_backend_vpp.h>
 #include <va/va_drmcommon.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <drm.h>
 #include <i915_drm.h>
 #include <intel_bufmgr.h>
+
+
+#ifdef __cplusplus
+}
+#endif
+
 #include "media_drv_batchbuffer.h"
 #include "va_private.h"
 #include "object_heap.h"

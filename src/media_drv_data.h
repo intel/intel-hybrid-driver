@@ -30,9 +30,17 @@
 #define _MEDIA__DRIVER_DATA_H
 #include <stdbool.h>
 #include <pthread.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <drm.h>
 #include <i915_drm.h>
 #include <intel_bufmgr.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 #define TRUE 1
 #define FALSE 0
