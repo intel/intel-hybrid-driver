@@ -39,6 +39,7 @@ struct hw_codec_info gen8_hw_codec_info = {
   .vp8_enc_hybrid_support = 1,
   .tiled_surface = 1,
   .vp8_enc_hybrid_support=1,
+  .vp9_dec_hybrid_support = 1,
   .ratecontrol= VA_RC_CQP,
   .render_init = media_drv_gen8_render_init,
  };
