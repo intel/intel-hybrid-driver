@@ -29,6 +29,7 @@
 #ifndef _MEDIA__DRIVER_DEFINES_H
 #define _MEDIA__DRIVER_DEFINES_H
 #include <stdbool.h>
+#include <stdint.h>
 
 #define FRAME_TYPE_I            1
 #define FRAME_TYPE_P            2
@@ -106,7 +107,7 @@ typedef short INT16;
 typedef int INT;
 typedef unsigned char BYTE;
 typedef char CHAR;
-typedef bool BOOL;
+typedef uint32_t BOOL;
 typedef bool STATUS;
 typedef void VOID;
 
