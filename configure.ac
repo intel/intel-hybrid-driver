@@ -170,6 +170,7 @@ AC_OUTPUT([
     Makefile
     debian.upstream/Makefile 
     src/Makefile
+    src/cmrt/Makefile
     ])
 
 dnl Print summary

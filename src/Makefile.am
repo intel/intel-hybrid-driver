@@ -21,11 +21,13 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+SUBDIRS = cmrt
 
 AM_CPPFLAGS = \
 	-DPTHREADS		\
 	$(DRM_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
+	-I$(top_srcdir)/src/cmrt	\
 	$(NULL)
 
 driver_cflags = \
@@ -117,7 +119,7 @@ hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
 hybrid_drv_video_la_CFLAGS	= $(driver_cflags)
 hybrid_drv_video_la_CXXFLAGS	= -fpermissive $(driver_cflags)
 hybrid_drv_video_la_LDFLAGS= $(driver_ldflags)
-hybrid_drv_video_la_LIBADD	= $(driver_libs)
+hybrid_drv_video_la_LIBADD	= $(driver_files) cmrt/cmrt.la
 hybrid_drv_video_la_SOURCES= $(driver_files)
 noinst_HEADERS = $(driver_headers)
 
