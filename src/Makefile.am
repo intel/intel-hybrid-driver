@@ -23,6 +23,8 @@
 
 SUBDIRS = cmrt vp9h
 
+CMRT_LIB_PATH=$(top_srcdir)/src/cmrt/.libs/
+
 AM_CPPFLAGS = \
 	-DPTHREADS		\
 	$(DRM_CFLAGS)		\
@@ -40,6 +42,7 @@ driver_ldflags = \
 	-module -avoid-version	\
 	-no-undefined		\
 	-Wl,--no-undefined	\
+	-L$(CMRT_LIB_PATH) \
 	$(NULL)
 
 driver_libs = \
@@ -120,7 +123,7 @@ hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
 hybrid_drv_video_la_CFLAGS	= $(driver_cflags)
 hybrid_drv_video_la_CXXFLAGS	= -fpermissive $(driver_cflags)
 hybrid_drv_video_la_LDFLAGS= $(driver_ldflags)
-hybrid_drv_video_la_LIBADD	= $(driver_files) cmrt/cmrt.la vp9h/vp9h.la
+hybrid_drv_video_la_LIBADD	= $(driver_files) vp9h/vp9h.la -l:cmrt.so
 hybrid_drv_video_la_SOURCES= $(driver_files)
 noinst_HEADERS = $(driver_headers)
 

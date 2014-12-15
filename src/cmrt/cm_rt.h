@@ -32,15 +32,13 @@
 #ifndef _Cm_H_
 #define _Cm_H_
 
-
 #ifdef __cplusplus
-#   define EXTERN_C     extern "C"
+#define EXTERN_C     extern "C"
 #else
-#   define EXTERN_C
+#define EXTERN_C
 #endif
 
 #include "cm_rt_linux.h"
-
 
 #ifndef CM_1_0
 #define CM_1_0          100
@@ -69,7 +67,6 @@
 #define CM_4_0          400
 #endif
 
-//Define MDF version for MDF 4.0
 #ifndef __INTEL_MDF
 #define __INTEL_MDF     CM_4_0
 #endif
@@ -91,14 +88,9 @@
 #define CM_INVALID_HEIGHT                           -14
 #define CM_INVALID_DEPTH                            -15
 #define CM_INVALID_COMMON_ISA                       -16
-#define CM_D3DDEVICEMGR_OPEN_HANDLE_FAIL            -17 // IDirect3DDeviceManager9::OpenDeviceHandle fail
-#define CM_D3DDEVICEMGR_DXVA2_E_NEW_VIDEO_DEVICE    -18 // IDirect3DDeviceManager9::LockDevice return DXVA2_E_VIDEO_DEVICE_LOCKED
-#define CM_D3DDEVICEMGR_LOCK_DEVICE_FAIL            -19 // IDirect3DDeviceManager9::LockDevice return other fail than DXVA2_E_VIDEO_DEVICE_LOCKED
-#define CM_EXCEED_SAMPLER_AMOUNT                    -20
 #define CM_EXCEED_MAX_KERNEL_PER_ENQUEUE            -21
 #define CM_EXCEED_MAX_KERNEL_SIZE_IN_BYTE           -22
 #define CM_EXCEED_MAX_THREAD_AMOUNT_PER_ENQUEUE     -23
-#define CM_EXCEED_VME_STATE_G6_AMOUNT               -24
 #define CM_INVALID_THREAD_SPACE                     -25
 #define CM_EXCEED_MAX_TIMEOUT                       -26
 #define CM_JITDLL_LOAD_FAILURE                      -27
@@ -113,16 +105,15 @@
 #define CM_INVALID_HARDWARE_THREAD_NUMBER           -36
 #define CM_GTPIN_INVOKE_FAILURE                     -37
 #define CM_INVALIDE_L3_CONFIGURATION                -38
-#define CM_INVALID_D3D11_TEXTURE2D_USAGE            -39
 #define CM_INTEL_GFX_NOTFOUND                       -40
 #define CM_GPUCOPY_INVALID_SYSMEM                   -41
 #define CM_GPUCOPY_INVALID_WIDTH                    -42
 #define CM_GPUCOPY_INVALID_STRIDE                   -43
 #define CM_EVENT_DRIVEN_FAILURE                     -44
-#define CM_LOCK_SURFACE_FAIL                        -45 // Lock surface failed
+#define CM_LOCK_SURFACE_FAIL                        -45
 #define CM_INVALID_GENX_BINARY                      -46
-#define CM_FEATURE_NOT_SUPPORTED_IN_DRIVER          -47 // driver out-of-sync
-#define CM_QUERY_DLL_VERSION_FAILURE                -48 //Fail in getting DLL file version
+#define CM_FEATURE_NOT_SUPPORTED_IN_DRIVER          -47
+#define CM_QUERY_DLL_VERSION_FAILURE                -48
 #define CM_KERNELPAYLOAD_PERTHREADARG_MUTEX_FAIL    -49
 #define CM_KERNELPAYLOAD_PERKERNELARG_MUTEX_FAIL    -50
 #define CM_KERNELPAYLOAD_SETTING_FAILURE            -51
@@ -131,10 +122,7 @@
 #define CM_GPUCOPY_INVALID_SURFACES                 -54
 #define CM_GPUCOPY_INVALID_SIZE                     -55
 #define CM_GPUCOPY_OUT_OF_RESOURCE                  -56
-#define CM_DEVICE_INVALID_D3DDEVICE                 -57
 #define CM_SURFACE_DELAY_DESTROY                    -58
-#define	CM_INVALID_VEBOX_STATE                      -59
-#define CM_INVALID_VEBOX_SURFACE                    -60
 #define CM_FEATURE_NOT_SUPPORTED_BY_HARDWARE	    -61
 #define CM_RESOURCE_USAGE_NOT_SUPPORT_READWRITE     -62
 #define CM_MULTIPLE_MIPLEVELS_NOT_SUPPORTED         -63
@@ -153,7 +141,6 @@
 #define CM_INVALID_GPUCOPY_KERNEL                   -76
 #define CM_INVALID_DEPENDENCY_WITH_WALKING_PATTERN  -77
 #define CM_INVALID_MEDIA_WALKING_PATTERN            -78
-#define CM_FAILED_TO_ALLOCATE_SVM_BUFFER            -79
 #define CM_EXCEED_MAX_POWER_OPTION_FOR_PLATFORM     -80
 #define CM_INVALID_KERNEL_THREADGROUPSPACE          -81
 #define CM_INVALID_KERNEL_SPILL_CODE                -82
@@ -168,9 +155,8 @@
 #define CM_MIN_SURF_HEIGHT  1
 #define CM_MIN_SURF_DEPTH   2
 
-#define CM_MAX_1D_SURF_WIDTH 0X8000000 // 2^27
+#define CM_MAX_1D_SURF_WIDTH 0X8000000
 
-//IVB+
 #define CM_MAX_2D_SURF_WIDTH_IVB_PLUS   16384
 #define CM_MAX_2D_SURF_HEIGHT_IVB_PLUS  16384
 
@@ -188,237 +174,369 @@
 #define CM_MAX_THREADSPACE_WIDTH        511
 #define CM_MAX_THREADSPACE_HEIGHT       511
 
-#define IVB_MAX_SLM_SIZE_PER_GROUP   16 // 64KB PER Group on Gen7
+#define IVB_MAX_SLM_SIZE_PER_GROUP   16
 
-//Time in seconds before kernel should timeout
 #define CM_MAX_TIMEOUT 2
-//Time in milliseconds before kernel should timeout
 #define CM_MAX_TIMEOUT_MS CM_MAX_TIMEOUT*1000
 
-#define CM_NO_EVENT  ((CmEvent *)(-1))	//NO Event
+#define CM_NO_EVENT  ((CmEvent *)(-1))
 
-typedef enum _CM_STATUS
-{
-    CM_STATUS_QUEUED         ,
-    CM_STATUS_FLUSHED        = 1,
-    CM_STATUS_FINISHED       = 2,
-    CM_STATUS_STARTED        = 3
+typedef enum _CM_STATUS {
+	CM_STATUS_QUEUED,
+	CM_STATUS_FLUSHED = 1,
+	CM_STATUS_FINISHED = 2,
+	CM_STATUS_STARTED = 3
 } CM_STATUS;
 
-
-// CM RT DLL File Version
-typedef struct _CM_DLL_FILE_VERSION
-{
-    WORD    wMANVERSION;
-    WORD    wMANREVISION;
-    WORD    wSUBREVISION;
-    WORD    wBUILD_NUMBER;
-    //Version constructed as : "wMANVERSION.wMANREVISION.wSUBREVISION.wBUILD_NUMBER"
+typedef struct _CM_DLL_FILE_VERSION {
+	WORD wMANVERSION;
+	WORD wMANREVISION;
+	WORD wSUBREVISION;
+	WORD wBUILD_NUMBER;
 } CM_DLL_FILE_VERSION, *PCM_DLL_FILE_VERSION;
 
-// Cm Device Create Option
-#define CM_DEVICE_CREATE_OPTION_DEFAULT                     0
+#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_ENABLE        0
 #define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE       1
-#define CM_DEVICE_CREATE_OPTION_TDR_DISABLE                 64  //Work only for DX11 so far
+#define CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_MASK          1
+
+#define CM_DEVICE_CREATE_OPTION_TDR_DISABLE                 64
 
 #define CM_DEVICE_CREATE_OPTION_SURFACE_REUSE_ENABLE        1024
+#define CM_DEVICE_CONFIG_SLM_MODE_OFFSET                    13
+#define CM_DEVICE_CONFIG_SLM_MODE_ENABLE                   (1 << CM_DEVICE_CONFIG_SLM_MODE_OFFSET)
 
+#define CM_DEVICE_CREATE_OPTION_DEFAULT                     ((CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_ENABLE) \
+                                                             | (CM_DEVICE_CONFIG_SLM_MODE_ENABLE))
+
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_OFFSET     1
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_MASK       (7 << CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_OFFSET)
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_16K_STEP   16384
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_16K        1
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_32K        2
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_48K        3
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_64K        4
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_80K        5
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_96K        6
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_112K       7
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_128K       0
+#define CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_DEFAULT    CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_128K
+
+#define CM_DEVICE_CONFIG_TASK_NUM_OFFSET               4
+#define CM_DEVICE_CONFIG_TASK_NUM_MASK                (3 << CM_DEVICE_CONFIG_TASK_NUM_OFFSET)
+#define CM_DEVICE_CONFIG_TASK_NUM_DEFAULT              0
+#define CM_DEVICE_CONFIG_TASK_NUM_8                    1
+#define CM_DEVICE_CONFIG_TASK_NUM_12                   2
+#define CM_DEVICE_CONFIG_TASK_NUM_16                   3
+#define CM_DEVICE_CONFIG_TASK_NUM_STEP                 4
+
+#define CM_DEVICE_CONFIG_MEDIA_RESET_OFFSET            7
+#define CM_DEVICE_CONFIG_MEDIA_RESET_ENABLE           (1 << CM_DEVICE_CONFIG_MEDIA_RESET_OFFSET)
+
+#define CM_DEVICE_CONFIG_EXTRA_TASK_NUM_OFFSET         8
+#define CM_DEVICE_CONFIG_EXTRA_TASK_NUM_MASK          (3 << CM_DEVICE_CONFIG_EXTRA_TASK_NUM_OFFSET)
+#define CM_DEVICE_CONFIG_EXTRA_TASK_NUM_4              3
+
+#define CM_DEVICE_CONFIG_SLICESHUTDOWN_OFFSET          10
+#define CM_DEVICE_CONFIG_SLICESHUTDOWN_ENABLE         (1 << CM_DEVICE_CONFIG_SLICESHUTDOWN_OFFSET)
+
+#define CM_DEVICE_CONFIG_SURFACE_REUSE_ENABLE          11
+
+#define CM_DEVICE_CONFIG_GPUCONTEXT_OFFSET             12
+#define CM_DEVICE_CONFIG_GPUCONTEXT_ENABLE             (1 << CM_DEVICE_CONFIG_GPUCONTEXT_OFFSET)
+
+// VP9 config:
+// Scratch space size :16k
+// Number of task: 16
+// Media Reset Option : TRUE
+// Extra task num: 4
+#define CM_DEVICE_CREATE_OPTION_FOR_VP9  ((CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_ENABLE) \
+                                           | (CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_16K << CM_DEVICE_CONFIG_SCRATCH_SPACE_SIZE_OFFSET) \
+                                           | (CM_DEVICE_CONFIG_TASK_NUM_16 << CM_DEVICE_CONFIG_TASK_NUM_OFFSET) \
+                                           | (CM_DEVICE_CONFIG_MEDIA_RESET_ENABLE) \
+                                           | (CM_DEVICE_CONFIG_EXTRA_TASK_NUM_4 << CM_DEVICE_CONFIG_EXTRA_TASK_NUM_OFFSET)\
+                                           | (CM_DEVICE_CONFIG_GPUCONTEXT_ENABLE))
 
 #define CM_MAX_DEPENDENCY_COUNT         8
 
-typedef enum _CM_DEPENDENCY_PATTERN
-{
-    CM_NONE_DEPENDENCY          ,    //All threads run parallel, scanline dispatch
-    CM_WAVEFRONT                = 1,
-    CM_WAVEFRONT26              = 2,
-    CM_VERTICAL_DEPENDENCY      = 3,
-    CM_HORIZONTAL_DEPENDENCY    = 4,
-    CM_WAVEFRONT26Z             = 5,
-    CM_WAVEFRONT26ZI            = 8
+#define CM_KERNEL_FUNCTION2(...) #__VA_ARGS__
+#define CM_KERNEL_FUNCTION(...) CM_KERNEL_FUNCTION2(__VA_ARGS__)
+#define _NAME(...) #__VA_ARGS__
+
+#define CM_DEFAULT_THREAD_DEPENDENCY_MASK          0xFF
+
+typedef enum _CM_DEPENDENCY_PATTERN {
+	CM_NONE_DEPENDENCY,
+	CM_WAVEFRONT = 1,
+	CM_WAVEFRONT26 = 2,
+	CM_VERTICAL_DEPENDENCY = 3,
+	CM_HORIZONTAL_DEPENDENCY = 4,
+	CM_WAVEFRONT26Z = 5,
+	CM_WAVEFRONT26ZI = 8
 } CM_DEPENDENCY_PATTERN;
 
-typedef enum _CM_WALKING_PATTERN
-{
-    CM_WALK_DEFAULT      ,
-    CM_WALK_WAVEFRONT    = 1,
-    CM_WALK_WAVEFRONT26  = 2,
-    CM_WALK_VERTICAL     = 3,
-    CM_WALK_HORIZONTAL   = 4
+typedef enum _CM_WALKING_PATTERN {
+	CM_WALK_DEFAULT,
+	CM_WALK_WAVEFRONT = 1,
+	CM_WALK_WAVEFRONT26 = 2,
+	CM_WALK_VERTICAL = 3,
+	CM_WALK_HORIZONTAL = 4
 } CM_WALKING_PATTERN;
 
-typedef struct _CM_DEPENDENCY
-{
-    UINT    count;
-    INT     deltaX[CM_MAX_DEPENDENCY_COUNT];
-    INT     deltaY[CM_MAX_DEPENDENCY_COUNT];
-}CM_DEPENDENCY;
+typedef struct _CM_DEPENDENCY {
+	UINT count;
+	INT deltaX[CM_MAX_DEPENDENCY_COUNT];
+	INT deltaY[CM_MAX_DEPENDENCY_COUNT];
+} CM_DEPENDENCY;
 
-typedef enum _CM_26ZI_DISPATCH_PATTERN
-{
-    VVERTICAL_HVERTICAL_26           = 0,
-    VVERTICAL_HHORIZONTAL_26         = 1,
-    VVERTICAL26_HHORIZONTAL26        = 2,
-    VVERTICAL1X26_HHORIZONTAL1X26    = 3
+typedef enum _CM_26ZI_DISPATCH_PATTERN {
+	VVERTICAL_HVERTICAL_26 = 0,
+	VVERTICAL_HHORIZONTAL_26 = 1,
+	VVERTICAL26_HHORIZONTAL26 = 2,
+	VVERTICAL1X26_HHORIZONTAL1X26 = 3
 } CM_26ZI_DISPATCH_PATTERN;
 
+typedef enum _GPU_PLATFORM {
+	PLATFORM_INTEL_UNKNOWN = 0,
+	PLATFORM_INTEL_SNB = 1,
+	PLATFORM_INTEL_IVB = 2,
+	PLATFORM_INTEL_HSW = 3,
+	PLATFORM_INTEL_BDW = 4,
+	PLATFORM_INTEL_CHV = 6,
+} GPU_PLATFORM;
 
-class SurfaceIndex
-{
-public:
-	SurfaceIndex() { index = 0; };
-	SurfaceIndex(const SurfaceIndex& _src) { index = _src.index; };
-	SurfaceIndex(const unsigned int& _n) { index = _n; };
-	SurfaceIndex& operator = (const unsigned int& _n) { this->index = _n; return *this; };
-	SurfaceIndex& operator + (const unsigned int& _n) { this->index += _n; return *this; };
-    virtual unsigned int get_data(void) { return index; };
+typedef enum _GPU_GT_PLATFORM {
+	PLATFORM_INTEL_GT_UNKNOWN = 0,
+	PLATFORM_INTEL_GT1 = 1,
+	PLATFORM_INTEL_GT2 = 2,
+	PLATFORM_INTEL_GT3 = 3,
+	PLATFORM_INTEL_GTCHV = 7,
+	PLATFORM_INTEL_GTA = 8,
+	PLATFORM_INTEL_GTC = 9,
+} GPU_GT_PLATFORM;
 
-private:
-    unsigned int index;
-    unsigned char extra_byte;
+typedef enum _CM_DEVICE_CAP_NAME {
+	CAP_KERNEL_COUNT_PER_TASK,
+	CAP_KERNEL_BINARY_SIZE,
+	CAP_BUFFER_COUNT,
+	CAP_SURFACE2D_COUNT,
+	CAP_SURFACE_COUNT_PER_KERNEL,
+	CAP_ARG_COUNT_PER_KERNEL,
+	CAP_ARG_SIZE_PER_KERNEL,
+	CAP_USER_DEFINED_THREAD_COUNT_PER_TASK,
+	CAP_HW_THREAD_COUNT,
+	CAP_SURFACE2D_FORMAT_COUNT,
+	CAP_SURFACE2D_FORMATS,
+	CAP_GPU_PLATFORM,
+	CAP_GT_PLATFORM,
+	CAP_MIN_FREQUENCY,
+	CAP_MAX_FREQUENCY,
+	CAP_L3_CONFIG,
+	CAP_GPU_CURRENT_FREQUENCY,
+	CAP_USER_DEFINED_THREAD_COUNT_PER_TASK_NO_THREAD_ARG,
+	CAP_USER_DEFINED_THREAD_COUNT_PER_MEDIA_WALKER,
+	CAP_USER_DEFINED_THREAD_COUNT_PER_THREAD_GROUP
+} CM_DEVICE_CAP_NAME;
+
+#ifndef SURFACE_INDEX
+#define SURFACE_INDEX
+class SurfaceIndex {
+ public:
+	SurfaceIndex() {
+		index = 0;
+	};
+	SurfaceIndex(const SurfaceIndex & _src) {
+		index = _src.index;
+	};
+	SurfaceIndex(const unsigned int &_n) {
+		index = _n;
+	};
+	SurfaceIndex & operator =(const unsigned int &_n) {
+		this->index = _n;
+		return *this;
+	};
+	SurfaceIndex & operator +(const unsigned int &_n) {
+		this->index += _n;
+		return *this;
+	};
+	virtual unsigned int get_data(void) {
+		return index;
+	};
+	virtual ~ SurfaceIndex() {
+	};
+
+ private:
+	unsigned int index;
+	unsigned char extra_byte;
 };
+#endif
 
-class CmEvent
-{
-public:
-        INT GetStatus( CM_STATUS &status);
-        INT GetExecutionTime(UINT64 &time);
-        INT WaitForTaskFinished(DWORD dwTimeOutMs = CM_MAX_TIMEOUT_MS);
+class CmEvent {
+ public:
+	INT GetStatus(CM_STATUS & status);
+	INT GetExecutionTime(UINT64 & time);
+	INT WaitForTaskFinished(DWORD dwTimeOutMs = CM_MAX_TIMEOUT_MS);
 
 };
 
 class CmThreadSpace;
-class CmThreadGroupSpace
-{
-public:
-	INT GetThreadGroupSpaceSize(UINT & threadSpaceWidth, UINT & threadSpaceHeight, UINT & groupSpaceWidth, UINT & groupSpaceHeight);
+class CmThreadGroupSpace {
+ public:
+	INT GetThreadGroupSpaceSize(UINT & threadSpaceWidth,
+				    UINT & threadSpaceHeight,
+				    UINT & groupSpaceWidth,
+				    UINT & groupSpaceHeight);
 
 };
 
-class CmKernel
-{
-public:
-        INT SetThreadCount(UINT count ) ;
-        INT SetKernelArg(UINT index, size_t size, const void * pValue ) ;
+class CmKernel {
+ public:
+	INT SetThreadCount(UINT count);
+	INT SetKernelArg(UINT index, size_t size, const void *pValue);
 
-        INT SetThreadArg(UINT threadId, UINT index, size_t size, const void * pValue ) ;
+	INT SetThreadArg(UINT threadId, UINT index, size_t size,
+			 const void *pValue);
 
-        INT AssociateThreadSpace(CmThreadSpace* & pTS) ;
-        INT AssociateThreadGroupSpace(CmThreadGroupSpace* & pTGS) ;
+	INT AssociateThreadSpace(CmThreadSpace * &pTS);
+	INT AssociateThreadGroupSpace(CmThreadGroupSpace * &pTGS);
 
 };
 
-class CmTask
-{
-public:
-        INT AddKernel(CmKernel *pKernel) ;
-        INT Reset(void) ;
+class CmTask {
+ public:
+	INT AddKernel(CmKernel * pKernel);
+	INT Reset(void);
 	INT AddSync(void);
 };
 
-class CmProgram
-{
-public:
-	INT GetKernelCount( UINT& kernelCount );
+class CmProgram {
+ public:
+	INT GetKernelCount(UINT & kernelCount);
 };
 
-class SurfaceIndex;
-
-class CmBuffer
-{
-public:
-        virtual INT GetIndex( SurfaceIndex*& pIndex ) ;
-	/* The following Read/Write of buffer is not required as when it is
-	 * shared between Cm and other component.
-	 */
-        virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
-        virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
+class CmBuffer {
+ public:
+	virtual INT GetIndex(SurfaceIndex * &pIndex);
+	virtual INT ReadSurface(unsigned char *pSysMem, CmEvent * pEvent,
+				UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL);
+	virtual INT WriteSurface(const unsigned char *pSysMem, CmEvent * pEvent,
+				 UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL);
 };
 
+class CmBufferUP {
+ public:
+	virtual INT GetIndex(SurfaceIndex * &pIndex) = 0;
+};
 
-class CmSurface2D
-{
-public:
-        INT GetIndex( SurfaceIndex*& pIndex ) ;
-        INT SetSurfaceStateDimensions(UINT iWidth, UINT iHeight, SurfaceIndex* pSurfIndex = NULL) ;
+class CmSurface2D {
+ public:
+	INT GetIndex(SurfaceIndex * &pIndex);
+	INT SetSurfaceStateDimensions(UINT iWidth, UINT iHeight,
+				      SurfaceIndex * pSurfIndex = NULL);
 
 	/* The following Read/Write of 2D surface is not required as when it is
 	 * shared between Cm and other component.
 	 */
 
-        INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
-        INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
-        INT ReadSurfaceStride( unsigned char* pSysMem, CmEvent* pEvent, const UINT stride, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
-        INT WriteSurfaceStride( const unsigned char* pSysMem, CmEvent* pEvent, const UINT stride, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) ;
+	INT ReadSurface(unsigned char *pSysMem, CmEvent * pEvent,
+			UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL);
+	INT WriteSurface(const unsigned char *pSysMem, CmEvent * pEvent,
+			 UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL);
+	INT ReadSurfaceStride(unsigned char *pSysMem, CmEvent * pEvent,
+			      const UINT stride, UINT64 sysMemSize =
+			      0xFFFFFFFFFFFFFFFFULL);
+	INT WriteSurfaceStride(const unsigned char *pSysMem, CmEvent * pEvent,
+			       const UINT stride, UINT64 sysMemSize =
+			       0xFFFFFFFFFFFFFFFFULL);
 };
 
+class CmSurface2DUP {
+ public:
+	INT GetIndex(SurfaceIndex * &pIndex);
 
+	INT GetSurfaceDesc(UINT & width, UINT & height,
+			   CM_SURFACE_FORMAT & format, UINT & sizeperpixel);
 
-class CmThreadSpace
-{
-public:
-        INT SelectThreadDependencyPattern ( CM_DEPENDENCY_PATTERN pattern ) ;
-        INT AssociateThread( UINT x, UINT y, CmKernel* pKernel , UINT threadId, BYTE nDependencyMask = 0 ) ;
-        INT Set26ZIDispatchPattern( CM_26ZI_DISPATCH_PATTERN pattern ) ;
-        INT Set26ZIMacroBlockSize( UINT width, UINT height )  ;
+};
+
+class CmThreadSpace {
+ public:
+	INT SelectThreadDependencyPattern(CM_DEPENDENCY_PATTERN pattern);
+	INT AssociateThread(UINT x, UINT y, CmKernel * pKernel, UINT threadId,
+			    BYTE nDependencyMask =
+			    CM_DEFAULT_THREAD_DEPENDENCY_MASK);
+	INT Set26ZIDispatchPattern(CM_26ZI_DISPATCH_PATTERN pattern);
+	INT Set26ZIMacroBlockSize(UINT width, UINT height);
 };
 
 class CmThreadGroupSpace;
 
-class CmQueue
-{
-public:
-        INT Enqueue( CmTask* pTask, CmEvent* & pEvent, const CmThreadSpace* pTS = NULL ) ;
-        INT DestroyEvent( CmEvent* & pEvent ) ;
+class CmQueue {
+ public:
+	INT Enqueue(CmTask * pTask, CmEvent * &pEvent,
+		    const CmThreadSpace * pTS = NULL);
+	INT DestroyEvent(CmEvent * &pEvent);
 
-public:
-        INT EnqueueWithGroup( CmTask* pTask, CmEvent* & pEvent, const CmThreadGroupSpace* pTGS = NULL ) ;
-        INT EnqueueWithHints( CmTask* pTask, CmEvent* & pEvent, UINT hints ) ;
+ public:
+	 INT EnqueueWithGroup(CmTask * pTask, CmEvent * &pEvent,
+			      const CmThreadGroupSpace * pTGS = NULL);
+	INT EnqueueWithHints(CmTask * pTask, CmEvent * &pEvent, UINT hints);
 };
 
+class CmDevice {
+ public:
 
-class CmDevice
-{
-public:
+	INT CreateBuffer(UINT size, CmBuffer * &pSurface);
+	INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format,
+			    CmSurface2D * &pSurface);
 
-        INT CreateBuffer(UINT size, CmBuffer* & pSurface );
-        INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* & pSurface ) ;
+	INT CreateSurface2D(CmOsResource * pOsResource,
+			    CmSurface2D * &pSurface);
+	INT CreateBuffer(CmOsResource * pOsResource, CmBuffer * &pSurface);
 
-        /* The following are preferred API that is used to create the buffer/2d surface */
-        INT CreateSurface2D( CmOsResource *pOsResource, CmSurface2D* & pSurface ) ;
-        INT CreateBuffer(CmOsResource *pOsResource, CmBuffer* & pSurface );
+	INT CreateBufferUP(UINT size, void *pSystMem, CmBufferUP * &pSurface);
+	INT DestroyBufferUP(CmBufferUP * &pSurface);
 
-        INT DestroySurface( CmBuffer* & pSurface) ;
-        INT DestroySurface( CmSurface2D* & pSurface) ;
+	INT CreateSurface2DUP(UINT width, UINT height,
+			      CM_SURFACE_FORMAT format, void *pSysMem,
+			      CmSurface2DUP * &pSurface);
+	INT DestroySurface(CmSurface2DUP * &pSurface);
 
+	INT DestroySurface(CmBuffer * &pSurface);
+	INT DestroySurface(CmSurface2D * &pSurface);
 
-        INT GetSurface2DInfo( UINT width, UINT height, CM_SURFACE_FORMAT format, UINT & pitch, UINT & physicalSize);
+	INT GetSurface2DInfo(UINT width, UINT height, CM_SURFACE_FORMAT format,
+			     UINT & pitch, UINT & physicalSize);
 
-        INT CreateQueue( CmQueue* & pQueue) ;
-        INT LoadProgram( void* pCommonISACode, const UINT size, CmProgram*& pProgram, const char* options = NULL ) ;
-        INT CreateKernel( CmProgram* pProgram, const char* kernelName, CmKernel* & pKernel, const char* options = NULL) ;
-        INT DestroyKernel( CmKernel*& pKernel) ;
-        INT DestroyProgram( CmProgram*& pProgram ) ;
+	INT CreateQueue(CmQueue * &pQueue);
+	INT LoadProgram(void *pCommonISACode, const UINT size,
+			CmProgram * &pProgram, const char *options = NULL);
+	INT CreateKernel(CmProgram * pProgram, const char *kernelName,
+			 CmKernel * &pKernel, const char *options = NULL);
+	INT DestroyKernel(CmKernel * &pKernel);
+	INT DestroyProgram(CmProgram * &pProgram);
 
-        INT CreateTask(CmTask *& pTask) ;
-        INT DestroyTask(CmTask*& pTask) ;
+	INT CreateTask(CmTask * &pTask);
+	INT DestroyTask(CmTask * &pTask);
 
-        INT CreateThreadGroupSpace( UINT thrdSpaceWidth, UINT thrdSpaceHeight, UINT grpSpaceWidth, UINT grpSpaceHeight, CmThreadGroupSpace*& pTGS ) ;
-        INT DestroyThreadGroupSpace(CmThreadGroupSpace*& pTGS) ;
+	INT CreateThreadGroupSpace(UINT thrdSpaceWidth, UINT thrdSpaceHeight,
+				   UINT grpSpaceWidth, UINT grpSpaceHeight,
+				   CmThreadGroupSpace * &pTGS);
+	INT DestroyThreadGroupSpace(CmThreadGroupSpace * &pTGS);
 
-        INT CreateThreadSpace( UINT width, UINT height, CmThreadSpace* & pTS ) ;
-        INT DestroyThreadSpace( CmThreadSpace* & pTS ) ;
+	INT CreateThreadSpace(UINT width, UINT height, CmThreadSpace * &pTS);
+	INT DestroyThreadSpace(CmThreadSpace * &pTS);
 
-        INT GetRTDllVersion(CM_DLL_FILE_VERSION* pFileVersion) ;
+	INT GetRTDllVersion(CM_DLL_FILE_VERSION * pFileVersion);
+
+	INT GetCaps(CM_DEVICE_CAP_NAME capName, size_t & capValueSize,
+		    void *pCapValue);
 };
 
-/*
- * This function depends on which parameter is required by low-level Cm-device.
- * a. whether CM is using its own DRM buffer management or sharing the buffer management with other driver.
- * b. Device ID is passed.
- * c. The CmDriverContext will provide the enough info for the low-level driver
- */
-EXTERN_C INT CreateCmDevice(CmDevice* &pDevice, UINT & version, CmDriverContext *drivercontext, UINT DevCreateOption = CM_DEVICE_CREATE_OPTION_DEFAULT);
+EXTERN_C INT CreateCmDevice(CmDevice * &pDevice, UINT & version,
+			    CmDriverContext * drivercontext =
+			    NULL, UINT DevCreateOption =
+			    CM_DEVICE_CREATE_OPTION_DEFAULT);
 
-EXTERN_C INT DestroyCmDevice(CmDevice* &pDevice);
+EXTERN_C INT DestroyCmDevice(CmDevice * &pDevice);
 
-#endif /* _Cm_H_ */
+#endif				/* _Cm_H_ */
