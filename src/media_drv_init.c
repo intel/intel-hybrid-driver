@@ -50,6 +50,7 @@
 MEDIA_DRV_MUTEX mutex_global = PTHREAD_MUTEX_INITIALIZER;
 VAProfile profile_table[MEDIA_GEN_MAX_PROFILES] = {
   VAProfileVP8Version0_3,
+  VAProfileVP9Version0,
   VAProfileNone
 };
 
@@ -1650,6 +1651,10 @@ media_BeginPicture (VADriverContextP ctx,
       status = VA_STATUS_SUCCESS;
       break;
 
+    case VAProfileVP9Version0:
+      status = VA_STATUS_SUCCESS;
+      break;
+
     default:
       status = VA_STATUS_ERROR_UNSUPPORTED_PROFILE;
       break;
@@ -2087,6 +2092,14 @@ media_validate_config(VADriverContextP ctx, VAProfile profile,
       va_status = VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
     }
     break;
+  case VAProfileVP9Version0:
+    if ((entrypoint == VAEntrypointVLD) &&
+        drv_ctx->codec_info->vp9_dec_hybrid_support) {
+      va_status = VA_STATUS_SUCCESS;
+    } else {
+      va_status = VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
+    }
+    break;
   default:
     va_status = VA_STATUS_ERROR_UNSUPPORTED_PROFILE;
     break;
@@ -2243,11 +2256,17 @@ VAStatus
 media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypoint * entrypoint_list,	/* out */
 			      INT * num_entrypoints)	/* out */
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   INT index = 0;
   switch (profile)
     {
     case VAProfileVP8Version0_3:
       entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+      break;
+    case VAProfileVP9Version0:
+      if (drv_ctx->codec_info->vp9_dec_hybrid_support) {
+        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointVLD;
+      }
       break;
     default:
       //printf ("Unsupported profile\n");

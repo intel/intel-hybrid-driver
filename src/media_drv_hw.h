@@ -212,6 +212,7 @@ struct hw_codec_info
   INT max_height;
   UINT tiled_surface:1;
   UINT vp8_enc_hybrid_support:1;
+  UINT vp9_dec_hybrid_support:1;
   UINT ratecontrol;
   bool (*render_init)(VADriverContextP);
 };
