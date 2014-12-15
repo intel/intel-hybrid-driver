@@ -306,6 +306,41 @@ media_QuerySurfaceAttributes (VADriverContextP ctx,
 			      VASurfaceAttrib * attrib_list,
 			      UINT * num_attribs)
 {
+
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
+  struct object_config *obj_config;
+  INT i;
+  VASurfaceAttrib *attribs = NULL;
+
+  if (config == VA_INVALID_ID)
+    return VA_STATUS_ERROR_INVALID_CONFIG;
+
+  obj_config = CONFIG(config);
+
+  if (obj_config == NULL)
+    return VA_STATUS_ERROR_INVALID_CONFIG;
+
+  if (!attrib_list && !num_attribs)
+    return VA_STATUS_ERROR_INVALID_PARAMETER;
+
+  if (attrib_list == NULL) {
+    *num_attribs = MEDIA_MAX_SURFACE_ATTRIBUTES;
+    return VA_STATUS_SUCCESS;
+  }
+
+  attribs = malloc(MEDIA_MAX_SURFACE_ATTRIBUTES *sizeof(*attribs));
+
+  i = 0;
+  attribs[i].type = VASurfaceAttribPixelFormat;
+  attribs[i].value.type = VAGenericValueTypeInteger;
+  attribs[i].flags = VA_SURFACE_ATTRIB_GETTABLE | VA_SURFACE_ATTRIB_SETTABLE;
+  attribs[i].value.value.i = VA_FOURCC_NV12;
+  i++;
+
+  *num_attribs = i;
+  memcpy(attrib_list, attribs, i * sizeof(*attribs));
+  free(attribs);
+
   return VA_STATUS_SUCCESS;
 }
 

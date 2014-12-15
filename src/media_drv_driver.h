@@ -272,4 +272,6 @@ extern uint32_t g_intel_debug_option_flags;
 }
 #endif
 
+#define MEDIA_MAX_SURFACE_ATTRIBUTES 10
+
 #endif
