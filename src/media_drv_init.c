@@ -46,11 +46,6 @@
 #define DEFAULT_SATURATION      10
 
 MEDIA_DRV_MUTEX mutex_global = PTHREAD_MUTEX_INITIALIZER;
-VAProfile profile_table[MEDIA_GEN_MAX_PROFILES] = {
-  VAProfileVP8Version0_3,
-  VAProfileVP9Version0,
-  VAProfileNone
-};
 
 config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
   {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
@@ -2273,15 +2268,23 @@ VAStatus
 media_QueryConfigProfiles (VADriverContextP ctx, VAProfile * profile_list,	/* out */
 			   INT * num_profiles)	/* out */
 {
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
   BOOL retval = true;
   MEDIA_DRV_ASSERT (profile_list);
   MEDIA_DRV_ASSERT (num_profiles);
+  int i = 0;
 
-  retval =
-    media_drv_memcpy (profile_list, sizeof (profile_table), profile_table,
-		      sizeof (profile_table));
-  MEDIA_DRV_ASSERT (retval == true);
-  *num_profiles = sizeof (profile_table) / sizeof (profile_table);
+  if (drv_ctx->codec_info->vp8_enc_hybrid_support) {
+    profile_list[i++] = VAProfileVP8Version0_3;
+  }
+
+  if (drv_ctx->codec_info->vp9_dec_hybrid_support) {
+    profile_list[i++] = VAProfileVP9Version0;
+  }
+
+  profile_list[i++] = VAProfileNone;
+  *num_profiles = i;
+
   return VA_STATUS_SUCCESS;
 }
 
@@ -2294,7 +2297,9 @@ media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypo
   switch (profile)
     {
     case VAProfileVP8Version0_3:
-      entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+      if (drv_ctx->codec_info->vp8_enc_hybrid_support) {
+        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+      }
       break;
     case VAProfileVP9Version0:
       if (drv_ctx->codec_info->vp9_dec_hybrid_support) {
