@@ -40,6 +40,8 @@
 #include "media_drv_driver.h"
 #include "media_drv_decoder.h"
 
+#include "media_drv_hw.h"
+#include "media_drv_hybrid_vp9_common.h"
 
 /*
  * Currently this is bogus. It is only for calling back the structure/function
@@ -70,8 +72,15 @@ struct hw_context *
 media_dec_hw_context_init (VADriverContextP ctx,
                            struct object_config *obj_config)
 {
-  struct hw_context *decoder_context =
-    (struct hw_context *) media_drv_alloc_memory (sizeof(struct hw_context));
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+  struct hw_context *decoder_context = NULL;
+
+  if (drv_ctx->codec_info->vp9_dec_hybrid_support &&
+      (obj_config->profile == VAProfileVP9Version0)) {
+    return media_hybrid_dec_hw_context_init(ctx, obj_config);
+  }
+
+  decoder_context = (struct hw_context *) media_drv_alloc_memory (sizeof(struct hw_context));
 
   decoder_context->run = intel_media_decode_picture;
   decoder_context->destroy = intel_media_context_destroy;
