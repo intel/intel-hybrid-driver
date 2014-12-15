@@ -58,6 +58,7 @@ driver_files = \
 	intel_hybrid_hostvld_vp9_engine.cpp	\
 	intel_hybrid_hostvld_vp9_context.cpp	\
 	intel_hybrid_vp9_kernel_g75.cpp	\
+	intel_hybrid_debug_dump.cpp	\
 	$(NULL)
 
 driver_headers = \
@@ -71,6 +72,7 @@ driver_headers = \
 	intel_hybrid_hostvld_vp9_context.h	\
 	intel_hybrid_hostvld_vp9_context_tables.h	\
 	intel_hybrid_hostvld_vp9_internal.h	\
+	intel_hybrid_debug_dump.h	\
 	$(NULL)
 
 noinst_LTLIBRARIES		= vp9h.la	

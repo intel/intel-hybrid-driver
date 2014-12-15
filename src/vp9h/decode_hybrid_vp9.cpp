@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include "cmrt_api.h"
 #include "decode_hybrid_vp9.h"
+#include "intel_hybrid_debug_dump.h"
 #include <errno.h>
 
 #include <va/va_dec_vp9.h>
@@ -2820,6 +2821,360 @@ VAStatus Intel_HybridVp9Decode_MdfHost_PreDeblock (
     return eStatus;
 }
 
+static INT g_iCounter = 0, g_iInterCounter = 0, g_iDeblockCounter = 0;
+
+int intel_hybrid_Vp9Decode_WriteFileFromPtr(
+    char          *pFilename,
+    void           *pData,
+    DWORD           dwSize, 
+    INT             iCounter)
+{
+    int      eStatus;
+
+    if (iCounter == 0)
+    {
+        eStatus = intel_hybrid_writefilefromptr(pFilename, pData, dwSize);
+    }
+    else
+    {
+        eStatus = intel_hybrid_appendfilefromptr(pFilename, pData, dwSize);
+    }
+
+    return eStatus;
+}
+
+int intel_hybrid_Vp9Decode_DebugDump (
+    PINTEL_DECODE_HYBRID_VP9_STATE       pHybridVp9State, 
+    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame)
+{
+    VADriverContextP	ctx;
+    PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER      pMdfDecodeBuffer;
+    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
+    INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER    MdfBuffer1D;
+    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE      pMdfDecodeEngine;
+    INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER    Buffer;
+    UINT                                        uiWidth, uiHeight, uiSizePerPixel;
+    MEDIA_DRV_CONTEXT *drv_ctx;
+
+    ctx = (VADriverContextP) (pHybridVp9State->driver_context);
+    drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+    pMdfDecodeBuffer    = &pMdfDecodeFrame->MdfDecodeBuffer;
+    struct object_surface *surface;
+    INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *pFrameSource;
+
+
+    // dump recon
+    pMdfDecodeEngine = &pHybridVp9State->MdfDecodeEngine;
+
+    surface = SURFACE(pMdfDecodeFrame->ucCurrIndex);
+
+    pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+
+    Buffer.dwSize  = pFrameSource->dwWidth * pFrameSource->dwHeight * 3 / 2;
+    Buffer.pBuffer  = intel_alloc_zero_aligned_memory(Buffer.dwSize, INTEL_HYBRID_VP9_PAGE_SIZE);
+
+    if (Buffer.pBuffer == NULL)
+	goto allocation_fail;
+
+    pFrameSource->Frame.pMdfSurface->ReadSurface(Buffer.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+    intel_hybrid_Vp9Decode_WriteFileFromPtr("driver_dump\\Recon_U8.dat", Buffer.pBuffer, Buffer.dwSize, g_iCounter);
+
+    Buffer.dwSize = pFrameSource->dwWidth * pFrameSource->dwHeight;
+    if (pMdfDecodeFrame->bNeedDeblock)
+    {
+        // dump after loopfilter
+        intel_hybrid_Vp9Decode_WriteFileFromPtr(
+            "driver_dump\\AfterLoopFilter_U8_Y.dat", 
+            Buffer.pBuffer, 
+            Buffer.dwSize, 
+            g_iCounter);
+        intel_hybrid_Vp9Decode_WriteFileFromPtr(
+            "driver_dump\\AfterLoopFilter_U8_CbCr.dat", 
+            Buffer.pu8Buffer + Buffer.dwSize, 
+            Buffer.dwSize >> 1, 
+            g_iCounter);
+    }
+    else
+    {
+        // dump after loopfilter
+        intel_hybrid_Vp9Decode_WriteFileFromPtr(
+            "driver_dump\\BeforeLoopFilter_U8_Y.dat", 
+            Buffer.pBuffer, 
+            Buffer.dwSize, 
+            g_iCounter);
+        intel_hybrid_Vp9Decode_WriteFileFromPtr(
+            "driver_dump\\BeforeLoopFilter_U8_CbCr.dat", 
+            Buffer.pu8Buffer + Buffer.dwSize, 
+            Buffer.dwSize >> 1, 
+            g_iCounter);
+    }
+ 
+    free(Buffer.pBuffer);
+
+    // dump Luma residual
+    pMdfBuffer2D           = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
+    MdfBuffer1D.dwSize     = pMdfDecodeFrame->dwAlignedWidth * pMdfDecodeFrame->dwAlignedHeight;
+    MdfBuffer1D.pu16Buffer = (PUINT16)intel_alloc_zero_aligned_memory(
+	MdfBuffer1D.dwSize * sizeof(UINT16),
+	INTEL_HYBRID_VP9_PAGE_SIZE);
+    
+    if (MdfBuffer1D.pu16Buffer == NULL)
+	    goto allocation_fail;
+
+    pMdfBuffer2D->pMdfSurface->ReadSurface(MdfBuffer1D.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PostITResidual_I16_Y.dat", 
+	MdfBuffer1D.pBuffer, 
+	MdfBuffer1D.dwSize * sizeof(UINT16), 
+	g_iCounter);
+    free(MdfBuffer1D.pBuffer);
+    MdfBuffer1D.pBuffer = NULL;
+
+    // dump Chroma residual
+    pMdfBuffer2D           = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
+    MdfBuffer1D.dwSize     = pMdfDecodeFrame->dwAlignedWidth * (pMdfDecodeFrame->dwAlignedHeight >> 1);
+    MdfBuffer1D.pu16Buffer = (PUINT16)intel_alloc_zero_aligned_memory(
+	MdfBuffer1D.dwSize * sizeof(UINT16),
+	INTEL_HYBRID_VP9_PAGE_SIZE);
+
+    if (MdfBuffer1D.pu16Buffer == NULL)
+	    goto allocation_fail;
+
+    pMdfBuffer2D->pMdfSurface->ReadSurface(MdfBuffer1D.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PostITResidual_I16_CbCr.dat", 
+	MdfBuffer1D.pBuffer, 
+	MdfBuffer1D.dwSize * sizeof(UINT16), 
+	g_iCounter);
+    free(MdfBuffer1D.pBuffer);
+    MdfBuffer1D.pBuffer = NULL;
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PreITCoeff_RawCoeffI16_Y.dat", 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize * sizeof(UINT16), 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PreITCoeff_RawCoeffI16_Cb.dat", 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_U].pBuffer, 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_U].dwSize * sizeof(UINT16), 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PreITCoeff_RawCoeffI16_Cr.dat", 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_V].pBuffer, 
+	pMdfDecodeBuffer->TransformCoeff[INTEL_HYBRID_VP9_MDF_YUV_PLANE_V].dwSize * sizeof(UINT16), 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\TxSize_U8_Y.dat", 
+	pMdfDecodeBuffer->TransformSize[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	pMdfDecodeBuffer->TransformSize[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\TxSize_U8_CbCr.dat", 
+	pMdfDecodeBuffer->TransformSize[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	pMdfDecodeBuffer->TransformSize[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\CoefficientStatusFlag_U8_Y.dat", 
+	pMdfDecodeBuffer->CoeffStatus[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	pMdfDecodeBuffer->CoeffStatus[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\CoefficientStatusFlag_U8_CbCr.dat", 
+	pMdfDecodeBuffer->CoeffStatus[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	pMdfDecodeBuffer->CoeffStatus[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PredictionMode_U8_Y.dat", 
+	pMdfDecodeBuffer->PredictionMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	pMdfDecodeBuffer->PredictionMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\PredictionMode_U8_CbCr.dat", 
+	pMdfDecodeBuffer->PredictionMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	pMdfDecodeBuffer->PredictionMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\DequantValue_U8_Y.dat", 
+	pMdfDecodeBuffer->QP[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	pMdfDecodeBuffer->QP[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize * sizeof(UINT16), 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\DequantValue_U8_CbCr.dat", 
+	pMdfDecodeBuffer->QP[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	pMdfDecodeBuffer->QP[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize * sizeof(UINT16), 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\TxType_U8_Y.dat", 
+	pMdfDecodeBuffer->TransformType.pBuffer, 
+	pMdfDecodeBuffer->TransformType.dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\SkipFlag_U8_Y.dat", 
+	pMdfDecodeBuffer->SkipFlag.pBuffer, 
+	pMdfDecodeBuffer->SkipFlag.dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\SegmentId_U8_Y.dat", 
+	pMdfDecodeBuffer->SegmentIndex.pBuffer, 
+	pMdfDecodeBuffer->SegmentIndex.dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\TileSliceInfo_U8.dat", 
+	pMdfDecodeBuffer->TileIndex.pBuffer, 
+	pMdfDecodeBuffer->TileIndex.dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\InterIntraFlag_U8_Y.dat", 
+	pMdfDecodeBuffer->InterIntraFlag.pBuffer, 
+	pMdfDecodeBuffer->InterIntraFlag.dwSize, 
+	g_iCounter);
+
+    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	"driver_dump\\BlockSize_U8_Y.dat", 
+	pMdfDecodeBuffer->BlockSize.pBuffer, 
+	pMdfDecodeBuffer->BlockSize.dwSize, 
+	g_iCounter);
+
+    if (pMdfDecodeFrame->bNeedDeblock)
+    {
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\LoopFilterVerticalMask_U8_Y.dat", 
+	    pMdfDecodeBuffer->VerticalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	    pMdfDecodeBuffer->VerticalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize, 
+	    g_iCounter);
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\LoopFilterVerticalMask_U8_CbCr.dat", 
+	    pMdfDecodeBuffer->VerticalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	    pMdfDecodeBuffer->VerticalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize, 
+	    g_iCounter);
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\LoopFilterHorizontalMask_U8_Y.dat", 
+	    pMdfDecodeBuffer->HorizontalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pBuffer, 
+	    pMdfDecodeBuffer->HorizontalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwSize, 
+	    g_iCounter);
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\LoopFilterHorizontalMask_U8_CbCr.dat", 
+	    pMdfDecodeBuffer->HorizontalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pBuffer, 
+	    pMdfDecodeBuffer->HorizontalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize, 
+	    g_iCounter);
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\FilterLevel_U8.dat", 
+	    pMdfDecodeBuffer->FilterLevel.pBuffer, 
+	    pMdfDecodeBuffer->FilterLevel.dwSize, 
+	    g_iCounter);
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\LoopFilterThreshold_U8.dat", 
+	    pMdfDecodeBuffer->Threshold.pBuffer, 
+	    pMdfDecodeBuffer->Threshold.dwSize, 
+	    g_iCounter);
+    }
+
+    if (!pMdfDecodeFrame->bIntraOnly)
+    {
+	PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE   pMdfDecodeEngine;
+	INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER tmp_Buffer;
+
+	pMdfDecodeEngine = &pHybridVp9State->MdfDecodeEngine;
+
+        /* dump Last Ref frame */
+        surface = SURFACE(pMdfDecodeFrame->ucLastRefIndex);
+
+        pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+        tmp_Buffer.dwSize  = pFrameSource->dwWidth * pFrameSource->dwHeight * 3 / 2;
+        tmp_Buffer.pBuffer  = intel_alloc_zero_aligned_memory(tmp_Buffer.dwSize, INTEL_HYBRID_VP9_PAGE_SIZE);
+
+        if (tmp_Buffer.pBuffer == NULL)
+	    goto allocation_fail;
+
+	pFrameSource->Frame.pMdfSurface->ReadSurface(tmp_Buffer.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+	intel_hybrid_Vp9Decode_WriteFileFromPtr("driver_dump\\ReferenceFrameLast.dat", tmp_Buffer.pBuffer, tmp_Buffer.dwSize, g_iInterCounter);
+
+        free(tmp_Buffer.pBuffer);
+        tmp_Buffer.pBuffer = NULL;
+
+        /* dump Golden Ref frame */
+        surface = SURFACE(pMdfDecodeFrame->ucGoldenRefIndex);
+
+        pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+        tmp_Buffer.dwSize  = pFrameSource->dwWidth * pFrameSource->dwHeight * 3 / 2;
+        tmp_Buffer.pBuffer  = intel_alloc_zero_aligned_memory(tmp_Buffer.dwSize, INTEL_HYBRID_VP9_PAGE_SIZE);
+
+        if (tmp_Buffer.pBuffer == NULL)
+	    goto allocation_fail;
+
+	pFrameSource->Frame.pMdfSurface->ReadSurface(tmp_Buffer.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+	intel_hybrid_Vp9Decode_WriteFileFromPtr("driver_dump\\ReferenceFrameGolden.dat", tmp_Buffer.pBuffer, tmp_Buffer.dwSize, g_iInterCounter);
+
+        free(tmp_Buffer.pBuffer);
+        tmp_Buffer.pBuffer = NULL;
+
+        /* dump Alt Ref frame */
+        surface = SURFACE(pMdfDecodeFrame->ucAltRefIndex);
+
+        pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+
+        tmp_Buffer.dwSize  = pFrameSource->dwWidth * pFrameSource->dwHeight * 3 / 2;
+        tmp_Buffer.pBuffer  = intel_alloc_zero_aligned_memory(tmp_Buffer.dwSize, INTEL_HYBRID_VP9_PAGE_SIZE);
+
+        if (tmp_Buffer.pBuffer == NULL)
+	    goto allocation_fail;
+
+	pFrameSource->Frame.pMdfSurface->ReadSurface(tmp_Buffer.pu8Buffer, pMdfDecodeFrame->pMdfEvent);
+	intel_hybrid_Vp9Decode_WriteFileFromPtr("driver_dump\\ReferenceFrameAlt.dat", tmp_Buffer.pBuffer, tmp_Buffer.dwSize, g_iInterCounter);
+
+	free(tmp_Buffer.pBuffer);
+
+        tmp_Buffer.pBuffer = NULL;
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\RefIndex_I8I8.dat", 
+	    pMdfDecodeBuffer->ReferenceFrame.pBuffer, 
+	    pMdfDecodeBuffer->ReferenceFrame.dwSize * sizeof(UINT16), 
+	    g_iInterCounter);
+
+	if (pMdfDecodeFrame->bSwitchableFilterType)
+	{
+	    intel_hybrid_Vp9Decode_WriteFileFromPtr(
+		"driver_dump\\InterpFilterType_U8.dat", 
+		pMdfDecodeBuffer->FilterType.pBuffer, 
+		pMdfDecodeBuffer->FilterType.dwSize, 
+		g_iInterCounter);
+	}
+
+	intel_hybrid_Vp9Decode_WriteFileFromPtr(
+	    "driver_dump\\MotionVector_I16I16.dat", 
+	    pMdfDecodeBuffer->MotionVector.pBuffer, 
+	    pMdfDecodeBuffer->MotionVector.dwSize * sizeof(UINT64), 
+	    g_iInterCounter);
+    }
+
+    return 0;
+
+allocation_fail:
+    return -ENOMEM;
+}
+
 
 VAStatus Intel_HybridVp9Decode_HostVldPreDeblockCb (
     PVOID                               pvStandardState, 
@@ -2896,9 +3251,18 @@ VAStatus Intel_HybridVp9Decode_HostVldRenderCb (
         Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces(pMdfDecodeEngine, pMdfDecodeFrame, pMdfDevice);
     }
 
+    if (g_intel_debug_option_flags & VA_INTEL_HYBRID_PRE_DUMP)
+    {
+        intel_hybrid_Vp9Decode_DebugDump(pHybridVp9State, pMdfDecodeFrame);
+    }
 
     // execute MDFHost
     Intel_HybridVp9Decode_MdfHost_Execute(ctx, pMdfDecodeEngine, pMdfDecodeFrame);
+
+    if (g_intel_debug_option_flags & VA_INTEL_HYBRID_POST_DUMP)
+    {
+        intel_hybrid_Vp9Decode_DebugDump(pHybridVp9State, pMdfDecodeFrame);
+    }
 
     return eStatus;
 }

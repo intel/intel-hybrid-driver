@@ -182,6 +182,8 @@
 				 devid == PCI_CHIP_HASWELL_ULT_B_GT2 || \
 				 devid == PCI_CHIP_HASWELL_ULT_E_GT2)
 
+#define VA_INTEL_HYBRID_PRE_DUMP	(1 << 2)
+#define VA_INTEL_HYBRID_POST_DUMP	(1 << 3)
 
 #define IS_HSW_GT3(devid)   	(devid == PCI_CHIP_HASWELL_GT3          || \
                                  devid == PCI_CHIP_HASWELL_M_GT3        || \
