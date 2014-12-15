@@ -1998,6 +1998,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
 	memset(&driver_context, 0, sizeof(driver_context));
 	driver_context.bufmgr = drv_ctx->drv_data.bufmgr; 
 	driver_context.deviceid = drv_ctx->drv_data.device_id;
+	driver_context.device_rev = drv_ctx->drv_data.revision;
         driver_context.shared_bufmgr = 1;
 
 	cm_version = CM_4_0;
