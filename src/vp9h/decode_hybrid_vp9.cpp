@@ -3765,6 +3765,10 @@ intel_hybrid_vp9_convert_picture(VADriverContextP ctx,
     memcpy(pVp9PicParams->SegTreeProbs, pPP->mb_segment_tree_probs, 7);
     memcpy(pVp9PicParams->SegPredProbs, pPP->segment_pred_probs, 3);
 
+
+    if (pPP->first_partition_size == 0) {
+	return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
     return VA_STATUS_SUCCESS;
 }
 
@@ -3779,6 +3783,7 @@ intel_hybrid_vp9_convert_slice(VADriverContextP ctx,
     PINTEL_VP9_SEGMENT_PARAMS                pVp9SegmentParams;
     VASliceParameterBufferVP9    *pSegData;
     int                          i,j,k;
+    uint32_t                     buffer_size;
 
     pVp9PicParams       = (PINTEL_VP9_PIC_PARAMS)&vp9_context->vp9_pic_params;
     pVp9SegmentParams   = (PINTEL_VP9_SEGMENT_PARAMS)&vp9_context->vp9_matrixbuffer;
@@ -3824,6 +3829,11 @@ intel_hybrid_vp9_convert_slice(VADriverContextP ctx,
         pVp9SegmentParams->SegData[i].ChromaDCQuantScale        = pSegData->seg_param[i].chroma_dc_quant_scale;
     }
 
+    buffer_size = (uint32_t) pVp9PicParams->FirstPartitionSize +
+                  (uint32_t) pVp9PicParams->UncompressedHeaderLengthInBytes;
+    if (buffer_size >= pVp9PicParams->BSBytesInBuffer) {
+	return VA_STATUS_ERROR_INVALID_PARAMETER;
+    }
     return VA_STATUS_SUCCESS;
 }
 
