@@ -47,6 +47,7 @@ struct hw_codec_info gen8_hw_codec_info = {
 struct hw_codec_info chv_hw_codec_info = {
   .max_width = 4096,
   .max_height = 4096,
+  .vp9_dec_hybrid_support = 1,
   .tiled_surface = 1,
   .render_init = media_drv_gen8_render_init,
  };
