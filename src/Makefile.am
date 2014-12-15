@@ -45,7 +45,7 @@ driver_libs = \
 	$(LIBVA_DEPS_LIBS)	\
 	$(NULL)
 
-source_c = \
+driver_files = \
         dso_utils.c            \
 	object_heap.c		\
 	media_drv_util.c   \
@@ -73,9 +73,10 @@ source_c = \
         media_drv_decoder.c  \
         media_drv_gen75_render.c   \
         media_drv_gen8_render.c   \
+        test_add.cpp   \
         $(NULL)
 
-source_h = \
+driver_headers = \
         dso_utils.h             \
 	i965_mutext.h		\
 	intel_compiler.h	\
@@ -108,15 +109,17 @@ source_h = \
         media_drv_surface.h   \
         media_drv_decoder.h   \
         media_render_common.h  \
+        test_add.h  \
        $(NULL)
 
 hybrid_drv_video_la_LTLIBRARIES= hybrid_drv_video.la
 hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
 hybrid_drv_video_la_CFLAGS	= $(driver_cflags)
+hybrid_drv_video_la_CXXFLAGS	= -fpermissive $(driver_cflags)
 hybrid_drv_video_la_LDFLAGS= $(driver_ldflags)
 hybrid_drv_video_la_LIBADD	= $(driver_libs)
-hybrid_drv_video_la_SOURCES= $(source_c)
-noinst_HEADERS = $(source_h)
+hybrid_drv_video_la_SOURCES= $(driver_files)
+noinst_HEADERS = $(driver_headers)
 
 # Extra clean files so that maintainer-clean removes *everything*
 MAINTAINERCLEANFILES = Makefile.in config.h.in
