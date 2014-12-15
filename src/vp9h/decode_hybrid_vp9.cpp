@@ -2002,7 +2002,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
         driver_context.shared_bufmgr = 1;
 
 	cm_version = CM_4_0;
-        cm_status = CreateCmDevice(pMdfDevice, cm_version, &driver_context, CM_DEVICE_CREATE_OPTION_DEFAULT);
+        cm_status = CreateCmDevice(pMdfDevice, cm_version, &driver_context, CM_DEVICE_CREATE_OPTION_FOR_VP9);
         pMdfDecodeEngine->pMdfDevice = pMdfDevice;
     }
 
