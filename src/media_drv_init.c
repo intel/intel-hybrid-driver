@@ -1029,6 +1029,7 @@ media_DeriveImage (VADriverContextP ctx, VASurfaceID surface, VAImage * out_imag
       image->pitches[0] = w_pitch;	/* Y */
       image->offsets[0] = 0;
       image->pitches[1] = obj_surface->cb_cr_pitch;	/* UV */
+      image->pitches[2] = obj_surface->cb_cr_pitch;	/* UV */
       image->offsets[1] = w_pitch * obj_surface->y_cb_offset;
       break;
 
