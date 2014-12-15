@@ -38,6 +38,8 @@
 #include "media_drv_hw_g7.h"
 #include "object_heap.h"
 
+uint32_t g_intel_debug_option_flags = 0;
+
 BOOL
 media_drv_intel_bufmgr_init (MEDIA_DRV_CONTEXT * drv_ctx)
 {
@@ -109,6 +111,20 @@ media_driver_init (VADriverContextP ctx)
   MEDIA_DRV_ASSERT (VA_CHECK_DRM_AUTH_TYPE (ctx, VA_DRM_AUTH_DRI1) ||
 		    VA_CHECK_DRM_AUTH_TYPE (ctx, VA_DRM_AUTH_DRI2) ||
 		    VA_CHECK_DRM_AUTH_TYPE (ctx, VA_DRM_AUTH_CUSTOM));
+
+  {
+    char *env_str;
+    g_intel_debug_option_flags = 0;
+    if ((env_str = getenv("VA_INTEL_DEBUG"))) {
+      char *debug_ptr = NULL;
+      debug_ptr = strstr(env_str, "0x");
+      if (debug_ptr) {
+        g_intel_debug_option_flags = strtoul(debug_ptr, NULL, 16);
+      } else {
+        g_intel_debug_option_flags = atoi(env_str);
+      }
+    }
+  }
 
   drv_ctx->drv_data.fd = drm_state->fd;
   drv_ctx->drv_data.dri2_enabled =

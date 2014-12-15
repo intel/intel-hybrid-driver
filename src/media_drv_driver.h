@@ -260,4 +260,14 @@ VOID media_release_buffer_store (struct buffer_store **ptr);
 
 void media_destroy_subpic (struct object_heap *heap, struct object_base *obj);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern uint32_t g_intel_debug_option_flags;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
