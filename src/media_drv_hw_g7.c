@@ -986,14 +986,11 @@ media_set_curbe_p_vp8_mbenc_g7 (struct encode_state *encode_state,
   cmd->dw1.ref_ctrl = params->ref_frame_ctrl;
   cmd->dw1.enable_segmentation = segmentation_enabled;
   cmd->dw1.enable_segmentation_info_update = 0;
-  cmd->dw1.multi_reference_qp_check = 0;
+  cmd->dw1.multi_reference_qp_check = 1;
   cmd->dw1.mode_cost_enable_flag = 0;
   cmd->dw1.enable_debug_dumps = 0;
   cmd->dw1.all_fractional = 1;
   cmd->dw1.enable_coeff_clamp = 0;
-
-  if (params->brc_enabled)
-    cmd->dw1.mode_cost_enable_flag = 1;
 
   //dw2
   cmd->dw2.lambda_intra_segment0 = quant_dc_vp8_g75[qp_seg0];
@@ -2768,7 +2765,7 @@ media_set_curbe_vp8_brc_update_g7(struct encode_state *encode_state,
     cmd->dw16.frame_byte_count  = params->frame_update->prev_frame_size - 12;
 
   if (params->frame_number == 1)
-    cmd->dw16.frame_byte_count = 32;
+    cmd->dw16.frame_byte_count -= 32;
 
   if (params->frame_update->two_prev_frame_flag == 1 && params->frame_number == 1)
     cmd->dw16.frame_byte_count = 0;
