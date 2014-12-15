@@ -52,11 +52,13 @@ const UCHAR g_Vp9NormTable[BAC_ENG_MAX_RANGE+1] =
 VOID Intel_HostvldVp9_BacEngineFill(
     PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine)
 {
-    register INT iRegOp;
+    INTEL_HOSTVLD_VP9_BAC_VALUE iRegOp;
     INT iShift = BAC_ENG_VALUE_BITS - BAC_ENG_VALUE_TAIL_RSRV - pBacEngine->iCount;
     register INT iBitsLeft = (INT)(pBacEngine->pBufEnd - pBacEngine->pBuf) * BYTE_BITS;
     INT iMargin   = iShift + BAC_ENG_VALUE_TAIL_RSRV - iBitsLeft;
     INT iLoopEnd  = 0;
+    uint8_t *buffer;
+    register INTEL_HOSTVLD_VP9_BAC_VALUE BacValue;
 
     if (iMargin >= 0)
     {
@@ -64,25 +66,19 @@ VOID Intel_HostvldVp9_BacEngineFill(
         iLoopEnd = iMargin;
     }
 
+    buffer = pBacEngine->pBuf;
+    BacValue = pBacEngine->BacValue;
     if (iMargin < 0 || iBitsLeft)
     {
 
-        iRegOp = *((INT*)(pBacEngine->pBuf));           
-        if (iShift > iLoopEnd) {
-            iBitsLeft = (iShift - iLoopEnd)/BYTE_BITS;
-            pBacEngine->pBuf += iBitsLeft;
-            pBacEngine->iCount += iBitsLeft * BYTE_BITS;
-        } else if (iShift == iLoopEnd) {
-            pBacEngine->pBuf++;
-            pBacEngine->iCount += BYTE_BITS;
-        }
-        iBitsLeft = 0;
         while (iShift >= iLoopEnd) {
-            iBitsLeft |= ((iRegOp & 0xff) << iShift);
-            iRegOp >>= BYTE_BITS;
+            pBacEngine->iCount += BYTE_BITS;
+            iRegOp = *buffer++;
+            BacValue |= (iRegOp << iShift);
             iShift -= BYTE_BITS;
         }
-        pBacEngine->BacValue |= iBitsLeft;
+        pBacEngine->BacValue = BacValue;
+        pBacEngine->pBuf = buffer;
     }
 }
 
