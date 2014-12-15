@@ -76,7 +76,6 @@ driver_files = \
         media_drv_decoder.c  \
         media_drv_gen75_render.c   \
         media_drv_gen8_render.c   \
-        test_add.cpp   \
         media_drv_hybrid_vp9_common.cpp   \
         $(NULL)
 
@@ -113,7 +112,6 @@ driver_headers = \
         media_drv_surface.h   \
         media_drv_decoder.h   \
         media_render_common.h  \
-        test_add.h  \
         media_drv_hybrid_vp9_common.h   \
        $(NULL)
 

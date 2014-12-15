@@ -39,8 +39,6 @@
 #include "media_drv_init.h"
 #include "media_drv_decoder.h"
 
-#include "test_add.h"
-
 //#define DEBUG 
 #define DEFAULT_BRIGHTNESS      0
 #define DEFAULT_CONTRAST        10
@@ -2508,7 +2506,6 @@ __vaDriverInit_0_34 (VADriverContextP ctx)
 {
   VAStatus ret = VA_STATUS_ERROR_UNKNOWN;
 
-  test_add_function(25, 35);
   ret = va_driver_init (ctx);
   return ret;
 }
