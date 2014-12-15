@@ -2035,6 +2035,10 @@ media_GetConfigAttributes (VADriverContextP ctx, VAProfile profile, VAEntrypoint
 	  break;
 
 
+        case VAConfigAttribDecSliceMode:
+          attrib_list[i].value = VA_DEC_SLICE_MODE_NORMAL;
+          break;
+
 	default:
 	  attrib_list[i].value = VA_ATTRIB_NOT_SUPPORTED;
 	  break;
