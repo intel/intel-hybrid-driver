@@ -235,6 +235,16 @@
 
 #define IS_GEN8(devid)  (IS_BROADWELL(devid))
 
+#define PCI_CHIP_CHV_0		0x22B0
+#define PCI_CHIP_CHV_1		0x22B1
+#define PCI_CHIP_CHV_2		0x22B2
+#define PCI_CHIP_CHV_3		0x22B3
+
+
+#define IS_CHERRYVIEW(devid)   (devid == PCI_CHIP_CHV_0 || \
+				devid == PCI_CHIP_CHV_1 || \
+				devid == PCI_CHIP_CHV_2 || \
+				devid == PCI_CHIP_CHV_3)
 struct region
 {
   INT x;
