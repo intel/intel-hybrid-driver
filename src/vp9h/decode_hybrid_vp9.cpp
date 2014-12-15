@@ -3572,7 +3572,7 @@ VAStatus Intel_HybridVp9_DecodeInitialize(
 	dri_bo_map(slice_data_bo, 0);
 	pHostVldVideoBuffer->slice_data_bo = slice_data_bo;
 	pHostVldVideoBuffer->pbBitsData = slice_data_bo->virt;
-	pHostVldVideoBuffer->dwBitsSize = slice_data_bo->size;
+	pHostVldVideoBuffer->dwBitsSize = pVp9PicParams->BSBytesInBuffer;
     }
 
     Intel_HostvldVp9_Initialize(
