@@ -149,8 +149,6 @@ media_guess_surface_format (VADriverContextP ctx,
   if (!obj_config)
     return;
 
-  if (IS_HASWELL (drv_ctx->drv_data.device_id)
-      || IS_IVYBRIDGE (drv_ctx->drv_data.device_id))
     {
       *fourcc = VA_FOURCC ('N', 'V', '1', '2');
       *is_tiled = 1;
