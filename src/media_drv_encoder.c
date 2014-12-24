@@ -1973,8 +1973,6 @@ media_encoder_picture_init (VADriverContextP ctx, VAProfile profile,
     encoder_context->internal_rate_mode = HB_BRC_CBR;
     encoder_context->max_bit_rate = encoder_context->target_bit_rate;
     encoder_context->min_bit_rate = encoder_context->target_bit_rate;
-    encoder_context->init_vbv_buffer_fullness_in_bit = encoder_context->target_bit_rate;
-    encoder_context->vbv_buffer_size_in_bit = encoder_context->target_bit_rate;
   } else if (VA_RC_VBR == encoder_context->rate_control_mode) {
     encoder_context->internal_rate_mode = HB_BRC_VBR;
   }
