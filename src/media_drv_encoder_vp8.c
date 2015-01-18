@@ -700,18 +700,20 @@ media_encoder_context_params_init (MEDIA_DRV_CONTEXT * drv_ctx,
 				   MEDIA_ENCODER_CTX * encoder_context)
 {
   if (IS_HSW_GT1 (drv_ctx->drv_data.device_id)
-      || (IS_IVYBRIDGE (drv_ctx->drv_data.device_id)))
-    {
-      encoder_context->walker_mode = SINGLE_MODE;
-    }
-  else if (IS_HSW_GT2 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->walker_mode = DUAL_MODE;
-    }
+      || (IS_IVB_GT1 (drv_ctx->drv_data.device_id))
+      || (IS_BAYTRAIL (drv_ctx->drv_data.device_id)))
+  {
+    encoder_context->walker_mode = SINGLE_MODE;
+  }
+  else if (IS_HSW_GT2 (drv_ctx->drv_data.device_id)
+      || (IS_IVB_GT2 (drv_ctx->drv_data.device_id)))
+  {
+    encoder_context->walker_mode = DUAL_MODE;
+  }
   else if (IS_HSW_GT3 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->walker_mode = QUAD_MODE;
-    }
+  {
+    encoder_context->walker_mode = QUAD_MODE;
+  }
 
   encoder_context->kernel_mode = 0;
   encoder_context->frame_num = 0;
