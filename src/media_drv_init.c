@@ -2113,7 +2113,7 @@ media_validate_config(VADriverContextP ctx, VAProfile profile,
   /* Validate profile & entrypoint */
   switch (profile) {
   case VAProfileVP8Version0_3:
-    if ((entrypoint == VAEntrypointEncSlice) &&
+    if ((entrypoint == VAEntrypointHybridEncSlice) &&
         drv_ctx->codec_info->vp8_enc_hybrid_support) {
       va_status = VA_STATUS_SUCCESS;
     } else {
