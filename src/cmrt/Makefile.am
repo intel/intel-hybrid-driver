@@ -101,7 +101,7 @@ cmrt_headers = \
 	$(NULL)
 
 cmrt_la_LTLIBRARIES     = cmrt.la
-cmrt_ladir              = $(prefix)/lib
+cmrt_ladir              = $(libdir)
 cmrt_la_CFLAGS          = $(cmrt_cflags)
 cmrt_la_CXXFLAGS        = -fpermissive $(cmrt_cflags)
 cmrt_la_LDFLAGS         = $(cmrt_ldflags)
