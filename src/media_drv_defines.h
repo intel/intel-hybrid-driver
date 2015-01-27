@@ -107,7 +107,7 @@ typedef short INT16;
 typedef int INT;
 typedef unsigned char BYTE;
 typedef char CHAR;
-typedef uint32_t BOOL;
+typedef bool BOOL;
 typedef bool STATUS;
 typedef void VOID;
 

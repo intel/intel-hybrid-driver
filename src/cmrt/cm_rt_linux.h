@@ -53,7 +53,7 @@ extern "C" {
 #include <sys/time.h>
 #include <pthread.h>
 #include <x86intrin.h>		//__rdtsc
-typedef uint32_t BOOL;
+typedef bool BOOL;
 typedef int32_t INT;
 typedef uint32_t UINT;
 typedef signed char INT8;
