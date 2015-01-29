@@ -4103,7 +4103,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       if (encoder_context->brc_enabled) {
 	params.buf_object = brc_init_reset_ctx->brc_history;
 	params.size = brc_init_reset_ctx->brc_history.bo_size;
-	assert(params.size == 544);
+	assert(params.size == HISTORY_BUFFER_SIZE);
       }
 
       params.surface_is_raw = 1;
@@ -4317,7 +4317,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       if (encoder_context->brc_enabled) {
 	params.buf_object = brc_init_reset_ctx->brc_history;
 	params.size = brc_init_reset_ctx->brc_history.bo_size;
-	assert(params.size == 544);
+	assert(params.size == HISTORY_BUFFER_SIZE);
       }
 
       params.surface_is_raw = 1;
@@ -4575,7 +4575,7 @@ media_surface_state_vp8_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context,
   params.size = ctx->brc_history.bo_size;
   params.cacheability_control =
     surface_params->cacheability_control;
-  assert(params.size == 544);
+  assert(params.size == HISTORY_BUFFER_SIZE);
   encoder_context->media_add_surface_state (&params);
 
   /* distortion buffer */

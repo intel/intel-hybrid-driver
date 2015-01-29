@@ -180,6 +180,7 @@
 
 
 #define HISTOGRAM_SIZE                      (136 * sizeof(unsigned int))
+#define HISTORY_BUFFER_SIZE   704 //as per the spec
 
 #define     MBPAK_HYBRID_STATE_P1        1
 #define    MBPAK_HYBRID_STATE_P2     2

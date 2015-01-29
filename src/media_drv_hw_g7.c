@@ -2665,7 +2665,7 @@ media_surface_state_vp8_brc_init_reset_g7(MEDIA_ENCODER_CTX * encoder_context,
   params.size = ctx->brc_history.bo_size;
   params.cacheability_control =
     surface_params->cacheability_control;
-  assert(params.size == 544);
+  assert(params.size == HISTORY_BUFFER_SIZE);
   media_add_surface_state (&params);
 
   /* distortion buffer */

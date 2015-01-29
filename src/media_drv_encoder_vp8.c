@@ -871,11 +871,11 @@ media_alloc_resource_brc_init_reset (VADriverContextP ctx,
 
   brc_init_reset_context->brc_history.surface_array_spacing = 0x1;
   brc_init_reset_context->brc_history.tiling = I915_TILING_NONE;
-  brc_init_reset_context->brc_history.bo_size = 544;	// 17 GRF registers
+  brc_init_reset_context->brc_history.bo_size = HISTORY_BUFFER_SIZE;	// 17 GRF registers
   media_allocate_resource (&brc_init_reset_context->brc_history,
 			   drv_ctx->drv_data.bufmgr,
 			   (const BYTE *) "BRC history buffer",
-			   HISTOGRAM_SIZE, 4096);
+			   HISTORY_BUFFER_SIZE, 4096);
   MEDIA_DRV_ASSERT (brc_init_reset_context->brc_history.bo);
 
   brc_init_reset_context->brc_distortion.width =
