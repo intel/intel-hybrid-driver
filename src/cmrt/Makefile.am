@@ -37,7 +37,6 @@ cmrt_cflags = \
 	-Wno-missing-braces \
 	-fvisibility=default 	\
 	-DLINUX			\
-	-I/usr/include/libdrm   \
 	-msse                   \
 	-msse2                  \
 	-msse3                  \
