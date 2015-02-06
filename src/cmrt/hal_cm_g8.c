@@ -343,8 +343,8 @@ VOID HalCm_HwSendL3CacheConfig_g8(PCM_HAL_STATE pState,
 
 	if (GFX_IS_PRODUCT(pState->Platform, IGFX_CHERRYVIEW)) {
 		LoadRegImm.dwData =
-		    pState->bSLMMode ? CM_CONFIG_CNTLREG_VALUE_G8_BDW_SLM :
-		    CM_CONFIG_CNTLREG_VALUE_G8_BDW_NONSLM;
+		    pState->bSLMMode ? CM_CONFIG_CNTLREG_VALUE_G8_CHV_SLM :
+		    CM_CONFIG_CNTLREG_VALUE_G8_CHV_SLM;
 	} else {
 		LoadRegImm.dwData =
 		    pState->bSLMMode ? CM_CONFIG_CNTLREG_VALUE_G8_BDW_SLM :
