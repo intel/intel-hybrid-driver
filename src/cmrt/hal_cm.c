@@ -623,11 +623,6 @@ GENOS_STATUS HalCm_ParseTask(PCM_HAL_STATE pState,
 
 	pState->WalkerParams.CmWalkerEnable = TRUE;
 
-	if ((pState->Platform.eProductFamily == IGFX_CHERRYVIEW)
-	    && ((1 << pState->Platform.usRevId) & 0x0fff0007u)) {
-		bNonstallingScoreboardEnable = FALSE;
-	}
-
 	for (iKrn = 0; iKrn < pExecParam->iNumKernels; iKrn++) {
 		if ((pExecParam->pKernels[iKrn] == NULL) ||
 		    (pExecParam->piKernelSizes[iKrn] == 0)) {
@@ -1049,11 +1044,6 @@ GENOS_STATUS HalCm_ParseHintsTask(PCM_HAL_STATE pState,
 	iHdrSize =
 	    pState->pHwInterface->pHwCommands->dwMediaObjectHeaderCmdSize;
 	pScoreboardParams = &pState->ScoreboardParams;
-
-	if ((pState->Platform.eProductFamily == IGFX_CHERRYVIEW)
-	    && ((1 << pState->Platform.usRevId) & 0x0fff0007u)) {
-		bNonstallingScoreboardEnable = FALSE;
-	}
 
 	for (iKrn = 0; iKrn < pExecHintsParam->iNumKernels; ++iKrn) {
 		if ((pExecHintsParam->pKernels[iKrn] == NULL) ||
