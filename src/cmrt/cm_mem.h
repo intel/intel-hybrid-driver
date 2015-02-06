@@ -113,48 +113,13 @@ inline void FastMemCopy_SSE2_movdqu_movdqa(void *dst, void *src,
 					   const size_t doubleQuadWords);
 inline void FastMemCopy_SSE2_movntdq_movdqu(void *dst, const void *src,
 					    const size_t doubleQuadWords);
-
-#define EMIT_R_MR(OPCODE, X, Y )   \
-    OPCODE                         \
-    __asm _emit (0x00 + X*8 + Y)
-
-#define EMIT_R_MR_OFFSET(OPCODE, X, Y, OFFSET)  \
-    OPCODE                                      \
-    __asm _emit (0x80 + X*8 + Y)                \
-    __asm _emit (OFFSET&0xFF)                   \
-    __asm _emit ((OFFSET>>8)&0xFF)              \
-    __asm _emit ((OFFSET>>16)&0xFF)             \
-    __asm _emit ((OFFSET>>24)&0xFF)
-
-#define MOVNTDQA_OP     \
-    _asm _emit 0x66     \
-    _asm _emit 0x0F     \
-    _asm _emit 0x38     \
-    _asm _emit 0x2A
-
-#define MOVNTDQA_R_MR(DST, SRC)                 \
-    EMIT_R_MR(MOVNTDQA_OP, DST, SRC)
-
-#define MOVNTDQA_R_MR_OFFSET(DST, SRC, OFFSET)  \
-    EMIT_R_MR_OFFSET(MOVNTDQA_OP, DST, SRC, OFFSET)
-
 #ifndef BIT
 #define BIT( n )    ( 1 << (n) )
 #endif
 
 inline void CmSafeMemSet(void *dst, const int data, const size_t bytes)
 {
-#if defined(_DEBUG)
-	__try
-#endif
-	{
-		::memset(dst, data, bytes);
-	}
-#if defined(_DEBUG)
-	__except(EXCEPTION_EXECUTE_HANDLER) {
-		CM_ASSERT(0);
-	}
-#endif
+	::memset(dst, data, bytes);
 }
 
 inline void CmDwordMemSet(void *dst, const DWORD data, const size_t bytes)
@@ -171,43 +136,18 @@ inline void CmSafeMemCopy(void *pdst, const void *psrc, const size_t bytes)
 	BYTE *p_dst = (BYTE *) pdst;
 	BYTE *p_src = (BYTE *) psrc;
 
-#if defined(_DEBUG)
-	__try
-#endif
-	{
-		GENOS_SecureMemcpy(p_dst, bytes, p_src, bytes);
-	}
-#if defined(_DEBUG)
-	__except(EXCEPTION_EXECUTE_HANDLER) {
-		CM_ASSERT(0);
-	}
-#endif
+	GENOS_SecureMemcpy(p_dst, bytes, p_src, bytes);
 }
 
 inline int CmSafeMemCompare(const void *dst, const void *src,
 			    const size_t bytes)
 {
-#if defined(_DEBUG)
-	__try
-#endif
-	{
-		return::memcmp(dst, src, bytes);
-	}
-#if defined(_DEBUG)
-	__except(EXCEPTION_EXECUTE_HANDLER) {
-		CM_ASSERT(0);
-		return -1;
-	}
-#endif
+	return::memcmp(dst, src, bytes);
 }
 
 inline void Prefetch(const void *ptr)
 {
-#ifndef __linux__
-	_mm_prefetch((const char *)ptr, _MM_HINT_NTA);
-#else
 	__asm__("prefetchnta 0(%0)"::"r"(ptr));
-#endif
 }
 
 inline bool TestSSE4_1(void)

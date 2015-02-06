@@ -100,10 +100,6 @@ class CmThreadSpace {
 
 	INT Initialize(void);
 
-#ifdef _DEBUG
-	INT PrintBoardOrder();
-#endif
-
 	CmDevice *m_pDevice;
 
 	UINT m_Width;

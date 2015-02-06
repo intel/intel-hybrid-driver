@@ -75,9 +75,7 @@ class CmTaskInternal:public CmDynamicArray {
 	INT GetDependencyVectors(CM_HAL_DEPENDENCY & pDependencyVector);
 	BOOLEAN CheckWalkingParametersSet();
 	BOOLEAN CheckDependencyVectorsSet();
-#if _DEBUG
-	INT DisplayThreadSpaceData(UINT width, UINT height);
-#endif
+
 	INT GetThreadSpaceSize(UINT & width, UINT & height);
 	INT GetThreadGroupSpaceSize(UINT & trdSpaceWidth, UINT & trdSpaceHeight,
 				    UINT & grpSpaceWidth,

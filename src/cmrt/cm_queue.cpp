@@ -41,21 +41,6 @@
 #include "hal_cm.h"
 #include "cm_surface_manager.h"
 
-#define BLOCK_PIXEL_WIDTH            (32)
-#define BLOCK_HEIGHT                 (8)
-#define BLOCK_HEIGHT_NV12            (4)
-#define SUB_BLOCK_PIXEL_WIDTH        (8)
-#define SUB_BLOCK_HEIGHT             (8)
-#define SUB_BLOCK_HEIGHT_NV12        (4)
-#define INNER_LOOP                   (4)
-#define BYTE_COPY_ONE_THREAD         (1024*INNER_LOOP)
-#define THREAD_SPACE_WIDTH_INCREMENT (8)
-#define BLOCK_WIDTH					 (64)
-#define PAGE_ALIGNED                 (0x1000)
-
-#define GPUCOPY_KERNEL_LOCK(a) ((a)->bLocked = TRUE)
-#define GPUCOPY_KERNEL_UNLOCK(a) ((a)->bLocked = FALSE)
-
 INT CmQueue::Create(CmDevice * pDevice, CmQueue * &pQueue)
 {
 	INT result = CM_SUCCESS;

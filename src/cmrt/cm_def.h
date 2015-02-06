@@ -176,8 +176,6 @@ typedef unsigned char byte;
 #define CM_KERNEL_DATA_GLOBAL_SURFACE_DIRTY     (1 << 4)
 #define CM_KERNEL_DATA_THREAD_COUNT_DIRTY       (1 << 5)
 
-#define CM_INIT_GPUCOPY_KERNL_COUNT             16
-
 #define SIWA_ONLY_A0            0x0fff0001u
 #define SIWA_ONLY_A1            0x0fff0002u
 #define SIWA_ONLY_A2            0x0fff0004u

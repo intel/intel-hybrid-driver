@@ -34,7 +34,6 @@
 #include "hal_cm.h"
 #include "cm_queue.h"
 
-#define COPY_OPTION(uiOption)    (uiOption & 0x1)
 
 INT CmSurface2D::Create(UINT index,
 			UINT handle,
