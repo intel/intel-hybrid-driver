@@ -721,19 +721,30 @@ PVOID IntelGen_OsLockResource(PGENOS_INTERFACE pOsInterface,
 	pData = NULL;
 
 	GENOS_OS_ASSERT(pOsInterface);
+	GENOS_OS_ASSERT(pOsInterface->pOsContext);
 	GENOS_OS_ASSERT(pOsResource);
 
 	if (pOsResource && pOsResource->bo) {
 		drm_intel_bo *bo = pOsResource->bo;
 
 		if (FALSE == pOsResource->bMapped) {
-			if (pOsResource->TileType == GENOS_TILE_LINEAR) {
-				drm_intel_bo_map(bo,
-						 (OSKM_LOCKFLAG_WRITEONLY &
-						  pLockFlags->WriteOnly));
-			} else {
+			if (GFX_IS_PRODUCT
+			    (pOsInterface->pOsContext->platform,
+			     IGFX_CHERRYVIEW)) {
+				//uncache mapping for the BOs mapped once and then shared in multi-task submissions
+				//   it is to W/A GPU hang on CHV when i915.ppgtt = 1 in KMD.
 				drm_intel_gem_bo_map_gtt(bo);
+			} else {
+				if (pOsResource->TileType == GENOS_TILE_LINEAR) {
+					drm_intel_bo_map(bo,
+							 (OSKM_LOCKFLAG_WRITEONLY
+							  &
+							  pLockFlags->WriteOnly));
+				} else {
+					drm_intel_gem_bo_map_gtt(bo);
+				}
 			}
+
 			pOsResource->pData = (PBYTE) bo->virt;
 			pOsResource->bMapped = TRUE;
 		}
@@ -752,21 +763,30 @@ HRESULT IntelGen_OsUnlockResource(PGENOS_INTERFACE pOsInterface,
 	hr = S_OK;
 
 	GENOS_OS_CHK_NULL_WITH_HR(pOsInterface);
+	GENOS_OS_CHK_NULL_WITH_HR(pOsInterface->pOsContext);
 	GENOS_OS_CHK_NULL_WITH_HR(pOsResource);
 
 	if (pOsResource->bo) {
 		if (TRUE == pOsResource->bMapped) {
-			if (pOsResource->TileType == GENOS_TILE_LINEAR) {
-				drm_intel_bo_unmap(pOsResource->bo);
-			} else {
+			if (GFX_IS_PRODUCT
+			    (pOsInterface->pOsContext->platform,
+			     IGFX_CHERRYVIEW)) {
+				// to be paired with IntelGen_OsLockResource
 				drm_intel_gem_bo_unmap_gtt(pOsResource->bo);
+			} else {
+				if (pOsResource->TileType == GENOS_TILE_LINEAR) {
+					drm_intel_bo_unmap(pOsResource->bo);
+				} else {
+					drm_intel_gem_bo_unmap_gtt
+					    (pOsResource->bo);
+				}
 			}
+
 			pOsResource->bo->virt = NULL;
 			pOsResource->bMapped = FALSE;
 		}
 		pOsResource->pData = NULL;
 	}
-
  finish:
 	return hr;
 }
