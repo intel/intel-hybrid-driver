@@ -1313,4 +1313,7 @@ struct gen8_blend_state_rt {
 
 #define GEN8_XY_COLOR_BLT_CMD                   (RCMD_2D | (0x50 << 22) | 0x05)
 
+#define GEN7_3DSTATE_VF                 RENDER_CMD(3, 0, 0x0c)
+#define GEN8_3DSTATE_VF_INSTANCING      RENDER_CMD(3, 0, 0x49)
+
 #endif /* _MEDIA_RENDER_COMMON_H_ */

@@ -908,6 +908,7 @@ gen8_emit_vertex_element_state(VADriverContextP ctx)
 {
     MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
     MEDIA_BATCH_BUFFER *batch = drv_ctx->render_batch;
+    int i;
     /*
      * The VUE layout
      * dword 0-3: pad (0, 0, 0. 0)
@@ -950,6 +951,13 @@ gen8_emit_vertex_element_state(VADriverContextP ctx)
               (I965_VFCOMPONENT_STORE_SRC << VE1_VFCOMPONENT_1_SHIFT) |
               (I965_VFCOMPONENT_STORE_1_FLT << VE1_VFCOMPONENT_2_SHIFT) |
               (I965_VFCOMPONENT_STORE_1_FLT << VE1_VFCOMPONENT_3_SHIFT));
+
+   /* Disable instancing for all vertex elements. */
+   for (i = 0; i < 3; i++) {
+      OUT_BATCH(batch, GEN8_3DSTATE_VF_INSTANCING | (3 - 2));
+      OUT_BATCH(batch, i);
+      OUT_BATCH(batch, 0);
+   }
 }
 
 static void
