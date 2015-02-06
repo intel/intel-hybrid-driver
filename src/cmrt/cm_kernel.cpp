@@ -1843,6 +1843,7 @@ INT CmKernel::CreateThreadSpaceParam(PCM_HAL_KERNEL_THREADSPACE_PARAM
 	UINT TsWidth = 0;
 	UINT TsHeight = 0;
 	CM_THREAD_SPACE_UNIT *pThreadSpaceUnit = NULL;
+	CM_THREAD_SPACE_DIRTY_STATUS dirtyStatus = CM_THREAD_SPACE_CLEAN;
 
 	if (pCmKernelThreadSpaceParam == NULL || pThreadSpace == NULL) {
 		CM_ASSERT(0);
@@ -1933,6 +1934,16 @@ INT CmKernel::CreateThreadSpaceParam(PCM_HAL_KERNEL_THREADSPACE_PARAM
 				      dispatchInfo.numWaves * sizeof(UINT));
 
 		}
+	}
+
+	dirtyStatus = pThreadSpace->GetDirtyStatus();
+	switch (dirtyStatus) {
+	case CM_THREAD_SPACE_CLEAN:
+		pCmKernelThreadSpaceParam->BBdirtyStatus = CM_HAL_BB_CLEAN;
+		break;
+	default:
+		pCmKernelThreadSpaceParam->BBdirtyStatus = CM_HAL_BB_DIRTY;
+		break;
 	}
 
  finish:
@@ -2156,6 +2167,7 @@ INT CmKernel::CreateKernelData(CmKernelData * &pKernelData,
 			       UINT & kernelDataSize, const CmThreadSpace * pTS)
 {
 	INT hr = CM_SUCCESS;
+	PCM_HAL_KERNEL_PARAM pHalKernelParam = NULL;
 
 	if ((pTS != NULL) && (m_pThreadSpace != NULL)) {
 		return CM_INVALID_THREAD_SPACE;
@@ -2172,6 +2184,14 @@ INT CmKernel::CreateKernelData(CmKernelData * &pKernelData,
 			pKernelData->Acquire();
 			pKernelData->AcquireKernel();
 			kernelDataSize = pKernelData->GetKernelDataSize();
+			if (m_pThreadSpace) {
+				pHalKernelParam =
+				    pKernelData->GetHalCmKernelData();
+				CMCHK_NULL(pHalKernelParam);
+				pHalKernelParam->
+				    CmKernelThreadSpaceParam.BBdirtyStatus =
+				    CM_HAL_BB_CLEAN;
+			}
 
 		} else {
 			if (m_pLastKernelData->IsInUse()) {
@@ -2210,6 +2230,9 @@ INT CmKernel::CreateKernelData(CmKernelData * &pKernelData,
 	CleanArgDirtyFlag();
 	if (pTS) {
 		pTS->SetDirtyStatus(CM_THREAD_SPACE_CLEAN);
+	}
+	if (m_pThreadSpace) {
+		m_pThreadSpace->SetDirtyStatus(CM_THREAD_SPACE_CLEAN);
 	}
 
  finish:
@@ -2901,15 +2924,41 @@ INT CmKernel::UpdateKernelData(CmKernelData * pKernelData,
 				m_pThreadSpace->GetWavefront26ZDispatchInfo
 				    (dispatchInfo);
 
-				pCmKernelThreadSpaceParam->
-				    dispatchInfo.numWaves =
-				    dispatchInfo.numWaves;
-				CmFastMemCopy
-				    (pCmKernelThreadSpaceParam->dispatchInfo.
-				     pNumThreadsInWave,
-				     dispatchInfo.pNumThreadsInWave,
-				     dispatchInfo.numWaves * sizeof(UINT));
-
+				if (pCmKernelThreadSpaceParam->
+				    dispatchInfo.numWaves >=
+				    dispatchInfo.numWaves) {
+					pCmKernelThreadSpaceParam->
+					    dispatchInfo.numWaves =
+					    dispatchInfo.numWaves;
+					CmFastMemCopy
+					    (pCmKernelThreadSpaceParam->dispatchInfo.
+					     pNumThreadsInWave,
+					     dispatchInfo.pNumThreadsInWave,
+					     dispatchInfo.numWaves *
+					     sizeof(UINT));
+				} else {
+					pCmKernelThreadSpaceParam->
+					    dispatchInfo.numWaves =
+					    dispatchInfo.numWaves;
+					CmSafeDeleteArray
+					    (pCmKernelThreadSpaceParam->dispatchInfo.
+					     pNumThreadsInWave);
+					pCmKernelThreadSpaceParam->
+					    dispatchInfo.pNumThreadsInWave =
+					    new(std::
+						nothrow)
+					    UINT[dispatchInfo.numWaves];
+					CMCHK_NULL_RETURN
+					    (pCmKernelThreadSpaceParam->dispatchInfo.
+					     pNumThreadsInWave,
+					     CM_OUT_OF_HOST_MEMORY);
+					CmFastMemCopy
+					    (pCmKernelThreadSpaceParam->dispatchInfo.
+					     pNumThreadsInWave,
+					     dispatchInfo.pNumThreadsInWave,
+					     dispatchInfo.numWaves *
+					     sizeof(UINT));
+				}
 			}
 		}
 	}

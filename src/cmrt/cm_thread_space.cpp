@@ -341,7 +341,8 @@ CM_RT_API INT
 				for (UINT x = 0; x < m_Width; ++x) {
 					linear_offset = y * m_Width + x;
 					m_pThreadSpaceUnit
-					    [linear_offset].threadId = threadId;
+					    [linear_offset].threadId =
+					    threadId++;
 					m_pThreadSpaceUnit
 					    [linear_offset].scoreboardCoordinates.
 					    x = x;
@@ -1309,21 +1310,25 @@ INT CmThreadSpace::Wavefront26ZISeqVV26HH26()
 		       (temp_xyFor26.x < (INT) m_Width)
 		       && (temp_xyFor26.y < (INT) m_Height));
 
-		waveFrontNum++;
-		adjustHeight =
-		    (UINT) ceil((double)m_Height / m_26ZIBlockHeight);
-
-		if (waveFrontNum < (2 * adjustHeight)) {
-			waveFrontStartX = waveFrontNum & 1;
-			waveFrontStartY =
-			    (UINT) floor((double)waveFrontNum / 2);
+		if (m_Width <= m_26ZIBlockWidth) {
+			temp_xyFor26.x = 0;
+			temp_xyFor26.y = temp_xyForHorz.y + m_26ZIBlockHeight;
 		} else {
-			waveFrontStartX = (waveFrontNum - 2 * adjustHeight) + 2;
-			waveFrontStartY = (adjustHeight) - 1;
+			waveFrontNum++;
+			adjustHeight =
+			    (UINT) ceil((double)m_Height / m_26ZIBlockHeight);
+			if (waveFrontNum < (2 * adjustHeight)) {
+				waveFrontStartX = waveFrontNum & 1;
+				waveFrontStartY =
+				    (UINT) floor((double)waveFrontNum / 2);
+			} else {
+				waveFrontStartX =
+				    (waveFrontNum - 2 * adjustHeight) + 2;
+				waveFrontStartY = (adjustHeight) - 1;
+			}
+			temp_xyFor26.x = waveFrontStartX * m_26ZIBlockWidth;
+			temp_xyFor26.y = waveFrontStartY * m_26ZIBlockHeight;
 		}
-
-		temp_xyFor26.x = waveFrontStartX * m_26ZIBlockWidth;
-		temp_xyFor26.y = waveFrontStartY * m_26ZIBlockHeight;
 	}
 
 	return CM_SUCCESS;
@@ -1453,22 +1458,25 @@ INT CmThreadSpace::Wavefront26ZISeqVV1x26HH1x26()
 			       && (temp_xyFor26.y < (INT) m_Height));
 
 		}
-
-		waveFrontNum++;
-		adjustHeight =
-		    (UINT) ceil((double)m_Height / m_26ZIBlockHeight);
-
-		if (waveFrontNum < (2 * adjustHeight)) {
-			waveFrontStartX = waveFrontNum & 1;
-			waveFrontStartY =
-			    (UINT) floor((double)waveFrontNum / 2);
+		if (m_Width <= m_26ZIBlockWidth) {
+			temp_xyFor26.x = 0;
+			temp_xyFor26.y = saveTemp_xyFor26.y + m_26ZIBlockHeight;
 		} else {
-			waveFrontStartX = (waveFrontNum - 2 * adjustHeight) + 2;
-			waveFrontStartY = (adjustHeight) - 1;
+			waveFrontNum++;
+			adjustHeight =
+			    (UINT) ceil((double)m_Height / m_26ZIBlockHeight);
+			if (waveFrontNum < (2 * adjustHeight)) {
+				waveFrontStartX = waveFrontNum & 1;
+				waveFrontStartY =
+				    (UINT) floor((double)waveFrontNum / 2);
+			} else {
+				waveFrontStartX =
+				    (waveFrontNum - 2 * adjustHeight) + 2;
+				waveFrontStartY = (adjustHeight) - 1;
+			}
+			temp_xyFor26.x = waveFrontStartX * m_26ZIBlockWidth;
+			temp_xyFor26.y = waveFrontStartY * m_26ZIBlockHeight;
 		}
-
-		temp_xyFor26.x = waveFrontStartX * m_26ZIBlockWidth;
-		temp_xyFor26.y = waveFrontStartY * m_26ZIBlockHeight;
 	}
 
 	return CM_SUCCESS;

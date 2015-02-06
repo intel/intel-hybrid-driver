@@ -439,13 +439,16 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 	INT iSize;
 	UINT i;
 	UINT j;
+	UINT k;
 	INT iFreeIdx;
 	UINT64 uiKernelIds[CM_MAX_KERNELS_PER_TASK];
 	UINT64 uiKernelParamsIds[CM_MAX_KERNELS_PER_TASK];
+	CM_HAL_BB_DIRTY_STATUS bbDirtyStatus;
 
 	hr = GENOS_STATUS_SUCCESS;
 	pHwInterface = pState->pHwInterface;
 	iFreeIdx = CM_INVALID_INDEX;
+	bbDirtyStatus = CM_HAL_BB_CLEAN;
 
 	iSize = HalCm_GetPow2Aligned(pState->pTaskParam->iBatchBufferSize);
 
@@ -465,8 +468,19 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 		uiKernelParamsIds[i] = ((pKernels[i])->uiKernelId << 16) >> 16;
 	}
 
+	bbDirtyStatus = CM_HAL_BB_CLEAN;
+	for (k = 0; k < iNumKernels; ++k) {
+		if (pKernels[k]->CmKernelThreadSpaceParam.BBdirtyStatus ==
+		    CM_HAL_BB_DIRTY) {
+			bbDirtyStatus = CM_HAL_BB_DIRTY;
+			break;
+		}
+	}
+
 	for (i = 0; i < (UINT) pState->iNumBatchBuffers; i++) {
 		pBb = &pState->pBatchBuffers[i];
+		CM_CHK_NULL_RETURN_GENOSSTATUS(pBb);
+
 		if (!IntelGen_OsResourceIsNull(&pBb->OsResource)) {
 			GENOS_FillMemory(uiKernelIds,
 					 sizeof(UINT64) *
@@ -478,7 +492,8 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 			    (uiKernelIds,
 			     pBb->pBBRenderData->BbArgs.BbCmArgs.uiKernelIds,
 			     sizeof(UINT64) * CM_MAX_KERNELS_PER_TASK)) {
-				if (pBb->bBusy) {
+				if (pBb->bBusy
+				    && bbDirtyStatus == CM_HAL_BB_DIRTY) {
 					pBb->pBBRenderData->BbArgs.
 					    BbCmArgs.bLatest = FALSE;
 				} else if (pBb->pBBRenderData->BbArgs.
@@ -489,6 +504,7 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 		}
 	}
 	if (i < (UINT) pState->iNumBatchBuffers) {
+		CM_CHK_NULL_RETURN_GENOSSTATUS(pBb);
 		pBb->pBBRenderData->BbArgs.BbCmArgs.uiRefCount++;
 		pBb->iCurrent = 0;
 		pBb->dwSyncTag = 0;
@@ -499,15 +515,18 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 
 	for (i = 0; i < (UINT) pState->iNumBatchBuffers; i++) {
 		pBb = &pState->pBatchBuffers[i];
+		CM_CHK_NULL_RETURN_GENOSSTATUS(pBb);
 
 		if (IntelGen_OsResourceIsNull(&pBb->OsResource)) {
 			iFreeIdx = i;
 			break;
 		}
 	}
+
 	if (iFreeIdx == CM_INVALID_INDEX) {
 		for (i = 0; i < (UINT) pState->iNumBatchBuffers; i++) {
 			pBb = &pState->pBatchBuffers[i];
+			CM_CHK_NULL_RETURN_GENOSSTATUS(pBb);
 			if (!pBb->bBusy) {
 				if (pBb->iSize >= iSize) {
 					pBb->iCurrent = 0;
@@ -542,6 +561,7 @@ GENOS_STATUS HalCm_GetBatchBuffer(PCM_HAL_STATE pState,
 	}
 
 	pBb = &pState->pBatchBuffers[iFreeIdx];
+	CM_CHK_NULL_RETURN_GENOSSTATUS(pBb);
 
 	pBb->pBBRenderData->BbArgs.BbCmArgs.uiRefCount = 1;
 	for (i = 0; i < iNumKernels; i++) {
@@ -3801,6 +3821,8 @@ GENOS_STATUS HalCm_FinishStatesForKernel(PCM_HAL_STATE pState,
 	PCM_HAL_SCOREBOARD_XY pThreadCoordinates = NULL;
 	PCM_HAL_MASK_AND_RESET pDependencyMask = NULL;
 	bool enableThreadSpace = FALSE;
+	bool enableKernelThreadSpace = FALSE;
+	PCM_HAL_SCOREBOARD_XY_MASK pKernelThreadCoordinates = NULL;
 
 	GENHW_HW_MEDIAOBJECT_PARAM MediaObjectParam;
 	PCM_HAL_KERNEL_ARG_PARAM pArgParam;
@@ -3818,6 +3840,12 @@ GENOS_STATUS HalCm_FinishStatesForKernel(PCM_HAL_STATE pState,
 		    pTaskParam->ppThreadCoordinates[iKernelIndex];
 		if (pThreadCoordinates) {
 			enableThreadSpace = TRUE;
+		}
+	} else if (pKernelParam->CmKernelThreadSpaceParam.pThreadCoordinates) {
+		pKernelThreadCoordinates =
+		    pKernelParam->CmKernelThreadSpaceParam.pThreadCoordinates;
+		if (pKernelThreadCoordinates) {
+			enableKernelThreadSpace = TRUE;
 		}
 	}
 
@@ -4199,20 +4227,19 @@ GENOS_STATUS HalCm_FinishStatesForKernel(PCM_HAL_STATE pState,
 		if (pBatchBuffer->pBBRenderData->BbArgs.BbCmArgs.uiRefCount > 1) {
 			PBYTE pBBuffer =
 			    pBatchBuffer->pData + pBatchBuffer->iCurrent;
-			for (tIndex = 0; tIndex < pKernelParam->iNumThreads;
-			     tIndex++) {
-				for (aIndex = 0;
-				     aIndex < pKernelParam->iNumArgs;
-				     aIndex++) {
-					pArgParam =
-					    &pKernelParam->CmArgParams[aIndex];
-					index = tIndex * pArgParam->bPerThread;
+			for (aIndex = 0; aIndex < pKernelParam->iNumArgs;
+			     aIndex++) {
+				pArgParam = &pKernelParam->CmArgParams[aIndex];
+				if ((pKernelParam->dwCmFlags &
+				     CM_KERNEL_FLAGS_CURBE)
+				    && !pArgParam->bPerThread) {
+					continue;
+				}
 
-					if ((pKernelParam->dwCmFlags &
-					     CM_KERNEL_FLAGS_CURBE)
-					    && !pArgParam->bPerThread) {
-						continue;
-					}
+				for (tIndex = 0;
+				     tIndex < pKernelParam->iNumThreads;
+				     tIndex++) {
+					index = tIndex * pArgParam->bPerThread;
 					CM_ASSERT(pArgParam->iPayloadOffset <
 						  pKernelParam->iPayloadSize);
 
@@ -4309,6 +4336,23 @@ GENOS_STATUS HalCm_FinishStatesForKernel(PCM_HAL_STATE pState,
 					    pThreadCoordinates[tIndex].x;
 					pCmd->DW4.ScoreboardY =
 					    pThreadCoordinates[tIndex].y;
+					if (!pDependencyMask)
+						pCmd->DW5.ScoreboardMask =
+						    (1 <<
+						     pState->ScoreboardParams.
+						     numMask) - 1;
+					else
+						pCmd->DW5.ScoreboardMask =
+						    pDependencyMask
+						    [tIndex].mask;
+				} else if (enableKernelThreadSpace) {
+					pCmd->DW2.UseScoreboard =
+					    (pState->ScoreboardParams.numMask ==
+					     0) ? 0 : 1;
+					pCmd->DW4.ScoreboardX =
+					    pKernelThreadCoordinates[tIndex].x;
+					pCmd->DW4.ScoreboardY =
+					    pKernelThreadCoordinates[tIndex].y;
 					if (!pDependencyMask)
 						pCmd->DW5.ScoreboardMask =
 						    (1 <<
