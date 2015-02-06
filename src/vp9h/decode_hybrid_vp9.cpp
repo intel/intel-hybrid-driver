@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #include <va/va_dec_vp9.h>
+#include <sys/ioctl.h>
 
 #define USE_KERNEL_ZERO_FILL_THREAD_INFO    1
 
@@ -444,6 +445,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_2DUP_BUFFER_UINT8(
                                         "Buffer", 
                                         buf_size, 4096);
 
+   {
+        struct drm_i915_gem_caching bo_cache;
+        bo_cache.handle = pMdfBuffer2D->bo->handle;
+        bo_cache.caching = I915_CACHING_CACHED;
+
+        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
+			&bo_cache);
+    }
     memset(&target_resource, 0, sizeof(target_resource));
 
     GetCmOsResourceFor2DBuffer(&target_resource, pMdfBuffer2D, pMdfBuffer2D->bo, VA_CM_FMT_A8);
@@ -506,6 +515,14 @@ VAStatus INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
     pMdfBuffer1D->bo  = dri_bo_alloc(drv_ctx->drv_data.bufmgr, 
                                         "Buffer", 
                                         buf_size, 64);
+   {
+        struct drm_i915_gem_caching bo_cache;
+        bo_cache.handle = pMdfBuffer1D->bo->handle;
+        bo_cache.caching = I915_CACHING_CACHED;
+
+        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
+			&bo_cache);
+    }
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu8Buffer = NULL;
@@ -548,6 +565,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
     pMdfBuffer1D->bo  = dri_bo_alloc(drv_ctx->drv_data.bufmgr, 
                                         "Buffer", 
                                         buf_size, 64);
+   {
+        struct drm_i915_gem_caching bo_cache;
+        bo_cache.handle = pMdfBuffer1D->bo->handle;
+        bo_cache.caching = I915_CACHING_CACHED;
+
+        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
+			&bo_cache);
+    }
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu16Buffer = NULL;
@@ -593,6 +618,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
     pMdfBuffer1D->bo  = dri_bo_alloc(drv_ctx->drv_data.bufmgr, 
                                         "Buffer", 
                                         buf_size, 64);
+    {
+        struct drm_i915_gem_caching bo_cache;
+        bo_cache.handle = pMdfBuffer1D->bo->handle;
+        bo_cache.caching = I915_CACHING_CACHED;
+
+        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
+			&bo_cache);
+    }
     pMdfBuffer1D->bo_mapped = 0;
 
     
@@ -637,6 +670,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
     pMdfBuffer1D->bo  = dri_bo_alloc(drv_ctx->drv_data.bufmgr, 
                                         "Buffer", 
                                         buf_size, 64);
+   {
+        struct drm_i915_gem_caching bo_cache;
+        bo_cache.handle = pMdfBuffer1D->bo->handle;
+        bo_cache.caching = I915_CACHING_CACHED;
+
+        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
+			&bo_cache);
+    }
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu64Buffer = NULL;
