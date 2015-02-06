@@ -1503,6 +1503,9 @@ HRESULT IntelGen_OsInitInterface(PGENOS_INTERFACE pOsInterface,
 
  finish:
 	if (S_OK != hr && NULL != pOsContext) {
+		if (pOsContext->fd >= 0) {
+			close(pOsContext->fd);
+		}
 		GENOS_FreeMemAndSetNull(pOsContext);
 	}
 	return hr;
@@ -1616,12 +1619,8 @@ static int OpenDevice()
 	sprintf(path, "/dev/dri/renderD%d", 128 + num);
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
-		if (fd < 0) {
-			sprintf(path, "/dev/dri/card%d", num);
-			if (fd < 0) {
-				fd = open(path, O_RDWR);
-			}
-		}
+		sprintf(path, "/dev/dri/card%d", num);
+		fd = open(path, O_RDWR);
 	}
 	return fd;
 }
