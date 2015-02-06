@@ -2923,7 +2923,7 @@ VAStatus Intel_HostvldVp9_ParseCoefficient(
 
                             if (CoeffIdx >= (INT)nEobMax)
                             {
-                                break;
+                                goto eob_finish_block;
                             }
                             if (CoeffIdx)
                             {
@@ -3019,6 +3019,7 @@ VAStatus Intel_HostvldVp9_ParseCoefficient(
                         VP9_PARSE_CAT_COEF_CONTINUE(VP9_CAT6_MIN_VAL, VP9_DCT_VAL_CATEGORY6);
                     } //while (CoeffIdx < nEobMax)
 
+eob_finish_block:
                     // Write coefficient status
                     if (iPlane > INTEL_HOSTVLD_VP9_YUV_PLANE_U) // V
                     {
