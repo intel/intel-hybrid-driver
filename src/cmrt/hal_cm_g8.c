@@ -167,17 +167,8 @@ GENOS_STATUS HalCm_SubmitCommands_g8(PCM_HAL_STATE pState,
 					   (pState, pKernels[i], &CmdBuffer));
 		}
 
-		if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW)) {
-			CmdMediaStateFlush =
-			    *(pHwInterface->pHwCommands->pMediaStateFlush_g75);
-			CmdMediaStateFlush.DW1.FlushToGo = 1;
-			CM_CHK_GENOSSTATUS(IntelGen_OsAddCommand
-					   (&CmdBuffer, &CmdMediaStateFlush,
-					    sizeof(CmdMediaStateFlush)));
-		} else {
-			CM_CHK_GENOSSTATUS(pHwInterface->pfnSendMediaStateFlush
-					   (pHwInterface, &CmdBuffer));
-		}
+		CM_CHK_GENOSSTATUS(pHwInterface->pfnSendMediaStateFlush
+				   (pHwInterface, &CmdBuffer));
 	} else if (enableGpGpu) {
 		GENHW_LOAD_REGISTER_IMM_PARAM LoadRegImm;
 		GENOS_ZeroMemory(&LoadRegImm,
@@ -199,17 +190,8 @@ GENOS_STATUS HalCm_SubmitCommands_g8(PCM_HAL_STATE pState,
 					   (pState, pKernels[i], &CmdBuffer));
 		}
 
-		if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW)) {
-			CmdMediaStateFlush =
-			    *(pHwInterface->pHwCommands->pMediaStateFlush_g75);
-			CmdMediaStateFlush.DW1.FlushToGo = 1;
-			CM_CHK_GENOSSTATUS(IntelGen_OsAddCommand
-					   (&CmdBuffer, &CmdMediaStateFlush,
-					    sizeof(CmdMediaStateFlush)));
-		} else {
-			CM_CHK_GENOSSTATUS(pHwInterface->pfnSendMediaStateFlush
-					   (pHwInterface, &CmdBuffer));
-		}
+		CM_CHK_GENOSSTATUS(pHwInterface->pfnSendMediaStateFlush
+				   (pHwInterface, &CmdBuffer));
 
 	} else {
 		CM_CHK_GENOSSTATUS(pHwInterface->pfnSendBatchBufferStart
@@ -217,23 +199,11 @@ GENOS_STATUS HalCm_SubmitCommands_g8(PCM_HAL_STATE pState,
 
 		if ((pBatchBuffer->pBBRenderData->BbArgs.BbCmArgs.uiRefCount ==
 		     1) || (pState->pTaskParam->reuseBBUpdateMask == 1)) {
-			if (GFX_IS_PRODUCT
-			    (pHwInterface->Platform, IGFX_CHERRYVIEW)) {
-				CmdMediaStateFlush =
-				    *(pHwInterface->
-				      pHwCommands->pMediaStateFlush_g75);
-				CmdMediaStateFlush.DW1.FlushToGo = 1;
-				CM_CHK_GENOSSTATUS(HalCm_AddMediaStateFlushBb_g8
-						   (pHwInterface, pBatchBuffer,
-						    &CmdMediaStateFlush));
-			} else {
-				CmdMediaStateFlush =
-				    *(pHwInterface->
-				      pHwCommands->pMediaStateFlush_g75);
-				CM_CHK_GENOSSTATUS(HalCm_AddMediaStateFlushBb_g8
-						   (pHwInterface, pBatchBuffer,
-						    &CmdMediaStateFlush));
-			}
+			CmdMediaStateFlush =
+			    *(pHwInterface->pHwCommands->pMediaStateFlush_g75);
+			CM_CHK_GENOSSTATUS(HalCm_AddMediaStateFlushBb_g8
+					   (pHwInterface, pBatchBuffer,
+					    &CmdMediaStateFlush));
 
 			pHwInterface->pfnAddBatchBufferEndCmdBb(pHwInterface,
 								pBatchBuffer);
