@@ -888,18 +888,18 @@ INT CmDevice::GetCapsInternal(PVOID pCaps, PUINT puSize)
 		break;
 
 	case DXVA_CM_QUERY_GT:
-		if (pCmHalState->pHwInterface->Platform.GtType == GTTYPE_GT1)
-			pQueryCaps->genGT = PLATFORM_INTEL_GT1;
-		else if (pCmHalState->pHwInterface->Platform.GtType ==
-			 GTTYPE_GT2)
-			pQueryCaps->genGT = PLATFORM_INTEL_GT2;
-		else if (pCmHalState->pHwInterface->Platform.GtType ==
-			 GTTYPE_GT3)
-			pQueryCaps->genGT = PLATFORM_INTEL_GT3;
-		else if (GFX_IS_PRODUCT
-			 (pCmHalState->pHwInterface->Platform, IGFX_CHERRYVIEW))
-		{
+		if (GFX_IS_PRODUCT
+		    (pCmHalState->pHwInterface->Platform, IGFX_CHERRYVIEW)) {
 			pQueryCaps->genGT = PLATFORM_INTEL_GTCHV;
+		} else if (pCmHalState->pHwInterface->Platform.GtType ==
+			   GTTYPE_GT1) {
+			pQueryCaps->genGT = PLATFORM_INTEL_GT1;
+		} else if (pCmHalState->pHwInterface->Platform.GtType ==
+			   GTTYPE_GT2) {
+			pQueryCaps->genGT = PLATFORM_INTEL_GT2;
+		} else if (pCmHalState->pHwInterface->Platform.GtType ==
+			   GTTYPE_GT3) {
+			pQueryCaps->genGT = PLATFORM_INTEL_GT3;
 		}
 		break;
 

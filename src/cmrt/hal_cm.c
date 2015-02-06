@@ -2060,7 +2060,12 @@ GENOS_STATUS HalCm_GetPlatformInfo(PCM_HAL_STATE pState,
 
 	case IGFX_GEN8_CORE:
 		platformInfo->numHWThreadsPerEU = CM_GEN8_HW_THREADS_PER_EU;
-		if (pHwInterface->Platform.GtType == GTTYPE_GT3) {
+		if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW)) {
+			platformInfo->numEUsPerSubSlice =
+			    CM_GEN8LP_EUS_PER_SUBSLICE;
+			platformInfo->numSlices = CM_GEN8LP_SLICE_NUM;
+			platformInfo->numSubSlices = CM_GEN8LP_SUBSLICE_NUM;
+		} else if (pHwInterface->Platform.GtType == GTTYPE_GT3) {
 			if (pState->bRequestSingleSlice == TRUE
 			    || pHwInterface->bRequestSingleSlice == TRUE
 			    || pState->PowerOption.nSlice == 1) {
@@ -2088,13 +2093,6 @@ GENOS_STATUS HalCm_GetPlatformInfo(PCM_HAL_STATE pState,
 			    CM_GEN8_GT1_EUS_PER_SUBSLICE;
 			platformInfo->numSlices = CM_GEN8_GT1_SLICE_NUM;
 			platformInfo->numSubSlices = CM_GEN8_GT1_SUBSLICE_NUM;
-		} else
-		    if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW))
-		{
-			platformInfo->numEUsPerSubSlice =
-			    CM_GEN8LP_EUS_PER_SUBSLICE;
-			platformInfo->numSlices = CM_GEN8LP_SLICE_NUM;
-			platformInfo->numSubSlices = CM_GEN8LP_SUBSLICE_NUM;
 		} else {
 			CM_ERROR_ASSERT("Invalid GT for Gen 8");
 			goto finish;

@@ -1062,6 +1062,8 @@ INT CmKernel::SetArgsInternal(CM_KERNEL_INTERNAL_ARG_TYPE nArgType, UINT index,
 
 			arg.pValue =
 			    new(std::nothrow) BYTE[size * m_ThreadCount];
+			CmSafeMemSet((void *)arg.pValue, 0,
+				     size * m_ThreadCount);
 			if (!arg.pValue) {
 				CM_ASSERT(0);
 				return CM_OUT_OF_HOST_MEMORY;

@@ -889,12 +889,12 @@ GENOS_STATUS IntelGen_HwSendWalkerState_g8(PGENHW_HW_INTERFACE pHwInterface,
 
 VOID IntelGen_HwInitInterface_g8(PGENHW_HW_INTERFACE pHwInterface)
 {
-	if (pHwInterface->Platform.GtType == GTTYPE_GT1) {
+	if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW)) {
+		pHwInterface->pHwCaps = &g_IntelGen_HwCaps_g8_lcia;
+	} else if (pHwInterface->Platform.GtType == GTTYPE_GT1) {
 		pHwInterface->pHwCaps = &g_IntelGen_HwCaps_g8_gt1;
 	} else if (pHwInterface->Platform.GtType == GTTYPE_GT2) {
 		pHwInterface->pHwCaps = &g_IntelGen_HwCaps_g8_gt2;
-	} else if (GFX_IS_PRODUCT(pHwInterface->Platform, IGFX_CHERRYVIEW)) {
-		pHwInterface->pHwCaps = &g_IntelGen_HwCaps_g8_lcia;
 	} else {
 		pHwInterface->pHwCaps = &g_IntelGen_HwCaps_g8_gt3;
 	}
