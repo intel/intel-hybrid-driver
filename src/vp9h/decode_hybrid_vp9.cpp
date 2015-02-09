@@ -1588,6 +1588,8 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
         goto finish;
     }
 
+    pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
+
     switch (dwIntraPredKernelModeChroma)
     {
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_8x8:
@@ -1633,6 +1635,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
         goto finish;
     }
 
+    pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
     // Inter prediction thread space
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
         pMdfDecodeFrame->dwWidthB16, 
@@ -1648,6 +1651,8 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
     pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->Set26ZIDispatchPattern(VVERTICAL_HHORIZONTAL_26);
     pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->Set26ZIMacroBlockSize(
         pMdfDecodeEngine->dwLumaDeblock26ZIMBWidth, 8);
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
+
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
         ALIGN(pMdfDecodeFrame->dwWidthB8, 2), 
         (pMdfDecodeFrame->dwHeightB8 + 1) >> 1, 
@@ -1655,6 +1660,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
     pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
     pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->Set26ZIDispatchPattern(VVERTICAL_HHORIZONTAL_26);
     pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->Set26ZIMacroBlockSize(8, 4);
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
 
 finish:
     return eStatus;
@@ -2857,8 +2863,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
             last_task = 1;
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
             pMdfDecodeEngine->pTaskIntra[i],
-            (last_task ? pMdfDecodeFrame->pMdfEvent : pCmNoEvent),
-            pMdfDecodeEngine->pThreadSpaceIntra[i]));
+            (last_task ? pMdfDecodeFrame->pMdfEvent : pCmNoEvent)));
 
         // destroy MDF tasks
         pMdfDecodeEngine->pMdfDevice->DestroyTask(pMdfDecodeEngine->pTaskIntra[i]);
@@ -2913,8 +2918,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
             // enqueue tasks
             INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
                 pMdfDecodeEngine->pTaskDeblock[i],
-                (last_task ? pMdfDecodeFrame->pMdfEvent : pCmNoEvent),
-                pMdfDecodeEngine->pThreadSpaceDeblock[i]));
+                (last_task ? pMdfDecodeFrame->pMdfEvent : pCmNoEvent)));
 
             // destroy MDF tasks
             pMdfDecodeEngine->pMdfDevice->DestroyTask(pMdfDecodeEngine->pTaskDeblock[i]);
