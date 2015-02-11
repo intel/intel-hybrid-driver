@@ -2424,8 +2424,10 @@ media_drv_init (VADriverContextP ctx)
     goto dis_attr_err;
   if (!media_render_init (ctx))
     goto render_init_err;
+#ifdef HAVE_VA_X11
   if (!media_output_dri_init (ctx))
     goto dri_init_error;
+#endif
 
   sprintf (drv_ctx->drv_version, "%s %s driver - %d.%d.%d.pre%d",
 	   INTEL_STR_DRIVER_VENDOR,
@@ -2438,7 +2440,9 @@ media_drv_init (VADriverContextP ctx)
 
   return VA_STATUS_SUCCESS;
 
+#ifdef HAVE_VA_X11
 dri_init_error:media_output_dri_terminate (ctx);
+#endif
 render_init_err:media_render_terminate (ctx);
 dis_attr_err:media_display_attributes_terminate (ctx);
 data_init_err:media_driver_data_terminate (ctx);
@@ -2459,7 +2463,9 @@ media_Terminate (VADriverContextP ctx)
   drv_ctx = (MEDIA_DRV_CONTEXT *) ctx->pDriverData;
   MEDIA_DRV_ASSERT (drv_ctx);
 
+#ifdef HAVE_VA_X11
   media_output_dri_terminate (ctx);
+#endif
 
   media_render_terminate (ctx);
 

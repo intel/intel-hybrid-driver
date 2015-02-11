@@ -71,7 +71,6 @@ driver_files = \
         media_drv_init.c   \
         media_drv_kernels.c  \
         media_drv_kernels_g7.c  \
-        media_drv_output_dri.c \
         media_drv_render.c   \
         media_drv_surface.c  \
         media_drv_decoder.c  \
@@ -79,6 +78,10 @@ driver_files = \
         media_drv_gen8_render.c   \
         media_drv_hybrid_vp9_common.cpp   \
         $(NULL)
+
+if USE_X11
+driver_files	+=media_drv_output_dri.c
+endif
 
 driver_headers = \
         dso_utils.h             \
@@ -113,6 +116,10 @@ driver_headers = \
         media_render_common.h  \
         media_drv_hybrid_vp9_common.h   \
        $(NULL)
+
+if USE_X11
+driver_headers	+=media_drv_output_dri.h
+endif
 
 hybrid_drv_video_la_LTLIBRARIES= hybrid_drv_video.la
 hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
