@@ -1079,6 +1079,7 @@ HRESULT IntelGen_OsSubmitCommandBuffer(PGENOS_INTERFACE pOsInterface,
 	INT ResourceOffset, PatchOffset;
 	DWORD dwBatchBufferEndCmd;
 	PLATFORM platform;
+	UINT write_domain;
 
 	hr = S_OK;
 
@@ -1122,10 +1123,15 @@ HRESULT IntelGen_OsSubmitCommandBuffer(PGENOS_INTERFACE pOsInterface,
 		*((DWORD *) ((BYTE *) cmd_bo->virt + PatchOffset)) =
 		    alloc_bo->offset + ResourceOffset;
 
+		if (alloc_bo == cmd_bo) {
+			write_domain = 0;
+		} else {
+			write_domain = I915_GEM_DOMAIN_RENDER;
+		}
 		hr = drm_intel_bo_emit_reloc(cmd_bo,
 					     PatchOffset,
 					     alloc_bo,
-					     ResourceOffset, 0x2, 0x0);
+					     ResourceOffset, 0x2, write_domain);
 		if (hr != 0) {
 			GENOS_OS_ASSERTMESSAGE
 			    ("Error patching alloc_bo = 0x%x, cmd_bo = 0x%x.",

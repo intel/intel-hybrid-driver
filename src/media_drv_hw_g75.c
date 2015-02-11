@@ -62,6 +62,7 @@ const SURFACE_SET_PARAMS surface_set_params_init = {
   FALSE,			//surface_is_raw
   FALSE,			//media_block_raw
   FALSE,			//advance_state
+  FALSE,			//writable
   0,				//uv_direction
   0,				//cacheability_control
   0,				// binding_table_offset
@@ -3502,6 +3503,10 @@ VOID
 media_add_surface_state (SURFACE_SET_PARAMS * params)
 {
   UINT width, height, format, pitch, tile_alignment, y_offset = 0;
+  UINT write_domain;
+
+  write_domain = (params->writable) ? I915_GEM_DOMAIN_RENDER : 0x0; // I915_GEM_DOMAIN_RENDER Write domain
+
   if (params->surface_is_2d)
     {
       SURFACE_STATE_G7 *cmd =
@@ -3516,7 +3521,9 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 					  height, 0, 0, 0);
 
       dri_bo_emit_reloc (params->binding_surface_state.bo,
-			 I915_GEM_DOMAIN_RENDER, 0, 0,
+			 I915_GEM_DOMAIN_RENDER,
+			 write_domain,
+			 0,
 			 params->surface_state_offset +
 			 offsetof (SURFACE_STATE_G7, dw1),
 			 params->surface_2d->bo);
@@ -3557,7 +3564,8 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
 					  height, 0, cbcr_offset, y_offset);
 
       dri_bo_emit_reloc (params->binding_surface_state.bo,
-			 I915_GEM_DOMAIN_RENDER, 0,
+			 I915_GEM_DOMAIN_RENDER,
+			 write_domain,
 			 cbcr_offset,
 			 params->surface_state_offset +
 			 offsetof (SURFACE_STATE_G7, dw1),
@@ -3577,7 +3585,8 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
       media_set_surface_state_adv (cmd, params, MFX_SURFACE_PLANAR_420_8);
 
       dri_bo_emit_reloc (params->binding_surface_state.bo,
-			 I915_GEM_DOMAIN_RENDER, 0,
+			 I915_GEM_DOMAIN_RENDER,
+			 write_domain,
 			 params->offset,
 			 params->surface_state_offset +
 			 offsetof (SURFACE_STATE_ADV_G7, ss0),
@@ -3609,7 +3618,7 @@ media_add_surface_state (SURFACE_SET_PARAMS * params)
       media_set_surface_state_buffer_surface (cmd, params, format, pitch);
       dri_bo_emit_reloc (params->binding_surface_state.bo,
 			 I915_GEM_DOMAIN_RENDER,
-			 0 /* I915_GEM_DOMAIN_RENDER */ ,
+			 write_domain,
 			 params->offset,
 			 params->surface_state_offset +
 			 offsetof (SURFACE_STATE_G7, dw1),
@@ -4084,6 +4093,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
       params.binding_surface_state.buf = binding_surface_state_buf;
       params.surface_is_2d = 1;
+      params.writable = 1;
       params.media_block_raw = 1;
       params.format = STATE_SURFACEFORMAT_R8_UNORM;
       params.binding_table_offset = BINDING_TABLE_OFFSET (5);
@@ -4123,6 +4133,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 
 	params.binding_surface_state.buf = binding_surface_state_buf;
 	params.surface_is_2d = 1;
+	params.writable = 1;
 	params.media_block_raw = 1; /* media block read/write message */
 	params.vert_line_stride_offset = 0;
 	params.vert_line_stride = 0;
@@ -4182,6 +4193,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
       params.buf_object = surface_2d;
       params.media_block_raw = 1;
       params.surface_is_raw = 1;
+      params.writable = 1;
       params.offset = encoder_context->mv_offset;
       params.size = encoder_context->mv_in_bytes;
       params.cacheability_control =
@@ -4290,6 +4302,7 @@ media_surface_state_vp8_mbenc (MEDIA_ENCODER_CTX * encoder_context,
 	mbenc_gpe_ctx->surface_state_binding_table.res.bo;
       params.binding_surface_state.buf = binding_surface_state_buf;
       params.surface_is_2d = 1;
+      params.writable = 1;
       params.media_block_raw = 1;
       params.vert_line_stride_offset = 0;
       params.vert_line_stride = 0;
@@ -4448,6 +4461,7 @@ media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
 	me_gpe_ctx->surface_state_binding_table.res.bo;
       params.binding_surface_state.buf = binding_surface_state_buf;
       params.surface_is_2d = 1;
+      params.writable = 1;
       params.vert_line_stride_offset = 0;
       params.vert_line_stride = 0;
       params.format = STATE_SURFACEFORMAT_R8_UNORM;
@@ -4463,6 +4477,7 @@ media_surface_state_vp8_me (MEDIA_ENCODER_CTX * encoder_context,
 	me_gpe_ctx->surface_state_binding_table.res.bo;
       params.binding_surface_state.buf = binding_surface_state_buf;
       params.surface_is_2d = 1;
+      params.writable = 1;
       params.vert_line_stride_offset = 0;
       params.vert_line_stride = 0;
       params.format = STATE_SURFACEFORMAT_R8_UNORM;
@@ -4574,6 +4589,7 @@ media_surface_state_vp8_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context,
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.binding_table_offset = BINDING_TABLE_OFFSET (0);
   params.surface_state_offset = SURFACE_STATE_OFFSET (0);
+  params.writable = 1;
   params.buf_object = ctx->brc_history;
   params.size = ctx->brc_history.bo_size;
   params.cacheability_control =
@@ -4587,6 +4603,7 @@ media_surface_state_vp8_brc_init_reset (MEDIA_ENCODER_CTX * encoder_context,
     gpe_ctx->surface_state_binding_table.res.bo;
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.surface_is_2d = 1;
+  params.writable = 1;
   params.media_block_raw = 1;
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;
@@ -4738,6 +4755,7 @@ media_surface_state_vp8_brc_update (MEDIA_ENCODER_CTX * encoder_context,
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.binding_table_offset = BINDING_TABLE_OFFSET (0); /* ??? 1 ? */
   params.surface_state_offset = SURFACE_STATE_OFFSET (0);
+  params.writable = 1;
   params.buf_object = brc_init_reset_ctx->brc_history;
   params.size = brc_init_reset_ctx->brc_history.bo_size;
   params.cacheability_control =
@@ -4804,6 +4822,7 @@ media_surface_state_vp8_brc_update (MEDIA_ENCODER_CTX * encoder_context,
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.binding_table_offset = BINDING_TABLE_OFFSET (5);
   params.surface_state_offset = SURFACE_STATE_OFFSET (5);
+  params.writable = 1;
   params.buf_object = mbenc_gpe_ctx->dynamic_state.res;
   params.size = ALIGN(MAX(sizeof(MEDIA_CURBE_DATA_MBENC_P_G75), sizeof(MEDIA_CURBE_DATA_MBENC_I_G75)), 64);
   params.cacheability_control = surface_params->cacheability_control;
@@ -4815,6 +4834,7 @@ media_surface_state_vp8_brc_update (MEDIA_ENCODER_CTX * encoder_context,
     gpe_ctx->surface_state_binding_table.res.bo;
   params.binding_surface_state.buf = binding_surface_state_buf;
   params.surface_is_2d = 1;
+  params.writable = 1;
   params.media_block_raw = 1; /* media block read/write message */
   params.vert_line_stride_offset = 0;
   params.vert_line_stride = 0;

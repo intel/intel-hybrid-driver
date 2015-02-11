@@ -149,6 +149,7 @@ typedef struct surface_set_params
   BOOL surface_is_raw;
   BOOL media_block_raw;
   BOOL advance_state;
+  BOOL writable;
   UINT uv_direction;
   UINT cacheability_control;
   unsigned long binding_table_offset;
