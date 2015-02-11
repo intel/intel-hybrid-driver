@@ -450,8 +450,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_2DUP_BUFFER_UINT8(
         bo_cache.handle = pMdfBuffer2D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
-        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
-			&bo_cache);
+        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
     memset(&target_resource, 0, sizeof(target_resource));
 
@@ -520,8 +519,7 @@ VAStatus INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
-        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
-			&bo_cache);
+        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
     pMdfBuffer1D->bo_mapped = 0;
     
@@ -570,8 +568,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
-        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
-			&bo_cache);
+        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
     pMdfBuffer1D->bo_mapped = 0;
     
@@ -623,8 +620,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
-        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
-			&bo_cache);
+        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
     pMdfBuffer1D->bo_mapped = 0;
 
@@ -675,8 +671,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
-        ioctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING,
-			&bo_cache);
+        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
     pMdfBuffer1D->bo_mapped = 0;
     
