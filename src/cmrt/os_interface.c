@@ -397,6 +397,7 @@ HRESULT Ctx_InitContext(GENOS_OS_CONTEXT * pContext,
 			return E_FAIL;
 		}
 
+		memset(&gp, 0, sizeof(gp));
 		gp.param = I915_PARAM_CHIPSET_ID;
 		gp.value = &iDeviceId;
 		hr = drmIoctl(pContext->fd, DRM_IOCTL_I915_GETPARAM, &gp);

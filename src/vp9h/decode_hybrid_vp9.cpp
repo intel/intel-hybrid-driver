@@ -447,6 +447,8 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_2DUP_BUFFER_UINT8(
 
    {
         struct drm_i915_gem_caching bo_cache;
+
+        memset(&bo_cache, 0, sizeof(bo_cache));
         bo_cache.handle = pMdfBuffer2D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
@@ -516,6 +518,8 @@ VAStatus INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
                                         buf_size, 64);
    {
         struct drm_i915_gem_caching bo_cache;
+
+        memset(&bo_cache, 0, sizeof(bo_cache));
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
@@ -565,6 +569,8 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
                                         buf_size, 64);
    {
         struct drm_i915_gem_caching bo_cache;
+
+        memset(&bo_cache, 0, sizeof(bo_cache));
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
@@ -617,6 +623,8 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
                                         buf_size, 64);
     {
         struct drm_i915_gem_caching bo_cache;
+
+        memset(&bo_cache, 0, sizeof(bo_cache));
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
@@ -668,6 +676,8 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
                                         buf_size, 64);
    {
         struct drm_i915_gem_caching bo_cache;
+
+        memset(&bo_cache, 0, sizeof(bo_cache));
         bo_cache.handle = pMdfBuffer1D->bo->handle;
         bo_cache.caching = I915_CACHING_CACHED;
 
