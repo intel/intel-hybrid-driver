@@ -31,6 +31,7 @@
 #include "cm_queue.h"
 #include "cm_device.h"
 #include "cm_event.h"
+#include <sys/time.h>
 
 INT CmSurface::Destroy(CmSurface * &pSurface)
 {
@@ -79,20 +80,21 @@ INT CmSurface::FlushDeviceQueue(CmEvent * pEvent)
 
 	UINT num_tasks;
 	pCmQueue->GetTaskCount(num_tasks);
-	LARGE_INTEGER freq;
-	QueryPerformanceFrequency(&freq);
-	LARGE_INTEGER start;
-	QueryPerformanceCounter(&start);
-	INT64 timeout =
-	    start.QuadPart + (CM_MAX_TIMEOUT * freq.QuadPart * num_tasks);
+	struct timeval start;
+	gettimeofday(&start, NULL);
+	UINT64 timeout_usec;
+	timeout_usec = CM_MAX_TIMEOUT * num_tasks * 1000000;
 
 	CM_STATUS status;
 	pEvent->GetStatus(status);
 	while (status == CM_STATUS_QUEUED) {
-		LARGE_INTEGER current;
-		QueryPerformanceCounter(&current);
-
-		if (current.QuadPart > timeout)
+		struct timeval current;
+		gettimeofday(&current, NULL);
+		UINT64 timeuse_usec;
+		timeuse_usec =
+		    1000000 * (current.tv_sec - start.tv_sec) +
+		    current.tv_usec - start.tv_usec;
+		if (timeuse_usec > timeout_usec)
 			return CM_EXCEED_MAX_TIMEOUT;
 
 		pEvent->GetStatus(status);

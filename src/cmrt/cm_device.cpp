@@ -95,7 +95,6 @@ INT CmDevice::Destroy(CmDevice * &pDevice)
 	INT refCount = pDevice->Release();
 
 	if (refCount == 0) {
-		result = pDevice->DestroyQueue(pDevice->m_pQueue);
 		CmSafeDelete(pDevice);
 	}
 
@@ -193,6 +192,7 @@ CmDevice::~CmDevice(void)
 	m_TaskArray.Delete();
 
 	CmSurfaceManager::Destroy(m_pSurfaceMgr);
+	DestroyQueue(m_pQueue);
 
 	if (m_hJITDll) {
 		FreeLibrary(m_hJITDll);

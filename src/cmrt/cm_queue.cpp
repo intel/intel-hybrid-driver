@@ -40,6 +40,7 @@
 #include "cm_def.h"
 #include "hal_cm.h"
 #include "cm_surface_manager.h"
+#include <sys/time.h>
 
 INT CmQueue::Create(CmDevice * pDevice, CmQueue * &pQueue)
 {
@@ -711,20 +712,21 @@ INT CmQueue::CleanQueue(void)
 	CM_ASSERT(m_EnqueuedTasks.IsEmpty());
 	m_EnqueuedTasks.DeleteFreePool();
 
-	LARGE_INTEGER freq;
-	QueryPerformanceFrequency(&freq);
-	LARGE_INTEGER start;
-	QueryPerformanceCounter(&start);
-	INT64 timeout =
-	    start.QuadPart +
-	    (CM_MAX_TIMEOUT * freq.QuadPart * m_FlushedTasks.GetCount());
+	struct timeval start;
+	gettimeofday(&start, NULL);
+	UINT64 timeout_usec;
+	timeout_usec = CM_MAX_TIMEOUT * m_FlushedTasks.GetCount() * 1000000;
 
 	while (!m_FlushedTasks.IsEmpty() && status != CM_EXCEED_MAX_TIMEOUT) {
 		QueryFlushedTasks();
 
-		LARGE_INTEGER current;
-		QueryPerformanceCounter(&current);
-		if (current.QuadPart > timeout)
+		struct timeval current;
+		gettimeofday(&current, NULL);
+		UINT64 timeuse_usec;
+		timeuse_usec =
+		    1000000 * (current.tv_sec - start.tv_sec) +
+		    current.tv_usec - start.tv_usec;
+		if (timeuse_usec > timeout_usec)
 			status = CM_EXCEED_MAX_TIMEOUT;
 	}
 
