@@ -62,7 +62,6 @@ driver_files = \
         media_drv_encoder.c \
         media_drv_encoder_vp8.c \
         media_drv_encoder_vp8_g7.c \
-        media_drv_encoder_vp8_g8.c \
         media_drv_hw.c	\
         media_drv_hwcmds.c  \
         media_drv_hwcmds_g8.c \
@@ -72,7 +71,6 @@ driver_files = \
         media_drv_init.c   \
         media_drv_kernels.c  \
         media_drv_kernels_g7.c  \
-        media_drv_kernels_g8.c  \
         media_drv_output_dri.c \
         media_drv_render.c   \
         media_drv_surface.c  \
@@ -99,7 +97,6 @@ driver_headers = \
         media_drv_encoder.h  \
         media_drv_encoder_vp8.h  \
         media_drv_encoder_vp8_g7.h \
-        media_drv_encoder_vp8_g8.h \
         media_drv_hwcmds.h  \
         media_drv_hwcmds_g8.h \
         media_drv_hw_g8.h  \
@@ -109,7 +106,6 @@ driver_headers = \
         media_drv_init.h   \
         media_drv_kernels.h \
         media_drv_kernels_g7.h \
-        media_drv_kernels_g8.h \
         media_drv_output_dri.h  \
         media_drv_render.h  \
         media_drv_surface.h   \

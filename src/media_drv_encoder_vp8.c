@@ -29,7 +29,6 @@
 #include "media_drv_encoder.h"
 #include "media_drv_encoder_vp8.h"
 #include "media_drv_encoder_vp8_g7.h"
-#include "media_drv_encoder_vp8_g8.h"
 #include "media_drv_driver.h"
 #include "media_drv_hw_g8.h"
 #include "media_drv_hw_g75.h"
@@ -1221,43 +1220,6 @@ media_encoder_init_vp8 (VADriverContextP ctx,
         media_object_walker_cmd;
       encoder_context->initialize_brc_distortion_buffer = media_init_brc_distortion_buffer_g7;
     }
-  else if (IS_GEN8 (drv_ctx->drv_data.device_id))
-    {
-      encoder_context->num_of_kernels =
-	sizeof (media_hybrid_vp8_kernels_g8) / sizeof (MEDIA_KERNEL);
-      encoder_context->disable_multi_ref = 0;
-      media_encoder_context_params_init (drv_ctx, encoder_context);
-      media_scaling_context_init (ctx, encoder_context);
-      media_me_context_init (ctx, encoder_context);
-      media_mbenc_context_init_vp8_g8 (ctx, encoder_context);
-      media_mbpak_context_init_vp8_g8 (ctx, encoder_context);
-      encoder_context->set_curbe_i_vp8_mbenc = media_set_curbe_i_vp8_mbenc;
-      encoder_context->set_curbe_p_vp8_mbenc = media_set_curbe_p_vp8_mbenc;
-      encoder_context->set_curbe_vp8_mbpak = media_set_curbe_vp8_mbpak;
-      encoder_context->set_curbe_scaling = mediadrv_set_curbe_scaling;
-      encoder_context->set_curbe_vp8_me = media_set_curbe_vp8_me;
-      encoder_context->surface_state_vp8_mbenc =
-	media_surface_state_vp8_mbenc_g8;
-      encoder_context->surface_state_vp8_mbpak =
-	media_surface_state_vp8_mbpak_g8;
-      encoder_context->surface_state_scaling =
-	media_surface_state_scaling;
-      encoder_context->surface_state_vp8_me =
-	media_surface_state_vp8_me;
-      encoder_context->media_add_surface_state = media_add_surface_state_g8;
-      encoder_context->media_add_binding_table = media_add_binding_table_g8;
-      encoder_context->media_object_walker_pak_init=media_object_walker_pak_init_g8;
-      encoder_context->media_object_walker_mbenc_init =media_object_walker_mbenc_init_g8;
-      encoder_context->gpe_context_vfe_scoreboardinit_pak_p1=gpe_context_vfe_scoreboardinit_pak_p1;
-      encoder_context->gpe_context_vfe_scoreboardinit_pak_p2=gpe_context_vfe_scoreboardinit_pak_p2_g8;
-      encoder_context->mediadrv_gen_state_base_address_cmd =
-	mediadrv_gen_state_base_address_cmd_g8;
-      encoder_context->mediadrv_gen_media_vfe_state_cmd =
-	mediadrv_gen_media_vfe_state_cmd_g8;
-      encoder_context->media_object_walker_cmd=
-        media_object_walker_cmd_g8;
-      encoder_context->initialize_brc_distortion_buffer = media_init_brc_distortion_buffer_g75;
-      }
   else
     {
       printf ("Platform not supported");
