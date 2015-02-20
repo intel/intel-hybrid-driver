@@ -1,6 +1,6 @@
 libva-intel-hybrid-driver
 VA driver for Intel G45 & HD Graphics family
-Copyright (C) 2009-2011 Intel Corporation
+Copyright (C) 2009-2015 Intel Corporation
 
 License
 -------
@@ -15,10 +15,12 @@ Platform definitions:
 HSW: Haswell
 BYT: Bay-Trail-M
 BDW: Broadwell
+BSW: Braswell
 
 Codecs
 ------
 Hybrid VP8 Encoder
+Hybrid VP9 Decoder
 
 Requirements
 ------------
