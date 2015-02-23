@@ -17,7 +17,7 @@ m4_define([libva_package_version], [1.2.0])
 m4_define([libdrm_version], [2.4.23])
 
 AC_PREREQ([2.57])
-AC_INIT([intel_driver], [intel_driver_version], [midhunchandra.kodiyath@intel.com],
+AC_INIT([intel_driver], [intel_driver_version], [libva@lists.freedesktop.org],
         [libva-intel-driver])
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_INIT_AUTOMAKE([1.9 tar-ustar])
