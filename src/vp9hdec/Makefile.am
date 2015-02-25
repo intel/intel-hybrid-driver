@@ -77,13 +77,13 @@ driver_headers = \
 	intel_hybrid_debug_dump.h	\
 	$(NULL)
 
-noinst_LTLIBRARIES		= vp9h.la	
-vp9h_la_CFLAGS		= $(driver_cflags)
-vp9h_la_CXXFLAGS	= -fpermissive $(driver_cflags)
-vp9h_la_LDFLAGS		= $(driver_ldflags)
-vp9h_la_LIBADD		= $(driver_libs)
-vp9h_la_SOURCES		= $(driver_files)
-noinst_HEADERS		= $(driver_headers)
+noinst_LTLIBRARIES		= vp9hdec.la
+vp9hdec_la_CFLAGS		= $(driver_cflags)
+vp9hdec_la_CXXFLAGS		= -fpermissive $(driver_cflags)
+vp9hdec_la_LDFLAGS		= $(driver_ldflags)
+vp9hdec_la_LIBADD		= $(driver_libs)
+vp9hdec_la_SOURCES		= $(driver_files)
+noinst_HEADERS			= $(driver_headers)
 
 # Extra clean files so that maintainer-clean removes *everything*
 MAINTAINERCLEANFILES = Makefile.in config.h.in

@@ -21,7 +21,7 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-SUBDIRS = cmrt vp9h
+SUBDIRS = cmrt vp9hdec
 
 CMRT_LIB_PATH=$(top_srcdir)/src/cmrt/.libs/
 
@@ -30,7 +30,7 @@ AM_CPPFLAGS = \
 	$(DRM_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
 	-I$(top_srcdir)/src/cmrt	\
-	-I$(top_srcdir)/src/vp9h	\
+	-I$(top_srcdir)/src/vp9hdec	\
 	$(NULL)
 
 driver_cflags = \
@@ -126,7 +126,7 @@ hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
 hybrid_drv_video_la_CFLAGS	= $(driver_cflags)
 hybrid_drv_video_la_CXXFLAGS	= -fpermissive $(driver_cflags)
 hybrid_drv_video_la_LDFLAGS= $(driver_ldflags)
-hybrid_drv_video_la_LIBADD	= $(driver_files) vp9h/vp9h.la -l:cmrt.so
+hybrid_drv_video_la_LIBADD	= $(driver_files) vp9hdec/vp9hdec.la -l:cmrt.so
 hybrid_drv_video_la_SOURCES= $(driver_files)
 noinst_HEADERS = $(driver_headers)
 

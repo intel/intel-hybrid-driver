@@ -171,7 +171,7 @@ AC_OUTPUT([
     debian.upstream/Makefile 
     src/Makefile
     src/cmrt/Makefile
-    src/vp9h/Makefile
+    src/vp9hdec/Makefile
     ])
 
 dnl Print summary
