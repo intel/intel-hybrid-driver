@@ -21,13 +21,12 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-SUBDIRS = cmrt vp9hdec
-
-CMRT_LIB_PATH=$(top_srcdir)/src/cmrt/.libs/
+SUBDIRS = vp9hdec
 
 AM_CPPFLAGS = \
 	-DPTHREADS		\
 	$(DRM_CFLAGS)		\
+	$(CMRT_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
 	-I$(top_srcdir)/src/cmrt	\
 	-I$(top_srcdir)/src/vp9hdec	\
@@ -42,12 +41,12 @@ driver_ldflags = \
 	-module -avoid-version	\
 	-no-undefined		\
 	-Wl,--no-undefined	\
-	-L$(CMRT_LIB_PATH) \
 	$(NULL)
 
 driver_libs = \
 	-lpthread -lm -ldl	\
 	$(DRM_LIBS) -ldrm_intel	\
+	$(CMRT_LIBS) -lcmrt \
 	$(LIBVA_DEPS_LIBS)	\
 	$(NULL)
 

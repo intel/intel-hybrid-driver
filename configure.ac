@@ -16,6 +16,9 @@ m4_define([libva_package_version], [1.2.0])
 # libdrm minimum version requirement
 m4_define([libdrm_version], [2.4.23])
 
+# cmrt minimum version requirement
+m4_define([cmrt_version], [0.0.1])
+
 AC_PREREQ([2.57])
 AC_INIT([intel_driver], [intel_driver_version], [libva@lists.freedesktop.org],
         [libva-intel-driver])
@@ -75,6 +78,11 @@ dnl Check for recent enough DRM
 LIBDRM_VERSION=libdrm_version
 PKG_CHECK_MODULES([DRM], [libdrm >= $LIBDRM_VERSION])
 AC_SUBST(LIBDRM_VERSION)
+
+dnl Check for recent enough CMRT
+CMRT_VERSION=cmrt_version
+PKG_CHECK_MODULES([CMRT], [cmrt >= $CMRT_VERSION])
+AC_SUBST(CMRT_VERSION)
 
 dnl Check for gen4asm
 PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.3], [gen4asm=yes], [gen4asm=no])
@@ -170,7 +178,6 @@ AC_OUTPUT([
     Makefile
     debian.upstream/Makefile 
     src/Makefile
-    src/cmrt/Makefile
     src/vp9hdec/Makefile
     ])
 
