@@ -91,6 +91,10 @@ struct object_buffer
   INT num_elements;
   INT size_element;
   VABufferType type;
+  unsigned int export_refcount;
+#if VA_CHECK_VERSION(0,36,0)
+  VABufferInfo export_state;
+#endif
 };
 struct buffer_store
 {

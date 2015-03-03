@@ -332,6 +332,26 @@ media_QuerySurfaceAttributes (VADriverContextP ctx,
   attribs[i].value.value.i = VA_FOURCC_NV12;
   i++;
 
+  attribs[i].type = VASurfaceAttribMemoryType;
+  attribs[i].value.type = VAGenericValueTypeInteger;
+  attribs[i].flags = VA_SURFACE_ATTRIB_GETTABLE | VA_SURFACE_ATTRIB_SETTABLE;
+  attribs[i].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_VA |
+      VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM |
+      VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
+  i++;
+
+  attribs[i].type = VASurfaceAttribExternalBufferDescriptor;
+  attribs[i].value.type = VAGenericValueTypePointer;
+  attribs[i].flags = VA_SURFACE_ATTRIB_SETTABLE;
+  attribs[i].value.value.p = NULL; /* ignore */
+  i++;
+
+  if (i > *num_attribs) {
+    *num_attribs = i;
+    free(attribs);
+    return VA_STATUS_ERROR_MAX_NUM_EXCEEDED;
+  }
+
   *num_attribs = i;
   memcpy(attrib_list, attribs, i * sizeof(*attribs));
   free(attribs);
@@ -787,6 +807,10 @@ media_create_buffer (MEDIA_DRV_CONTEXT * drv_ctx, VABufferType type,
   obj_buffer->size_element = size;
   obj_buffer->type = type;
   obj_buffer->buffer_store = NULL;
+  obj_buffer->export_refcount = 0;
+#if VA_CHECK_VERSION(0,36,0)
+  memset(&obj_buffer->export_state, 0, sizeof(VABufferInfo));
+#endif
   buffer_store = media_drv_alloc_memory (sizeof (struct buffer_store));
   MEDIA_DRV_ASSERT (buffer_store);
   buffer_store->ref_count = 1;
@@ -984,6 +1008,135 @@ media_DestroyImage (VADriverContextP ctx, VAImageID image)
 		       (struct object_base *) obj_image);
   return VA_STATUS_SUCCESS;
 }
+
+#if VA_CHECK_VERSION(0,36,0)
+
+/* Acquires buffer handle for external API usage (internal implementation) */
+static VAStatus
+media_drv_acquire_buffer_handle(struct object_buffer *obj_buffer,
+    uint32_t mem_type, VABufferInfo *out_buf_info)
+{
+  struct buffer_store *buffer_store;
+
+  buffer_store = obj_buffer->buffer_store;
+  if (!buffer_store || !buffer_store->bo)
+    return VA_STATUS_ERROR_INVALID_BUFFER;
+
+  /* Synchronization point */
+  drm_intel_bo_wait_rendering(buffer_store->bo);
+
+  if (obj_buffer->export_refcount > 0) {
+    if (obj_buffer->export_state.mem_type != mem_type)
+      return VA_STATUS_ERROR_INVALID_PARAMETER;
+  }
+  else {
+    VABufferInfo * const buf_info = &obj_buffer->export_state;
+
+    switch (mem_type) {
+    case VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM: {
+      uint32_t name;
+      if (drm_intel_bo_flink(buffer_store->bo, &name) != 0)
+        return VA_STATUS_ERROR_INVALID_BUFFER;
+      buf_info->handle = name;
+      break;
+      }
+    case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: {
+      int fd;
+      if (drm_intel_bo_gem_export_to_prime(buffer_store->bo, &fd) != 0)
+        return VA_STATUS_ERROR_INVALID_BUFFER;
+      buf_info->handle = (intptr_t)fd;
+      break;
+      }
+    }
+
+    buf_info->type = obj_buffer->type;
+    buf_info->mem_type = mem_type;
+    buf_info->mem_size =
+      obj_buffer->num_elements * obj_buffer->size_element;
+  }
+
+  obj_buffer->export_refcount++;
+  *out_buf_info = obj_buffer->export_state;
+  return VA_STATUS_SUCCESS;
+}
+
+/** Acquires buffer handle for external API usage */
+static VAStatus
+media_drv_AcquireBufferHandle(VADriverContextP ctx, VABufferID buf_id,
+    VABufferInfo *buf_info)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+  struct object_buffer * const obj_buffer = BUFFER(buf_id);
+  uint32_t i, mem_type;
+
+  /* List of supported memory types, in preferred order */
+  static const uint32_t mem_types[] = {
+    VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME,
+    VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM,
+    0
+  };
+
+  if (!obj_buffer)
+    return VA_STATUS_ERROR_INVALID_BUFFER;
+
+  /* XXX: only VA surface|image like buffers are supported for now */
+  if (obj_buffer->type != VAImageBufferType)
+    return VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE;
+
+  if (!buf_info)
+    return VA_STATUS_ERROR_INVALID_PARAMETER;
+
+  if (!buf_info->mem_type)
+    mem_type = mem_types[0];
+  else {
+    mem_type = 0;
+    for (i = 0; mem_types[i] != 0; i++) {
+      if (buf_info->mem_type & mem_types[i]) {
+        mem_type = buf_info->mem_type;
+        break;
+      }
+    }
+    if (!mem_type)
+      return VA_STATUS_ERROR_UNSUPPORTED_MEMORY_TYPE;
+  }
+  return media_drv_acquire_buffer_handle(obj_buffer, mem_type, buf_info);
+}
+
+/* Releases buffer handle after usage (internal implementation) */
+static VAStatus
+media_drv_release_buffer_handle(struct object_buffer *obj_buffer)
+{
+  if (obj_buffer->export_refcount == 0)
+    return VA_STATUS_ERROR_INVALID_BUFFER;
+
+  if (--obj_buffer->export_refcount == 0) {
+    VABufferInfo * const buf_info = &obj_buffer->export_state;
+
+    switch (buf_info->mem_type) {
+    case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: {
+      close((intptr_t)buf_info->handle);
+      break;
+      }
+    }
+    buf_info->mem_type = 0;
+  }
+  return VA_STATUS_SUCCESS;
+}
+
+/** Releases buffer handle after usage from external API */
+static VAStatus
+media_drv_ReleaseBufferHandle(VADriverContextP ctx, VABufferID buf_id)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+  struct object_buffer * const obj_buffer = BUFFER(buf_id);
+
+  if (!obj_buffer)
+    return VA_STATUS_ERROR_INVALID_BUFFER;
+
+  return media_drv_release_buffer_handle(obj_buffer);
+}
+
+#endif
 
 VAStatus
 media_DeriveImage (VADriverContextP ctx, VASurfaceID surface, VAImage * out_image)	/* out */
@@ -2542,6 +2695,10 @@ va_driver_init (VADriverContextP ctx)
   vtable->vaQuerySurfaceAttributes = media_QuerySurfaceAttributes;
   vtable->vaCreateSurfaces2 = media_CreateSurfaces2;
 
+#if VA_CHECK_VERSION(0,36,0)
+  vtable->vaAcquireBufferHandle = media_drv_AcquireBufferHandle;
+  vtable->vaReleaseBufferHandle = media_drv_ReleaseBufferHandle;
+#endif
   ret = media_drv_init (ctx);
   return ret;
 }
