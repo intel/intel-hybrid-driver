@@ -656,7 +656,7 @@ media_PutImage (VADriverContextP ctx,
 		UINT src_height,
 		INT dest_x, INT dest_y, UINT dest_width, UINT dest_height)
 {
-  return VA_STATUS_SUCCESS;
+  return VA_STATUS_ERROR_UNIMPLEMENTED;
 }
 
 VAStatus
@@ -665,7 +665,7 @@ media_GetImage (VADriverContextP ctx, VASurfaceID surface, INT x,	/* coordinates
 		UINT height, VAImageID image)
 {
 
-  return VA_STATUS_SUCCESS;
+  return VA_STATUS_ERROR_UNIMPLEMENTED;
 }
 
 VAStatus
