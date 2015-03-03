@@ -731,6 +731,8 @@ media_CreateImage (VADriverContextP ctx, VAImageFormat * format, INT width, INT 
   memset(image->component_order, 0, sizeof(image->component_order));
 
   switch (format->fourcc) {
+  case VA_FOURCC_BGRX:
+  case VA_FOURCC_RGBX:
   case VA_FOURCC_BGRA:
   case VA_FOURCC_RGBA:
     image->num_planes = 1;
@@ -1288,10 +1290,36 @@ error:
 
 }
 
+/* List of supported image formats */
+typedef struct {
+  unsigned int        type;
+  VAImageFormat       va_format;
+} media_image_format_map_t;
+
+static const media_image_format_map_t
+media_image_formats_map[MEDIA_GEN_MAX_IMAGE_FORMATS + 1] = {
+  { MEDIA_SURFACETYPE_RGBA,
+    { VA_FOURCC_RGBX, VA_LSB_FIRST, 32, 24, 0x000000ff, 0x0000ff00, 0x00ff0000 } },
+  { MEDIA_SURFACETYPE_RGBA,
+    { VA_FOURCC_BGRX, VA_LSB_FIRST, 32, 24, 0x00ff0000, 0x0000ff00, 0x000000ff } },
+};
+
+
 VAStatus
 media_QueryImageFormats (VADriverContextP ctx, VAImageFormat * format_list,	/* out */
 			 INT * num_formats)	/* out */
 {
+  int n;
+
+  for (n = 0; media_image_formats_map[n].va_format.fourcc != 0; n++) {
+    const media_image_format_map_t * const m = &media_image_formats_map[n];
+    if (format_list)
+      format_list[n] = m->va_format;
+  }
+
+  if (num_formats)
+    *num_formats = n;
+
   return VA_STATUS_SUCCESS;
 }
 
