@@ -35,6 +35,10 @@
 #define MEDIA_SURFACEFORMAT_B8G8R8A8_UNORM                 0x0C0
 #define MEDIA_SURFACEFORMAT_R8G8B8A8_UNORM                 0x0C7
 
+#ifndef VA_SRC_COLOR_MASK
+#define VA_SRC_COLOR_MASK      0x000000f0
+#endif
+
 struct media_render_kernel
 {
   CHAR *name;
