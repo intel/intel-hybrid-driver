@@ -255,6 +255,8 @@ typedef struct _media_drv_context
   struct media_render_state render_state;
   struct va_dri_output *dri_output;
   MEDIA_HW_CONTEXT hw_context;
+
+  void *wrapper_ctx;
 } MEDIA_DRV_CONTEXT;
 
 typedef struct _config_attr_list
@@ -273,6 +275,24 @@ media_DestroySurfaces (VADriverContextP ctx,
 VAStatus
 media_CreateSurfaces (VADriverContextP ctx,
 		      INT width, INT height, INT format, INT num_surfaces, VASurfaceID * surfaces);
+
+VAStatus
+media_MapBuffer (VADriverContextP ctx, VABufferID buf_id, /* in */
+     VOID ** pbuf);  /* out */
+VAStatus
+media_UnmapBuffer (VADriverContextP ctx, VABufferID buf_id);
+
+VAStatus
+vawr_DeriveBuffer(VADriverContextP ctx,
+            VABufferType type,
+            UINT size,
+            UINT num_elements,
+            VOID * data,
+            VABufferInfo *buf_info, VABufferID *buf_id);
+
+VAStatus
+vawr_DestroyBuffer(VADriverContextP ctx, VABufferID buf_id);
+
 
 #ifdef __cplusplus
 extern "C"

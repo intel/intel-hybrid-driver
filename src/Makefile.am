@@ -25,6 +25,7 @@ SUBDIRS = vp9hdec
 
 AM_CPPFLAGS = \
 	-DPTHREADS		\
+        -DVA_DRIVERS_PATH="\"$(LIBVA_DRIVERS_PATH)\"" \
 	$(DRM_CFLAGS)		\
 	$(CMRT_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
@@ -76,6 +77,7 @@ driver_files = \
         media_drv_gen75_render.c   \
         media_drv_gen8_render.c   \
         media_drv_hybrid_vp9_common.cpp   \
+        va_wrapper.c \
         $(NULL)
 
 if USE_X11

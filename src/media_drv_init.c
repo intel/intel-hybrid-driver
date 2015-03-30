@@ -38,6 +38,7 @@
 #include "media_drv_driver.h"
 #include "media_drv_init.h"
 #include "media_drv_decoder.h"
+#include "va_wrapper.h"
 
 //#define DEBUG 
 #define DEFAULT_BRIGHTNESS      0
@@ -2197,6 +2198,10 @@ media_DestroySurfaces (VADriverContextP ctx,
     {
       struct object_surface *obj_surface = SURFACE (surface_list[i]);
 
+      // make sure the corresponding surface in the wrapper is also be destroyed
+      if(drv_ctx->wrapper_ctx)
+        vawrapper_destroysurface(drv_ctx->wrapper_ctx, surface_list[i]);
+
       MEDIA_DRV_ASSERT (obj_surface);
       media_destroy_surface (&drv_ctx->surface_heap,
 			     (struct object_base *) obj_surface);
@@ -2619,6 +2624,8 @@ media_drv_init (VADriverContextP ctx)
   drv_ctx->current_context_id = VA_INVALID_ID;
   ctx->str_vendor = drv_ctx->drv_version;
 
+  drv_ctx->wrapper_ctx = vawrapper_init(ctx);
+
   return VA_STATUS_SUCCESS;
 
 #ifdef HAVE_VA_X11
@@ -2655,6 +2662,10 @@ media_Terminate (VADriverContextP ctx)
   media_driver_data_terminate (ctx);
 
   media_driver_terminate (ctx);
+
+  if(drv_ctx->wrapper_ctx)
+    vawrapper_term(drv_ctx->wrapper_ctx);
+
   if (drv_ctx)
     media_drv_free_memory (drv_ctx);
   ctx->pDriverData = NULL;
@@ -2739,4 +2750,42 @@ __vaDriverInit_0_34 (VADriverContextP ctx)
 
   ret = va_driver_init (ctx);
   return ret;
+}
+
+
+VAStatus
+vawr_DeriveBuffer(VADriverContextP ctx,
+            VABufferType type,
+            UINT size,
+            UINT num_elements,
+            VOID * data,
+            VABufferInfo *buf_info, VABufferID *buf_id)
+{
+  MEDIA_DRV_CONTEXT *drv_ctx = NULL;
+  dri_bo * store_bo = NULL;
+
+  MEDIA_DRV_ASSERT (ctx);
+  drv_ctx = ctx->pDriverData;
+  MEDIA_DRV_ASSERT (drv_ctx);
+
+  if(buf_info->mem_type == VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM)
+    store_bo =
+      drm_intel_bo_gem_create_from_name (drv_ctx->drv_data.bufmgr,
+           "gem flinked vaapi surface",
+           buf_info->handle);
+  else if (buf_info->mem_type == VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME)
+    store_bo =
+      drm_intel_bo_gem_create_from_prime (drv_ctx->drv_data.bufmgr,
+            buf_info->handle,
+            buf_info->mem_size);
+  else
+    return VA_STATUS_ERROR_INVALID_PARAMETER;
+
+  return media_create_buffer_internal(ctx, 0, type, size, num_elements, data, store_bo, buf_id);
+}
+
+VAStatus
+vawr_DestroyBuffer(VADriverContextP ctx, VABufferID buf_id)
+{
+  return media_DestroyBuffer(ctx, buf_id);
 }
