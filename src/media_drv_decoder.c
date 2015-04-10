@@ -76,7 +76,7 @@ media_dec_hw_context_init (VADriverContextP ctx,
   struct hw_context *decoder_context = NULL;
 
   if (drv_ctx->codec_info->vp9_dec_hybrid_support &&
-      (obj_config->profile == VAProfileVP9Version0)) {
+      (obj_config->profile == VAProfileVP9Profile0)) {
     return media_hybrid_dec_hw_context_init(ctx, obj_config);
   }
 

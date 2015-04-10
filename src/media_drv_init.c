@@ -1861,7 +1861,7 @@ media_BeginPicture (VADriverContextP ctx,
       status = VA_STATUS_SUCCESS;
       break;
 
-    case VAProfileVP9Version0:
+    case VAProfileVP9Profile0:
       status = VA_STATUS_SUCCESS;
       break;
 
@@ -2306,7 +2306,7 @@ media_validate_config(VADriverContextP ctx, VAProfile profile,
       va_status = VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
     }
     break;
-  case VAProfileVP9Version0:
+  case VAProfileVP9Profile0:
     if ((entrypoint == VAEntrypointVLD) &&
         drv_ctx->codec_info->vp9_dec_hybrid_support) {
       va_status = VA_STATUS_SUCCESS;
@@ -2465,7 +2465,7 @@ media_QueryConfigProfiles (VADriverContextP ctx, VAProfile * profile_list,	/* ou
   }
 
   if (drv_ctx->codec_info->vp9_dec_hybrid_support) {
-    profile_list[i++] = VAProfileVP9Version0;
+    profile_list[i++] = VAProfileVP9Profile0;
   }
 
   profile_list[i++] = VAProfileNone;
@@ -2487,7 +2487,7 @@ media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypo
         entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
       }
       break;
-    case VAProfileVP9Version0:
+    case VAProfileVP9Profile0:
       if (drv_ctx->codec_info->vp9_dec_hybrid_support) {
         entrypoint_list[index++] = (VAEntrypoint) VAEntrypointVLD;
       }
