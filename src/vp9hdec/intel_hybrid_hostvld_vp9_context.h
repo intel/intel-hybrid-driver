@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright © 2014 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -69,13 +69,17 @@
 
 typedef UINT8 PROBABILITY, *PPROBABILITY;
 
-VAStatus Intel_HostvldVp9_GetCurrFrameContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo);
-
 VAStatus Intel_HostvldVp9_ResetContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo);
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo);
+
+VAStatus Intel_HostvldVp9_UpdateContextTables(
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo);
+
+VAStatus Intel_HostvldVp9_GetCurrFrameContext(
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo);
 
 VAStatus Intel_HostvldVp9_SetupSegmentationProbs(
     PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext,
@@ -88,11 +92,10 @@ VAStatus Intel_HostvldVp9_ReadProbabilities(
     PINTEL_HOSTVLD_VP9_BAC_ENGINE    pBacEngine);
 
 VAStatus Intel_HostvldVp9_AdaptProbabilities(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo);
+    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);
 
 VAStatus Intel_HostvldVp9_RefreshFrameContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo);
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo);
 
 #endif // __INTEL_HOSTVLD_VP9_CONTEXT_H__

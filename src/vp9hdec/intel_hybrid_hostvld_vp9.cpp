@@ -74,29 +74,36 @@
 #define INTEL_HOSTVLD_VP9_HOSTBUF_NUM    2
 #define INTEL_HOSTVLD_VP9_DDIBUF_NUM     INTEL_MT_DXVA_BUF_NUM
 #define INTEL_HOSTVLD_VP9_SEM_QUEUE_SIZE 128
+#define INTEL_HOSTVLD_VP9_PAGE_SIZE      0x1000
+#define INTEL_HOSTVLD_VP9_EARLY_DECODE_BUFFER_NUM  3
+
+#define VP9_ALIGNED_FREE_MEMORY(pAlignedBuffer)                \
+do {                                                           \
+    if (pAlignedBuffer)                                        \
+    {                                                          \
+        free(pAlignedBuffer);                                  \
+    }                                                          \
+} while(0)
 
 #define VP9_REALLOCATE_ABOVE_CTX_BUFFER(pAboveCtxBuffer, size) \
 do {                                                           \
-    if (pAboveCtxBuffer)                                       \
-    {                                                          \
-        free(pAboveCtxBuffer);                       \
-    }                                                          \
-    pAboveCtxBuffer = (PUINT8)calloc(1, size);    \
+    VP9_ALIGNED_FREE_MEMORY(pAboveCtxBuffer);                                     \
+    pAboveCtxBuffer = (PUINT8)memalign(INTEL_HOSTVLD_VP9_PAGE_SIZE, size); \
 } while(0)
 
-#define VP9_REALLOCATE_HOSTVLD_1D_BUFFER_UINT8(pHostvldBuffer, dwBufferSize)  \
-do                                                                            \
-{                                                                             \
-    if ((pHostvldBuffer)->pu8Buffer)                                            \
-    {                                                                         \
-        free((pHostvldBuffer)->pu8Buffer);                            \
-    }                                                                         \
+#define VP9_REALLOCATE_HOSTVLD_1D_BUFFER_UINT8(pHostvldBuffer, dwBufferSize)    \
+do                                                                              \
+{                                                                               \
+    VP9_ALIGNED_FREE_MEMORY((pHostvldBuffer)->pu8Buffer);                       \
     (pHostvldBuffer)->dwSize = dwBufferSize;                                    \
-    (pHostvldBuffer)->pu8Buffer = (PUINT8)calloc(1, (dwBufferSize)); \
+    (pHostvldBuffer)->pu8Buffer = (PUINT8)memalign(INTEL_HOSTVLD_VP9_PAGE_SIZE, dwBufferSize); \
 } while (0)
 
 VAStatus Intel_HostvldVp9_Execute_MT (
     INTEL_HOSTVLD_VP9_HANDLE         hHostVld);
+
+VAStatus Intel_HostvldVp9_PostLoopFilter (
+    PVOID                               pVp9FrameState);
 
 static VAStatus Intel_HostvldVp9_GetPartitions(
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo, 
@@ -151,7 +158,9 @@ VAStatus Intel_HostvldVp9_Create (
     uint32_t                               dwThreadNumber;
     uint32_t                               dwBufferNumber;
     uint32_t                               dwDDIBufNumber;
+    uint32_t                               dwBufNumEarlyDec;
     uint32_t                                i           = 0;
+    uint32_t                                uiTileIndex = 0;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
 
 
@@ -161,13 +170,14 @@ VAStatus Intel_HostvldVp9_Create (
 
     dwThreadNumber = INTEL_HOSTVLD_VP9_THREAD_NUM;
 
-    pVp9HostVld->pfnDeblockCb       = pCallbacks->pfnHostVldDeblockCb;
     pVp9HostVld->pfnRenderCb        = pCallbacks->pfnHostVldRenderCb;
     pVp9HostVld->pfnSyncCb          = pCallbacks->pfnHostVldSyncCb;
     pVp9HostVld->pvStandardState    = pCallbacks->pvStandardState;
     pVp9HostVld->dwThreadNumber     = dwThreadNumber;
     pVp9HostVld->dwBufferNumber     = INTEL_HOSTVLD_VP9_HOSTBUF_NUM;
     pVp9HostVld->dwDDIBufNumber     = dwThreadNumber;
+    pVp9HostVld->ui8BufNumEarlyDec  = 1; //not early decode for Sinlge thread case
+    pVp9HostVld->PrevParserID       = -1;
 
     pthread_mutex_init(&pVp9HostVld->MutexSync, NULL);
     // Create Frame State
@@ -181,23 +191,37 @@ VAStatus Intel_HostvldVp9_Create (
         pTileState = (PINTEL_HOSTVLD_VP9_TILE_STATE)calloc(dwThreadNumber, sizeof(*pTileState));
         pFrameState->pTileStateBase     = pTileState;
 
+        // Initialize Tile States
+        for (uiTileIndex = 0; uiTileIndex < dwThreadNumber; uiTileIndex++)
+        {
+            pTileState->pFrameState     = pFrameState;
+            pTileState->dwCurrColIndex  = uiTileIndex;
+            pTileState++;
+        }
 
         // Create Context Model
-        pFrameState->FrameInfo.pContext = &pVp9HostVld->Context.CurrContext;
         pFrameState->pVp9HostVld        = pVp9HostVld;
         pFrameState->dwLastTaskID       = -1; // Invalid ID
         pFrameState++;
     }
 
-    pContext                                        = &pVp9HostVld->Context.CurrContext;
-    pContext->TxProbTables[TX_8X8].pui8ProbTable    = &pContext->TxProbTableSet.Tx_8X8[0][0];
-    pContext->TxProbTables[TX_8X8].uiStride         = TX_8X8;
-    pContext->TxProbTables[TX_16X16].pui8ProbTable  = &pContext->TxProbTableSet.Tx_16X16[0][0];
-    pContext->TxProbTables[TX_16X16].uiStride       = TX_16X16;
-    pContext->TxProbTables[TX_32X32].pui8ProbTable  = &pContext->TxProbTableSet.Tx_32X32[0][0];
-    pContext->TxProbTables[TX_32X32].uiStride       = TX_32X32;
+    pVp9HostVld->pEarlyDecBufferBase = (PINTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER)calloc(
+                                            pVp9HostVld->ui8BufNumEarlyDec, sizeof(*(pVp9HostVld->pEarlyDecBufferBase)));
 
-  
+    pVp9HostVld->pLastParserTaskID = (PUINT)malloc(pVp9HostVld->ui8BufNumEarlyDec * sizeof(UINT));
+    memset(pVp9HostVld->pLastParserTaskID, -1, pVp9HostVld->ui8BufNumEarlyDec * sizeof(UINT));
+
+    for (i = 0; i < pVp9HostVld->ui8BufNumEarlyDec; i++)
+    {
+        pContext                                        = &pVp9HostVld->pEarlyDecBufferBase[i].CurrContext;
+        pContext->TxProbTables[TX_8X8].pui8ProbTable    = &pContext->TxProbTableSet.Tx_8X8[0][0];
+        pContext->TxProbTables[TX_8X8].uiStride         = TX_8X8;
+        pContext->TxProbTables[TX_16X16].pui8ProbTable  = &pContext->TxProbTableSet.Tx_16X16[0][0];
+        pContext->TxProbTables[TX_16X16].uiStride       = TX_16X16;
+        pContext->TxProbTables[TX_32X32].pui8ProbTable  = &pContext->TxProbTableSet.Tx_32X32[0][0];
+        pContext->TxProbTables[TX_32X32].uiStride       = TX_32X32;
+    }
+
 finish:
     return eStatus;
 }
@@ -257,6 +281,9 @@ VAStatus Intel_HostvldVp9_Initialize (
         pFrameState->dwCurrIndex    = dwCurrIndex;
         pFrameState->pOutputBuffer  = pVp9HostVld->pOutputBufferBase + dwCurrIndex;
         pFrameState->pVideoBuffer   = pVideoBuffer;
+        pFrameState->LastFrameType  = pVp9HostVld->LastFrameType;
+        pFrameState->FrameInfo.pContext = &pVp9HostVld->pEarlyDecBufferBase[0].CurrContext; //for ST, there is only 1 early dec buffer
+        pFrameState->pLastSegIdBuf      = &pVp9HostVld->pEarlyDecBufferBase[0].LastSegId;
 
         pVp9HostVld->dwCurrIndex    = dwCurrIndex;
     }
@@ -279,6 +306,7 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
     DWORD                               dwNumAboveCtx, dwSize, i;
     DWORD                               dwPrevPicWidth, dwPrevPicHeight;
     BOOL                                bPrevShowFrame;
+    BOOL                                bResetLastSegId = FALSE;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
 
 
@@ -303,7 +331,7 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
     pFrameInfo->ui8SegUpdMap        = pPicParams->PicFlags.fields.segmentation_update_map;
     pFrameInfo->ui8TemporalUpd      = pPicParams->PicFlags.fields.segmentation_temporal_update;
     
-    pFrameInfo->LastFrameType       = pVp9HostVld->LastFrameType;
+    pFrameInfo->LastFrameType       = pFrameState->LastFrameType;
     pFrameInfo->dwPicWidthCropped   = pPicParams->FrameWidthMinus1 + 1;
     pFrameInfo->dwPicHeightCropped  = pPicParams->FrameHeightMinus1 + 1;
     pFrameInfo->dwPicWidth          = ALIGN(pPicParams->FrameWidthMinus1 + 1, 8);
@@ -346,9 +374,9 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
     for (i = 0; i < VP9_MAX_SEGMENTS; i++)
     {
         // pack segment QP
-        pFrameInfo->SegQP[i][INTEL_HOSTVLD_VP9_YUV_PLANE_Y]  = 
+        pFrameInfo->SegQP[INTEL_HOSTVLD_VP9_YUV_PLANE_Y][i]  =
             (((UINT32)pSegmentData->SegData[i].LumaACQuantScale) << 16) | pSegmentData->SegData[i].LumaDCQuantScale;
-        pFrameInfo->SegQP[i][INTEL_HOSTVLD_VP9_YUV_PLANE_UV] = 
+        pFrameInfo->SegQP[INTEL_HOSTVLD_VP9_YUV_PLANE_UV][i] =
             (((UINT32)pSegmentData->SegData[i].ChromaACQuantScale) << 16) | pSegmentData->SegData[i].ChromaDCQuantScale;
     }
     
@@ -370,21 +398,19 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
     if (pFrameInfo->bIsIntraOnly || pFrameInfo->bErrorResilientMode)
     {
         // reset context
-        Intel_HostvldVp9_ResetContext(
-            &pVp9HostVld->Context,
-            pFrameInfo);
+        Intel_HostvldVp9_ResetContext(pVp9HostVld->ContextTable, pFrameInfo);
     }
     
     if (!pFrameInfo->bResetContext)
     {
         // If we didn't reset the context, initialize current frame context by copying from context table
         Intel_HostvldVp9_GetCurrFrameContext(
-            &pVp9HostVld->Context, 
+            pVp9HostVld->ContextTable,
             pFrameInfo);
     }
     
         Intel_HostvldVp9_SetupSegmentationProbs(
-            &pVp9HostVld->Context.CurrContext,
+            pFrameInfo->pContext,
             pPicParams->SegTreeProbs,
             pPicParams->SegPredProbs);
     
@@ -402,40 +428,54 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
     {
         pFrameInfo->dwNumAboveCtx = dwNumAboveCtx;
     
-        // Partition context, per 8x8 block
-        dwSize = dwNumAboveCtx * sizeof(*pFrameInfo->pSegContextAbove);
-        VP9_REALLOCATE_ABOVE_CTX_BUFFER(pFrameInfo->pSegContextAbove, dwSize);
-    
-        // Context for predicted segment id, per 8x8 block
-        dwSize = dwNumAboveCtx * sizeof(*pFrameInfo->pPredSegIdContextAbove);
-        VP9_REALLOCATE_ABOVE_CTX_BUFFER(pFrameInfo->pPredSegIdContextAbove, dwSize);
-    
+        // allocate above context
+        dwSize = dwNumAboveCtx * sizeof(*pFrameInfo->pContextAbove);
+        VP9_ALIGNED_FREE_MEMORY(pFrameInfo->pContextAbove);
+        pFrameInfo->pContextAbove =
+            (PINTEL_HOSTVLD_VP9_NEIGHBOR)memalign(INTEL_HOSTVLD_VP9_PAGE_SIZE, dwSize);
+
+        dwNumAboveCtx <<= 1;
         // Entropy context, per 4x4 block. Allocate once for all the planes
-        dwSize = (dwNumAboveCtx << 1) * sizeof(*pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y]);
-        VP9_REALLOCATE_ABOVE_CTX_BUFFER(pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y], dwSize * VP9_CODED_YUV_PLANES);
+        dwSize = dwNumAboveCtx * sizeof(*pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y]) * 2;
+        VP9_REALLOCATE_ABOVE_CTX_BUFFER(pFrameInfo->EntropyContextAbove.pu8Buffer, dwSize);
+        pFrameInfo->EntropyContextAbove.dwSize = dwSize;
+        pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y] =
+            pFrameInfo->EntropyContextAbove.pu8Buffer;
         pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_U] =
-            pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y] + dwSize;
+            pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y] + (dwSize >> 1);
         pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_V] =
-            pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_U] + dwSize;
+            pFrameInfo->pEntropyContextAbove[VP9_CODED_YUV_PLANE_U] + (dwSize >> 2); // we only support 4:2:0 so far.
+    }
+
+    // Reallocate mode info buffer if changed to bigger resolution
+    dwSize = pFrameInfo->dwB8ColumnsAligned * pFrameInfo->dwB8RowsAligned;
+    if (dwSize > pFrameInfo->ModeInfo.dwSize)
+    {
+        VP9_ALIGNED_FREE_MEMORY(pFrameInfo->ModeInfo.pBuffer);
+        pFrameInfo->ModeInfo.pBuffer = memalign(INTEL_HOSTVLD_VP9_PAGE_SIZE,
+            dwSize * sizeof(INTEL_HOSTVLD_VP9_MODE_INFO));
+        pFrameInfo->ModeInfo.dwSize  = dwSize;
     }
 
     // Zero last segment id buffer if resolution changed
-    if ((pFrameInfo->dwPicWidthCropped  != dwPrevPicWidth) || 
-        (pFrameInfo->dwPicHeightCropped != dwPrevPicHeight))
+    if (dwSize > pFrameState->pLastSegIdBuf->dwSize)
     {
-        // Reallocate last segment id buffer if it's not big enough
-        dwSize = pFrameInfo->dwB8ColumnsAligned * pFrameInfo->dwB8RowsAligned;
-        if (dwSize > pVp9HostVld->LastSegmentIndex.dwSize)
-        {
-            // Per 8x8 block, UINT8
-            VP9_REALLOCATE_HOSTVLD_1D_BUFFER_UINT8(&pVp9HostVld->LastSegmentIndex, dwSize);
-        }
-        else
-        {
-            memset(pVp9HostVld->LastSegmentIndex.pu8Buffer, 0, pVp9HostVld->LastSegmentIndex.dwSize);
-        }
+        // Per 8x8 block, UINT8
+        VP9_REALLOCATE_HOSTVLD_1D_BUFFER_UINT8(pFrameState->pLastSegIdBuf, dwSize);
+        bResetLastSegId |= TRUE;
     }
-    pFrameState->pLastSegIdBuf = &pVp9HostVld->LastSegmentIndex;
+    if ((pFrameInfo->dwPicWidthCropped  != dwPrevPicWidth) || 
+        (pFrameInfo->dwPicHeightCropped != dwPrevPicHeight) ||
+         pFrameInfo->bIsIntraOnly ||
+         pFrameInfo->bErrorResilientMode)
+    {
+        bResetLastSegId |= TRUE;
+    }
+
+    if (bResetLastSegId)
+    {
+        memset(pFrameState->pLastSegIdBuf->pu8Buffer, 0, pFrameState->pLastSegIdBuf->dwSize);
+    }
     
     if (pVp9HostVld->pfnSyncCb)
     {
@@ -458,11 +498,6 @@ VAStatus Intel_HostvldVp9_PreParser (PVOID pVp9FrameState)
         Intel_HostvldVp9_FillIntraFrameRefFrame(&pOutputBuffer->ReferenceFrame);
     }
     
-    if (pFrameInfo->bIsIntraOnly || pFrameInfo->bErrorResilientMode)
-    {
-        memset(pFrameState->pLastSegIdBuf->pu8Buffer, 0, pFrameState->pLastSegIdBuf->dwSize);
-    }
-
     Intel_HostvldVp9_ParseCompressedHeader(pFrameState);
 
     Intel_HostvldVp9_PreParseTiles(pFrameState);
@@ -484,22 +519,24 @@ VAStatus Intel_HostvldVp9_PostParser (PVOID pVp9FrameState)
     pVp9HostVld = pFrameState->pVp9HostVld;
     pFrameInfo  = &pFrameState->FrameInfo;
 
-    pVp9HostVld->Context.pCurrCount = &pFrameState->pTileStateBase->Count;
+    Intel_HostvldVp9_PostParseTiles(pFrameState);
 
-    if (pVp9HostVld->dwThreadNumber > 1)
+    if (pFrameInfo->bIsIntraOnly || pFrameInfo->bErrorResilientMode)
     {
-        Intel_HostvldVp9_PostParseTiles(pFrameState);
+        Intel_HostvldVp9_UpdateContextTables(pVp9HostVld->ContextTable, pFrameInfo);
     }
-    
-    Intel_HostvldVp9_AdaptProbabilities(&pVp9HostVld->Context, pFrameInfo);
-    
-    Intel_HostvldVp9_RefreshFrameContext(&pVp9HostVld->Context, pFrameInfo);
 
-    pVp9HostVld->LastFrameType = 
-        (INTEL_HOSTVLD_VP9_FRAME_TYPE)pFrameInfo->pPicParams->PicFlags.fields.frame_type;
+    Intel_HostvldVp9_AdaptProbabilities(pFrameState);
+
+    Intel_HostvldVp9_RefreshFrameContext(pVp9HostVld->ContextTable, pFrameInfo);
 
     pFrameState->ReferenceFrame.pu16Buffer = pFrameState->pOutputBuffer->ReferenceFrame.pu16Buffer;
     pFrameState->ReferenceFrame.dwSize     = pFrameState->pOutputBuffer->ReferenceFrame.dwSize;
+
+    if(pFrameState->FrameInfo.dwTileColumns > 1)
+    {
+        Intel_HostvldVp9_PostLoopFilter(pVp9FrameState);
+    }
 
     return eStatus;
 }
@@ -507,15 +544,19 @@ VAStatus Intel_HostvldVp9_PostParser (PVOID pVp9FrameState)
 VAStatus Intel_HostvldVp9_TileColumnParser (PVOID pVp9TileState)
 {
     PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState  = NULL;
+    DWORD                               dwTileColumns, dwCurrColIndex, dwTileStateNumber;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
 
 
     pTileState     = (PINTEL_HOSTVLD_VP9_TILE_STATE)pVp9TileState;
+    dwTileColumns     = pTileState->pFrameState->FrameInfo.dwTileColumns;
+    dwCurrColIndex    = pTileState->dwCurrColIndex;
+    dwTileStateNumber = pTileState->pFrameState->pVp9HostVld->dwThreadNumber;
 
-    while(pTileState->dwCurrColIndex < pTileState->dwTileColumns)
+    while(dwCurrColIndex < dwTileColumns)
     {
-        Intel_HostvldVp9_ParseTileColumn(pTileState, pTileState->dwCurrColIndex);
-        pTileState->dwCurrColIndex  += pTileState->dwTileStateNumber;
+        Intel_HostvldVp9_ParseTileColumn(pTileState, dwCurrColIndex);
+        dwCurrColIndex  += dwTileStateNumber;
     }
 
     return eStatus;
@@ -530,34 +571,72 @@ VAStatus Intel_HostvldVp9_Parser (PVOID pVp9FrameState)
 
     eStatus = Intel_HostvldVp9_ParseTiles((PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState);
 
-    eStatus = Intel_HostvldVp9_PostParser(pVp9FrameState);
+    if (((PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState)->pVp9HostVld->dwThreadNumber == 1)
+    {
+       eStatus = Intel_HostvldVp9_PostParser(pVp9FrameState);
+    }
 
 finish:
     return eStatus;
 }
 
-
-VAStatus Intel_HostvldVp9_LoopFilter (PVOID pVp9FrameState)
+VAStatus Intel_HostvldVp9_LoopFilterTiles (PVOID pVp9TileState)
 {
-    PINTEL_HOSTVLD_VP9_STATE         pVp9HostVld = NULL;
+    PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState  = NULL;
+    DWORD                               dwTileColumns, dwCurrColIndex, dwTileStateNumber;
+    VAStatus                            eStatus     = VA_STATUS_SUCCESS;
+
+    pTileState        = (PINTEL_HOSTVLD_VP9_TILE_STATE)pVp9TileState;
+    dwTileColumns     = pTileState->pFrameState->FrameInfo.dwTileColumns;
+    dwCurrColIndex    = pTileState->dwCurrColIndex;
+    dwTileStateNumber = pTileState->pFrameState->pVp9HostVld->dwThreadNumber;
+
+    while(dwCurrColIndex < dwTileColumns)
+    {
+        Intel_HostvldVp9_LoopfilterTileColumn(pTileState, dwCurrColIndex);
+        dwCurrColIndex  += dwTileStateNumber;
+    }
+
+    return eStatus;
+}
+
+VAStatus Intel_HostvldVp9_PostLoopFilter (PVOID pVp9FrameState)
+{
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState = NULL;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
 
+    pFrameState = (PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState;
 
+    // Calc Loop filter threshold
+    Intel_HostvldVp9_LoopfilterCalcThreshold(pFrameState);
+
+    Intel_HostvldVp9_SetOutOfBoundValues(pFrameState);
+
+    return eStatus;
+}
+
+VAStatus Intel_HostvldVp9_LoopfilterFrame(PVOID pVp9FrameState)
+{
+    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState = NULL;
+    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo  = NULL;
+    PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState  = NULL;
+    DWORD                               dwTileIndex,dwTileX;
+    VAStatus                            eStatus     = VA_STATUS_SUCCESS;
 
     pFrameState = (PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState;
-    pVp9HostVld = pFrameState->pVp9HostVld;
 
-    Intel_HostvldVp9_LoopfilterFrame(pFrameState);
+    pFrameInfo              = &pFrameState->FrameInfo;
+    pTileState              = pFrameState->pTileStateBase;
+    pTileState->pFrameState = pFrameState;
 
-    if (pVp9HostVld->pfnDeblockCb)
+    // decode tiles
+    for (dwTileX = 0; dwTileX < pFrameInfo->dwTileColumns; dwTileX++)
     {
-        eStatus = pVp9HostVld->pfnDeblockCb(
-            pVp9HostVld->pvStandardState, 
-            pFrameState->dwCurrIndex);
+        Intel_HostvldVp9_LoopfilterTileColumn(pTileState,dwTileX);
     }
 
-finish:
+    Intel_HostvldVp9_PostLoopFilter(pFrameState);
+
     return eStatus;
 }
 
@@ -565,8 +644,8 @@ VAStatus Intel_HostvldVp9_Render (PVOID pVp9FrameState)
 {
     PINTEL_HOSTVLD_VP9_STATE         pVp9HostVld = NULL;
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState = NULL;
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo;
-    VASurfaceID                               ucCurrPicIndex,ucLastRefIdx,ucGoldenRefIdx,ucAltRefIdx;
+    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo  = NULL;
+    VASurfaceID                      ucLastRefIdx, ucGoldenRefIdx, ucAltRefIdx;
     PINTEL_HOSTVLD_VP9_VIDEO_BUFFER  pVideoBuffer= NULL;
     PINTEL_VP9_PIC_PARAMS            pPicParams  = NULL;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
@@ -578,7 +657,6 @@ VAStatus Intel_HostvldVp9_Render (PVOID pVp9FrameState)
     pVideoBuffer    = pFrameState->pVideoBuffer;
     pPicParams      = pVideoBuffer->pVp9PicParams;
 
-    ucCurrPicIndex  = pPicParams->CurrPic;
     ucLastRefIdx    = pPicParams->RefFrameList[pPicParams->PicFlags.fields.LastRefIdx];
     ucGoldenRefIdx  = pPicParams->RefFrameList[pPicParams->PicFlags.fields.GoldenRefIdx];
     ucAltRefIdx     = pPicParams->RefFrameList[pPicParams->PicFlags.fields.AltRefIdx];
@@ -609,11 +687,11 @@ VAStatus Intel_HostvldVp9_Execute (
 
     eStatus = Intel_HostvldVp9_Parser(pFrameState);
     if (eStatus != VA_STATUS_SUCCESS)
-	goto finish;
+       goto finish;
 
-    eStatus = Intel_HostvldVp9_LoopFilter(pFrameState);
+    eStatus = Intel_HostvldVp9_LoopfilterFrame(pFrameState);
     if (eStatus != VA_STATUS_SUCCESS)
-	goto finish;
+       goto finish;
 
     pVp9VideoBuffer = pFrameState->pVideoBuffer;
 
@@ -624,7 +702,9 @@ VAStatus Intel_HostvldVp9_Execute (
 
     eStatus = Intel_HostvldVp9_Render(pFrameState);
     if (eStatus != VA_STATUS_SUCCESS)
-	goto finish;
+       goto finish;
+
+    pVp9HostVld->LastFrameType = (INTEL_HOSTVLD_VP9_FRAME_TYPE)(pFrameState->pVideoBuffer->pVp9PicParams->PicFlags.fields.frame_type);
 
 finish:
     return eStatus;
@@ -648,6 +728,9 @@ VAStatus Intel_HostvldVp9_InitFrameState (
     pFrameState->pRenderTarget = pTaskUserData->pVideoBuffer->pRenderTarget;
     pFrameState->dwCurrIndex   = pTaskUserData->dwCurrIndex;
     pFrameState->dwPrevIndex   = pTaskUserData->dwPrevIndex;
+    pFrameState->LastFrameType      = pTaskUserData->LastFrameType;
+    pFrameState->FrameInfo.pContext = pTaskUserData->pCurrContext;
+    pFrameState->pLastSegIdBuf      = pTaskUserData->pLastSegIdBuf;
 
     return eStatus;
 }
@@ -668,7 +751,7 @@ VAStatus Intel_HostvldVp9_Destroy (
     {
         PINTEL_HOSTVLD_VP9_VIDEO_BUFFER  pVideoBuffer;
         PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState;
-
+        PINTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER pEarlyDecBufferBase;
 
         pFrameState = pVp9HostVld->pFrameStateBase;
         if (pFrameState)
@@ -677,9 +760,9 @@ VAStatus Intel_HostvldVp9_Destroy (
             {
                 if (pFrameState)
                 {
-                    VP9_SafeFreeMemory(pFrameState->FrameInfo.pSegContextAbove);
-                    VP9_SafeFreeMemory(pFrameState->FrameInfo.pPredSegIdContextAbove);
-                    VP9_SafeFreeMemory(pFrameState->FrameInfo.pEntropyContextAbove[VP9_CODED_YUV_PLANE_Y]);
+                    VP9_ALIGNED_FREE_MEMORY(pFrameState->FrameInfo.pContextAbove);
+                    VP9_ALIGNED_FREE_MEMORY(pFrameState->FrameInfo.EntropyContextAbove.pu8Buffer);
+                    VP9_ALIGNED_FREE_MEMORY(pFrameState->FrameInfo.ModeInfo.pBuffer);
                     VP9_SafeFreeMemory(pFrameState->pTileStateBase);
                 }
                 pFrameState++;
@@ -687,8 +770,16 @@ VAStatus Intel_HostvldVp9_Destroy (
             
             VP9_SafeFreeMemory(pVp9HostVld->pFrameStateBase);
         }
+        pEarlyDecBufferBase = pVp9HostVld->pEarlyDecBufferBase;
+        for (i = 0; i< pVp9HostVld->ui8BufNumEarlyDec; i++)
+        {
+            VP9_ALIGNED_FREE_MEMORY(pEarlyDecBufferBase->LastSegId.pu8Buffer);
 
-        VP9_SafeFreeMemory(pVp9HostVld->LastSegmentIndex.pu8Buffer);
+            pEarlyDecBufferBase++;
+        }
+        VP9_SafeFreeMemory(pVp9HostVld->pEarlyDecBufferBase);
+        VP9_SafeFreeMemory(pVp9HostVld->pLastParserTaskID);
+
         pthread_mutex_destroy(&pVp9HostVld->MutexSync);
 
         free(pVp9HostVld);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright © 2014 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -38,10 +38,6 @@ VAStatus Intel_HostvldVp9_ParseCompressedHeader(
 
 VAStatus Intel_HostvldVp9_ParseTiles(
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);
-#ifndef SEPERATE_LOOPFILTER_ENABLE
-VAStatus Intel_HostvldVp9_ParseLoopFilterThreshold(
-    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);
-#endif
 
 VAStatus Intel_HostvldVp9_PreParseTiles(
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);

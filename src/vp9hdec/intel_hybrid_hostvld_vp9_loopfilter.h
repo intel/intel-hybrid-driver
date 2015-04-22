@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright © 2014 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,7 +29,14 @@
 #ifndef __INTEL_HOSTVLD_VP9_LOOPFILTER_H__
 #define __INTEL_HOSTVLD_VP9_LOOPFILTER_H__
 
-VAStatus Intel_HostvldVp9_LoopfilterFrame(
+VAStatus Intel_HostvldVp9_LoopfilterTileColumn(
+    PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState,
+    DWORD                               dwTileX);
+
+VAStatus Intel_HostvldVp9_LoopfilterCalcThreshold(
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);
 
-#endif // __INTEL_HOSTVLD_VP9_PARSER_H__
+VAStatus Intel_HostvldVp9_SetOutOfBoundValues(
+    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState);
+
+#endif // __INTEL_HOSTVLD_VP9_LOOPFILTER_H__

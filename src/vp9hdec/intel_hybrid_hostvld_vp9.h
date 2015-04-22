@@ -48,6 +48,7 @@ typedef struct _INTEL_HOSTVLD_VP9_1D_BUFFER
 {
     union
     {
+        void         *pBuffer;
         uint8_t      *pu8Buffer;
         uint16_t     *pu16Buffer;
         uint32_t     *pu32Buffer;
@@ -78,6 +79,8 @@ typedef struct _INTEL_HOSTVLD_VP9_VIDEO_BUFFER
     uint8_t                           *pbBitsData;     // bitstream buffer
     uint32_t                           dwBitsSize;     // bitstream size
 
+    BOOL                            bResolutionChanged;
+
     /* Added by Zhao Yakui */
     dri_bo			*slice_data_bo;
 
@@ -98,10 +101,7 @@ typedef struct _INTEL_HOSTVLD_VP9_OUTPUT_BUFFER
     INTEL_HOSTVLD_VP9_2D_BUFFER  VerticalEdgeMask[INTEL_HOSTVLD_VP9_YUV_PLANE_NUMBER];
     INTEL_HOSTVLD_VP9_2D_BUFFER  HorizontalEdgeMask[INTEL_HOSTVLD_VP9_YUV_PLANE_NUMBER];
     INTEL_HOSTVLD_VP9_1D_BUFFER  TransformType;      // For Luma only; Chroma should always use DCT_DCT transform
-    INTEL_HOSTVLD_VP9_1D_BUFFER  SkipFlag;           // Y, U and V share the same skip flags
-    INTEL_HOSTVLD_VP9_1D_BUFFER  SegmentIndex;       // Y, U and V share the same segmentation index lookup table
     INTEL_HOSTVLD_VP9_1D_BUFFER  TileIndex;          // Y, U and V share the same tile index
-    INTEL_HOSTVLD_VP9_1D_BUFFER  InterIntraFlag;     // Y, U and V share the same Inter/Intra flags
     INTEL_HOSTVLD_VP9_1D_BUFFER  BlockSize;          // Y, U and V share the same block size
     INTEL_HOSTVLD_VP9_1D_BUFFER  ReferenceFrame;     // Y, U and V share the same reference frame buffer
     INTEL_HOSTVLD_VP9_1D_BUFFER  FilterType;         // Y, U and V share the same interpolation filter type
@@ -128,7 +128,6 @@ typedef VAStatus (* PFNINTEL_HOSTVLD_VP9_SYNCCB) (
 
 typedef struct _INTEL_HOSTVLD_VP9_CALLBACKS
 {
-    PFNINTEL_HOSTVLD_VP9_DEBLOCKCB pfnHostVldDeblockCb;
     PFNINTEL_HOSTVLD_VP9_RENDERCB  pfnHostVldRenderCb;
     PFNINTEL_HOSTVLD_VP9_SYNCCB    pfnHostVldSyncCb;
     void                             *pvStandardState;

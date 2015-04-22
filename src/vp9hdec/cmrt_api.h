@@ -34,7 +34,7 @@
 #include <va/va.h>
 #include "cm_rt.h"
 
-#define CM_MAX_THREAD_WIDTH	511
+#define CM_MAX_THREAD_WIDTH_FOR_MW	511
 
 #endif /* _CMRT_API_H_ */
 

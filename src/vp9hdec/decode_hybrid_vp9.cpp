@@ -72,8 +72,6 @@
 #include <va/va_dec_vp9.h>
 #include <sys/ioctl.h>
 
-#define USE_KERNEL_ZERO_FILL_THREAD_INFO    1
-
 #define MDF_KERNEL_FUNCTION_IQIT_LUMA               "InverseTransform_Luma_Granularity_32x32"
 #define MDF_KERNEL_FUNCTION_IQIT_CHROMA             "InverseTransform_Chroma_Granularity_32x32"
 #define MDF_KERNEL_FUNCTION_IQIT_LOSSLESS_LUMA      "InverseTransform_LL_Luma_Granularity_32x32"
@@ -105,6 +103,8 @@
 #define VP9_HYBRID_DECODE_ALL_FRAMES        (VP9_HYBRID_DECODE_PREVIOUS_FRAME | VP9_HYBRID_DECODE_CURRENT_FRAME)
 
 #define VP9_HYBRID_DECODE_REF_SCALE_SHIFT   14
+
+#define VP9_HYBRID_DECODE_COMBINED_FILETER_SIZE 512
 
 #define INTEL_DECODE_CHK_MDF_STATUS(_mdfstatus)                      \
 do                                                                      \
@@ -801,8 +801,7 @@ static void INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(
 
 #endif
 
-void Intel_HybridVp9Decode_ConstructCombinedFilters(
-    PINTEL_DECODE_HYBRID_VP9_STATE pHybridVp9State)
+void Intel_HybridVp9Decode_ConstructCombinedFilters(PVOID pCombinedFilters)
 {
     int8_t  *pi8CombinedFilters;
     int16_t *pi16Filters;
@@ -810,7 +809,7 @@ void Intel_HybridVp9Decode_ConstructCombinedFilters(
 
     // 8 Tap Filters
     pi16Filters = (int16_t *)&g_Filters8Tap;
-    pi8CombinedFilters = pHybridVp9State->pi8CombinedFilters;
+    pi8CombinedFilters = (PINT8)pCombinedFilters;
     for (i = 0; i < 8 * 16; i++)
     {
         pi8CombinedFilters[i] = (int8_t)((*pi16Filters++) - 1);
@@ -926,14 +925,8 @@ void Intel_HybridVp9Decode_SetHostBuffers(
     pHostVldOutputBuf->HorizontalEdgeMask[INTEL_HOSTVLD_VP9_YUV_PLANE_UV].dwSize     = 
         pMdfDecodeBuffer->HorizontalEdgeMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].dwSize;
 
-    pHostVldOutputBuf->InterIntraFlag.pu8Buffer     = pMdfDecodeBuffer->InterIntraFlag.pu8Buffer;
-    pHostVldOutputBuf->InterIntraFlag.dwSize        = pMdfDecodeBuffer->InterIntraFlag.dwSize;
     pHostVldOutputBuf->TransformType.pu8Buffer      = pMdfDecodeBuffer->TransformType.pu8Buffer;
     pHostVldOutputBuf->TransformType.dwSize         = pMdfDecodeBuffer->TransformType.dwSize;
-    pHostVldOutputBuf->SkipFlag.pu8Buffer           = pMdfDecodeBuffer->SkipFlag.pu8Buffer;
-    pHostVldOutputBuf->SkipFlag.dwSize              = pMdfDecodeBuffer->SkipFlag.dwSize;
-    pHostVldOutputBuf->SegmentIndex.pu8Buffer       = pMdfDecodeBuffer->SegmentIndex.pu8Buffer;
-    pHostVldOutputBuf->SegmentIndex.dwSize          = pMdfDecodeBuffer->SegmentIndex.dwSize;
     pHostVldOutputBuf->TileIndex.pu8Buffer          = pMdfDecodeBuffer->TileIndex.pu8Buffer;
     pHostVldOutputBuf->TileIndex.dwSize             = pMdfDecodeBuffer->TileIndex.dwSize;
     pHostVldOutputBuf->BlockSize.pu8Buffer          = pMdfDecodeBuffer->BlockSize.pu8Buffer;
@@ -950,291 +943,6 @@ void Intel_HybridVp9Decode_SetHostBuffers(
     pHostVldOutputBuf->Threshold.pu8Buffer          = pMdfDecodeBuffer->Threshold.pu8Buffer;
     pHostVldOutputBuf->Threshold.dwPitch            = pMdfDecodeBuffer->Threshold.dwPitch;
     pHostVldOutputBuf->Threshold.dwSize             = pMdfDecodeBuffer->Threshold.dwSize;
-}
-
-VOID Intel_HybridVp9Decode_MdfHost_CalcOntheFlyMask (
-    PUINT8                                       pui8OntheFlyThreadMask,
-    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER    pVerticalEdgeMask,
-    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER    pHorizontalEdgeMask,
-    DWORD                                        dwPitch)
-{
-    INT PicStride_EdgeMask  = pVerticalEdgeMask->dwPitch;
-
-    PUINT8 pui8VerticalEdgeMask     = pVerticalEdgeMask->pu8Buffer;
-    PUINT8 pui8HorizontalEdgeMask   = pHorizontalEdgeMask->pu8Buffer;
-
-    UINT8 ui8CurEdgeMask;
-    UINT8 ui8NeighborEdgeMask;
-
-    DWORD iRow, iCol;
-
-    //Vertical Edge kernels
-
-    for (iRow = 0; iRow < pVerticalEdgeMask->dwHeight; iRow++) 
-    {
-        for (iCol = 0; iCol < pVerticalEdgeMask->dwWidth << 1; iCol++) 
-        {
-            pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2] = 0x7f;
-
-            if (iCol & 1) 
-            {
-                ui8CurEdgeMask = (pui8VerticalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1)]) & 0x0f;
-                ui8NeighborEdgeMask = ( pui8VerticalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1)]) >> 4;
-            } 
-            else 
-            {
-                ui8CurEdgeMask = (pui8VerticalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1)]) >> 4;
-
-                if ( iCol ) 
-                {
-                    ui8NeighborEdgeMask = (pui8VerticalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1) - 1]) & 0x0f;
-                } 
-                else 
-                {
-                    ui8NeighborEdgeMask = 0;
-                }
-            }
-
-            if (((ui8CurEdgeMask & 0x3) == 1) || ((ui8CurEdgeMask & 0x3) == 2)) 
-            {
-                //4x4 Edge
-                //8x8 Edge
-                if (!(ui8NeighborEdgeMask & 0x4)) 
-                {
-                    pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2] = 0x7d;
-                }
-            } 
-            else if ((ui8CurEdgeMask & 0x3) == 3) 
-            {
-                //16x16 Edge                            
-                if (!( ui8NeighborEdgeMask & 0x7)) 
-                {
-                    pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2] = 0x7d;
-                }
-            }
-        }
-    }
-
-    //Horizontal Edge kernels
-    for (iRow = 0; iRow < pVerticalEdgeMask->dwHeight; iRow++) 
-    {
-        for (iCol = 0; iCol < pVerticalEdgeMask->dwWidth << 1; iCol++) 
-        {
-            pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2 + 1] = 0x7f;
-
-            if (iCol & 1) 
-            {
-                ui8CurEdgeMask = (pui8HorizontalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1)]) & 0x0f;
-
-                if (iRow) 
-                {
-                    ui8NeighborEdgeMask = (pui8HorizontalEdgeMask[(iRow - 1)* PicStride_EdgeMask + (iCol>>1)]) & 0x0f;
-                } 
-                else 
-                {
-                    ui8NeighborEdgeMask = 0;
-                }
-            } 
-            else 
-            {
-                ui8CurEdgeMask = (pui8HorizontalEdgeMask[iRow * PicStride_EdgeMask + (iCol>>1)]) >> 4;
-
-                if (iRow) 
-                {
-                    ui8NeighborEdgeMask = (pui8HorizontalEdgeMask[(iRow - 1)* PicStride_EdgeMask + (iCol>>1)]) >> 4;
-                } 
-                else 
-                {
-                    ui8NeighborEdgeMask = 0;
-                }
-            }
-
-            if (((ui8CurEdgeMask & 0x3) == 1) || ((ui8CurEdgeMask & 0x3) == 2)) 
-            {
-                //4x4 Edge
-                //8x8 Edge
-                if (!(ui8NeighborEdgeMask & 0x4)) 
-                {
-                    pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2 + 1] = 0x6f;
-                }
-            } 
-            else if ((ui8CurEdgeMask & 0x3) == 3) 
-            {
-                //16x16 Edge                            
-                if (!( ui8NeighborEdgeMask & 0x7)) 
-                {
-                    pui8OntheFlyThreadMask[iRow * dwPitch + iCol * 2 + 1] = 0x6f;
-                }
-            }
-        }
-    }
-}
-
-VOID Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_Deblock8x8 (
-    PUINT8          pui8OntheFlyThreadMask,
-    DWORD           dwWidthB8,
-    DWORD           dwHeightB8,
-    DWORD           dwPitch,
-    DWORD           dwPositionMask)
-{
-    DWORD x, y;
-
-    for (y = 0; y < dwHeightB8; y++) 
-    {
-        for (x = 0; x < dwWidthB8; x++) 
-        {
-            DWORD y_inside_sb64 = y & dwPositionMask;
-            DWORD x_inside_sb64 = x & dwPositionMask;
-
-            //Vertical Edge Kernels
-            if (x_inside_sb64 == 0) 
-            {
-                //SB64 Left Boundary
-                if (y_inside_sb64 < dwPositionMask) 
-                {
-                    pui8OntheFlyThreadMask[y * dwPitch + x * 2] &= 0x07;
-                } 
-                else 
-                {
-                    //Bottom-Left Corner
-                    pui8OntheFlyThreadMask[y * dwPitch + x * 2] &= 0x06;
-                }
-            } 
-            else 
-            {
-                //Internal Vertical Edge
-                pui8OntheFlyThreadMask[y * dwPitch + x * 2] &= 0x02;
-            }        
-
-            //Horizontal Edge Kernels
-            if (x_inside_sb64 < dwPositionMask) 
-            {
-                //Internal Horizontal Edge
-                pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1] &= 0x7c;
-            } 
-            else 
-            {
-                //SB64 Right Boundary
-                if (y_inside_sb64 == 0) 
-                {
-                    //Top-Right Corner of SB64
-                    pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1] &= 0x3c;
-                } 
-                else 
-                {
-                    pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1] &= 0x1c;
-                }
-            }
-        }
-    }
-}
-
-VOID Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_Deblock16x8 (
-    PUINT8          pui8OntheFlyThreadMask,
-    DWORD           dwWidthB8,
-    DWORD           dwHeightB8,
-    DWORD           dwPitch,
-    DWORD           dwPositionMask) 
-{
-    DWORD x, y;
-
-    for (y = 0; y < dwHeightB8; y++) 
-    {
-        for (x = 0; x < dwWidthB8; x += 2) 
-        {
-            DWORD y_inside_sb64 = y & dwPositionMask;
-            DWORD x_inside_sb64 = x & dwPositionMask;
-
-            //Vertical Edge Kernels
-            if (x_inside_sb64 == 0) 
-            {
-                //SB64 Left Boundary
-                if (y_inside_sb64 < dwPositionMask) 
-                {
-                    pui8OntheFlyThreadMask[y * dwPitch + x] =
-                        (0x07 & pui8OntheFlyThreadMask[y * dwPitch + x * 2]) |
-                        (0x02 & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 2]);
-                } 
-                else 
-                {
-                    //Bottom-Left Corner
-                    pui8OntheFlyThreadMask[y * dwPitch + x] =
-                        (0x06 & pui8OntheFlyThreadMask[y * dwPitch + x * 2]) |
-                        (0x02 & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 2]);
-                }
-            } 
-            else 
-            {
-                //Internal Vertical Edge
-                pui8OntheFlyThreadMask[y * dwPitch + x] =
-                    (0x02 & pui8OntheFlyThreadMask[y * dwPitch + x * 2]) |
-                    (0x02 & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 2]);
-            }        
-
-            //Horizontal Edge Kernels
-            if (x_inside_sb64 < (dwPositionMask - 1)) 
-            {
-                //Internal Horizontal Edge
-                pui8OntheFlyThreadMask[y * dwPitch + x + 1] =
-                    (0x7c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1]) |
-                    (0x7c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 3]);
-            } 
-            else 
-            {
-                //SB64 Right Boundary
-                if (y_inside_sb64 == 0) 
-                {
-                    //Top-Right Corner of SB64
-                    pui8OntheFlyThreadMask[y * dwPitch + x + 1] =
-                        (0x7c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1]) |
-                        (0x3c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 3]);
-                } 
-                else 
-                {
-                    pui8OntheFlyThreadMask[y * dwPitch + x + 1] =
-                        (0x7c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 1]) |
-                        (0x1c & pui8OntheFlyThreadMask[y * dwPitch + x * 2 + 3]);
-                }
-            }
-        }
-    }
-}
-
-VOID Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_IntraPred (
-    CmThreadSpace   *pThreadSpace,
-    CmKernel        *pKernel,
-    DWORD           dwWidth,
-    DWORD           dwHeight)
-{
-    UINT  uiThreadId = 0;
-    UCHAR ucMask;
-    UINT  x, y;
-
-    for (y = 0; y < dwHeight; y++) 
-    {
-        for (x = 0; x < dwWidth; x++) 
-        {
-            if ( (x & 1) == 0 && (y & 1) == 0 ) 
-            {                                                           
-                ucMask = 0x1f;  // all 5 dependencies are enforced
-            } 
-            else if ( (x & 1) == 1 && (y & 1) == 0 ) 
-            {                                                                  
-                ucMask = 0x1e;  // masks out bottom left, remaining 4 dependencies are enforced
-            } 
-            else if ( (x & 1) == 0 && (y & 1) == 1 ) 
-            {                                                                          
-                ucMask = 0x1e;  // masks out bottom left, remaining 4 dependencies are enforced
-            } 
-            else 
-            {                                                                                   
-                ucMask = 0x0e;  // masks out bottom left and top right, remaining 3 dependencies are enforced
-            }
-
-            pThreadSpace->AssociateThread(x, y, pKernel, uiThreadId, ucMask);
-            uiThreadId++;
-        }
-    }
 }
 
 VAStatus Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount (
@@ -1264,18 +972,14 @@ VAStatus Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount (
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_8x8:
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB8 * pMdfDecodeFrame->dwHeightB8);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
         pMdfDecodeEngine->pKernelZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB8 * pMdfDecodeFrame->dwHeightB8);
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16:
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB16 * pMdfDecodeFrame->dwHeightB16);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
         pMdfDecodeEngine->pKernelZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB16 * pMdfDecodeFrame->dwHeightB16);
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_32x32:
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
@@ -1291,10 +995,8 @@ VAStatus Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount (
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_8x8:
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB16 * pMdfDecodeFrame->dwHeightB16);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
         pMdfDecodeEngine->pKernelZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SetThreadCount(
             pMdfDecodeFrame->dwWidthB16 * pMdfDecodeFrame->dwHeightB16);
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16:
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SetThreadCount(
@@ -1318,10 +1020,38 @@ VAStatus Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount (
         pMdfDecodeFrame->dwWidthB16 * pMdfDecodeFrame->dwHeightB16);
 
     // Deblocking kernels
-    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SetThreadCount(
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP]->SetThreadCount(
         pMdfDecodeEngine->dwLumaDeblockThreadWidth * pMdfDecodeEngine->dwLumaDeblockThreadHeight);
-    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SetThreadCount(
-        ALIGN(pMdfDecodeFrame->dwWidthB8, 2) * ((pMdfDecodeFrame->dwHeightB8 + 1) >> 1));
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP]->SetThreadCount(
+        pMdfDecodeEngine->dwChromaDeblockThreadWidth * pMdfDecodeEngine->dwChromaDeblockThreadHeight);
+
+    // To support true 4K cases (4096 width or height), we need other deblocking kernels and thread spaces for blocks outside of 4080x4088
+    if (pMdfDecodeFrame->dwWidth > 4080)
+    {
+        // Need deblocking kernel for right top block
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]->SetThreadCount(
+            (ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7) * pMdfDecodeEngine->dwLumaDeblockThreadHeight);
+
+        // Also need deblocking kernel for right region of chroma
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]->SetThreadCount(
+            (ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7) * pMdfDecodeEngine->dwChromaDeblockThreadHeight);
+
+        if (pMdfDecodeFrame->dwHeight > 4088)
+        {
+            // Need deblocking kernel for left bottom region and right bottom region out of 4080x4088 bound
+            pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM]->SetThreadCount(
+                pMdfDecodeEngine->dwLumaDeblockThreadWidth * (pMdfDecodeFrame->dwHeightB8 - 504));
+
+            pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_BOTTOM]->SetThreadCount(
+                (ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7) * (pMdfDecodeFrame->dwHeightB8 - 504));
+        }
+    }
+    else if (pMdfDecodeFrame->dwHeight > 4088)
+    {
+        // Need deblocking kernel for  left bottom region out of 4080x4088 bound
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM]->SetThreadCount(
+            pMdfDecodeEngine->dwLumaDeblockThreadWidth * (pMdfDecodeFrame->dwHeightB8 - 504));
+    }
 
 finish:
     return eStatus;
@@ -1331,33 +1061,50 @@ void Intel_HybridVp9Decode_MdfHost_PickDeblockKernel (
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine, 
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame)
 {
-    if ((pMdfDecodeFrame->dwWidthB8 << 1) > CM_MAX_THREAD_WIDTH)
+    if ((pMdfDecodeFrame->dwWidthB8 << 1) > CM_MAX_THREAD_WIDTH_FOR_MW) // width > 2040
     {
         // use 16x8 deblocking
-        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] =
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP] =
             pMdfDecodeEngine->pKernelDeblock16x8[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
-        pMdfDecodeEngine->dwLumaDeblockThreadWidth  = pMdfDecodeFrame->dwWidthB8;
-        pMdfDecodeEngine->dwLumaDeblockThreadHeight = pMdfDecodeFrame->dwHeightB8;
+        if (ALIGN(pMdfDecodeFrame->dwWidthB8, 2) > CM_MAX_THREAD_WIDTH_FOR_MW) // width > 4080
+        {
+            // Has right top region.
+            // If heightB8 > CM_MAX_THREAD_WIDTH_FOR_MW, also has left bottom region and right bottom region.
+            pMdfDecodeEngine->dwLumaDeblockThreadWidth  = 503;
+            pMdfDecodeEngine->dwLumaDeblockThreadHeight =
+                (pMdfDecodeFrame->dwHeightB8 > CM_MAX_THREAD_WIDTH_FOR_MW) ? 504 : pMdfDecodeFrame->dwHeightB8;
+        }
+        else if (pMdfDecodeFrame->dwHeightB8 > CM_MAX_THREAD_WIDTH_FOR_MW) // height > 4088
+        {
+            // Has left bottom region only
+            pMdfDecodeEngine->dwLumaDeblockThreadWidth  = ALIGN(pMdfDecodeFrame->dwWidthB8, 2);
+            pMdfDecodeEngine->dwLumaDeblockThreadHeight = 504;
+
+        }
+        else // width <= 4080 and height <= 4088. Thread space width and height do not exceed HW limitation.
+        {
+            // Normal case
+            pMdfDecodeEngine->dwLumaDeblockThreadWidth = ALIGN(pMdfDecodeFrame->dwWidthB8, 2);
+            pMdfDecodeEngine->dwLumaDeblockThreadHeight = pMdfDecodeFrame->dwHeightB8;
+        }
         pMdfDecodeEngine->dwLumaDeblock26ZIMBWidth  = 8;
-        pMdfDecodeEngine->pfnAssociateDeblockThreadWithMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] =
-            Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_Deblock16x8;
     }
     else
     {
         // use 8x8 deblocking
-        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] =
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP] =
             pMdfDecodeEngine->pKernelDeblock8x8[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
        pMdfDecodeEngine->dwLumaDeblockThreadWidth   = pMdfDecodeFrame->dwWidthB8 << 1;
        pMdfDecodeEngine->dwLumaDeblockThreadHeight  = pMdfDecodeFrame->dwHeightB8;
        pMdfDecodeEngine->dwLumaDeblock26ZIMBWidth   = 16;
-       pMdfDecodeEngine->pfnAssociateDeblockThreadWithMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] =
-            Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_Deblock8x8;
     }
 
-    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV] =
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP] =
         pMdfDecodeEngine->pKernelDeblock8x8[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
-    pMdfDecodeEngine->pfnAssociateDeblockThreadWithMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV] =
-        Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_Deblock8x8;
+    pMdfDecodeEngine->dwChromaDeblockThreadWidth    =
+        (ALIGN(pMdfDecodeFrame->dwWidthB8, 2) > CM_MAX_THREAD_WIDTH_FOR_MW) ?
+        503 : ALIGN(pMdfDecodeFrame->dwWidthB8, 2);
+    pMdfDecodeEngine->dwChromaDeblockThreadHeight   = (pMdfDecodeFrame->dwHeightB8 + 1) >> 1;
 }
 
 VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
@@ -1445,14 +1192,12 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
         pProgram, IntraPredKernelsChroma[dwIntraPredKernelModeChroma],
         pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
         pProgram, MDF_KERNEL_FUNCTION_ZERO_FILL,
         pMdfDecodeEngine->pKernelZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
         pProgram, MDF_KERNEL_FUNCTION_ZERO_FILL,
         pMdfDecodeEngine->pKernelZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
-#endif
 
     // Inter Prediction & Ref Padding kernels
     if (IS_HASWELL(drv_ctx->drv_data.device_id))
@@ -1543,6 +1288,21 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
         pProgram, MDF_KERNEL_FUNCTION_DEBLOCK_CHROMA, 
         pMdfDecodeEngine->pKernelDeblock8x8[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
 
+    // For true 4K cases (4096 width or height), we need other deblocking kernels for blocks outside of 4080x4088
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
+        pProgram, MDF_KERNEL_FUNCTION_DEBLOCK16x8_LUMA,
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]));
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
+        pProgram, MDF_KERNEL_FUNCTION_DEBLOCK16x8_LUMA,
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM]));
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
+        pProgram, MDF_KERNEL_FUNCTION_DEBLOCK16x8_LUMA,
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_BOTTOM]));
+    // We only need right top kernel for chroma since 8x8 chroma deblocking already supports (8K - 16)
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateKernel(
+        pProgram, MDF_KERNEL_FUNCTION_DEBLOCK_CHROMA,
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]));
+
 finish:
     return eStatus;
 }
@@ -1553,6 +1313,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
     CmDevice                                *pMdfDevice)
 {
     DWORD       dwIntraPredKernelModeLuma, dwIntraPredKernelModeChroma;
+    CmThreadSpace                *pThreadSpace;
     VAStatus  eStatus = VA_STATUS_SUCCESS;
 
     // IQ/IT thread space
@@ -1580,17 +1341,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
             pMdfDecodeFrame->dwHeightB8,
             pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
         pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SelectThreadDependencyPattern(CM_WAVEFRONT26Z);
-        Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_IntraPred(
-            pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y],
-            pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y],
-            pMdfDecodeFrame->dwWidthB8,
-            pMdfDecodeFrame->dwHeightB8);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
+
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
             pMdfDecodeFrame->dwWidthB8,
             pMdfDecodeFrame->dwHeightB8,
             pMdfDecodeEngine->pThreadSpaceZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16:
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
@@ -1598,17 +1353,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
             pMdfDecodeFrame->dwHeightB16,
             pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
         pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SelectThreadDependencyPattern(CM_WAVEFRONT26Z);
-        Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_IntraPred(
-            pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y],
-            pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y],
-            pMdfDecodeFrame->dwWidthB16,
-            pMdfDecodeFrame->dwHeightB16);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
+
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
             pMdfDecodeFrame->dwWidthB16,
             pMdfDecodeFrame->dwHeightB16,
             pMdfDecodeEngine->pThreadSpaceZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_32x32:
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
@@ -1633,17 +1382,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
             pMdfDecodeFrame->dwHeightB16,
             pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
         pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SelectThreadDependencyPattern(CM_WAVEFRONT26Z);
-        Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_IntraPred(
-            pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV],
-            pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV],
-            pMdfDecodeFrame->dwWidthB16,
-            pMdfDecodeFrame->dwHeightB16);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
+
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
             pMdfDecodeFrame->dwWidthB16,
             pMdfDecodeFrame->dwHeightB16,
             pMdfDecodeEngine->pThreadSpaceZeroFill[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
-#endif
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16:
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
@@ -1652,11 +1395,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
             pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
         pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SelectThreadDependencyPattern(
             pMdfDecodeFrame->dwWidthB32 == 1 ? CM_WAVEFRONT : CM_WAVEFRONT26Z);
-        Intel_HybridVp9Decode_MdfHost_AssociateThreadWithMask_IntraPred(
-            pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV],
-            pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV],
-            pMdfDecodeFrame->dwWidthB32,
-            pMdfDecodeFrame->dwHeightB32);
         break;
     case INTEL_HYBRID_VP9_MDF_INTRAPRED_32x32:
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
@@ -1671,6 +1409,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
     }
 
     pMdfDecodeEngine->pKernelIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceIntra[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
+
     // Inter prediction thread space
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
         pMdfDecodeFrame->dwWidthB16, 
@@ -1681,21 +1420,85 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces (
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
         pMdfDecodeEngine->dwLumaDeblockThreadWidth,
         pMdfDecodeEngine->dwLumaDeblockThreadHeight,
-        pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]));
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->Set26ZIDispatchPattern(VVERTICAL_HHORIZONTAL_26);
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->Set26ZIMacroBlockSize(
+        pThreadSpace));
+    pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+    pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+    pThreadSpace->Set26ZIMacroBlockSize(
         pMdfDecodeEngine->dwLumaDeblock26ZIMBWidth, 8);
-    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
-
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP]->AssociateThreadSpace(pThreadSpace);
+    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP] = pThreadSpace;
     INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
-        ALIGN(pMdfDecodeFrame->dwWidthB8, 2), 
-        (pMdfDecodeFrame->dwHeightB8 + 1) >> 1, 
-        pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]));
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->Set26ZIDispatchPattern(VVERTICAL_HHORIZONTAL_26);
-    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->Set26ZIMacroBlockSize(8, 4);
-    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]->AssociateThreadSpace(pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
+        pMdfDecodeEngine->dwChromaDeblockThreadWidth,
+        pMdfDecodeEngine->dwChromaDeblockThreadHeight,
+        pThreadSpace));
+    pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+    pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+    pThreadSpace->Set26ZIMacroBlockSize(8, 4);
+    pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP]->AssociateThreadSpace(pThreadSpace);
+    pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP] = pThreadSpace;
+
+    // To support true 4K cases (4096 width or height), we need other deblocking kernels and thread spaces for blocks outside of 4080x4088
+    if (pMdfDecodeFrame->dwWidth > 4080)
+    {
+        // Need thread space for the deblocking kernel for right top block
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
+            ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7, // 16 x dwLumaDeblockThreadWidth first 7 threads in a row do nothing
+            pMdfDecodeEngine->dwLumaDeblockThreadHeight,
+            pThreadSpace));
+        pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+        pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+        pThreadSpace->Set26ZIMacroBlockSize(8, 8);
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]->AssociateThreadSpace(pThreadSpace);
+        pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP] = pThreadSpace;
+
+        // Also need thread space for right region of chroma
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
+            ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7, // 16 x dwLumaDeblockThreadWidth first 7 threads in a row do nothing
+            pMdfDecodeEngine->dwChromaDeblockThreadHeight,
+            pThreadSpace));
+        pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+        pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+        pThreadSpace->Set26ZIMacroBlockSize(8, 4);
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP]->AssociateThreadSpace(pThreadSpace);
+        pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP] = pThreadSpace;
+
+        if (pMdfDecodeFrame->dwHeight > 4088)
+        {
+            // Need thread space for the deblocking kernels for left bottom region and right bottom region out of 4080x4088 bound
+           INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
+                pMdfDecodeEngine->dwLumaDeblockThreadWidth,
+                pMdfDecodeFrame->dwHeightB8 - 504,
+                pThreadSpace));
+            pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+            pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+            pThreadSpace->Set26ZIMacroBlockSize(8, 8);
+            pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM]->AssociateThreadSpace(pThreadSpace);
+            pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM] = pThreadSpace;
+
+            INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
+                ALIGN(pMdfDecodeFrame->dwWidthB8, 2) - 503 + 7, // 16 x dwLumaDeblockThreadWidth first 7 threads in a row do nothing
+                pMdfDecodeFrame->dwHeightB8 - 504,
+                pThreadSpace));
+            pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+            pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+            pThreadSpace->Set26ZIMacroBlockSize(8, 8);
+            pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_BOTTOM]->AssociateThreadSpace(pThreadSpace);
+            pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_BOTTOM] = pThreadSpace;
+        }
+    }
+    else if (pMdfDecodeFrame->dwHeight > 4088)
+    {
+        // Need thread space for the deblocking kernels for left bottom region out of 4080x4088 bound
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateThreadSpace(
+            pMdfDecodeEngine->dwLumaDeblockThreadWidth,
+            pMdfDecodeFrame->dwHeightB8 - 504,
+            pThreadSpace));
+        pThreadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT26ZI);
+        pThreadSpace->Set26ZIDispatchPattern(VVERTICAL1X26_HHORIZONTAL1X26);
+        pThreadSpace->Set26ZIMacroBlockSize(8, 8);
+        pMdfDecodeEngine->pKernelDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM]->AssociateThreadSpace(pThreadSpace);
+        pMdfDecodeEngine->pThreadSpaceDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y][INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_BOTTOM] = pThreadSpace;
+    }
 
 finish:
     return eStatus;
@@ -1705,17 +1508,18 @@ VAStatus Intel_HybridVp9Decode_MdfHost_DestroyThreadSpaces (
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine,
     CmDevice                                *pMdfDevice)
 {
-    INT         i;
+    INT         i, j;
     VAStatus  eStatus = VA_STATUS_SUCCESS;
 
     for (i = INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y; i < INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER; i++)
     {
         INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceIqIt[i]);
-        INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceDeblock[i]);
         INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceIntra[i]);
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
+        for (j = INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP; j < INTEL_HYBRID_VP9_MDF_DEBLOCK_REGIONS; j++)
+        {
+            INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceDeblock[i][j]);
+        }
         INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceZeroFill[i]);
-#endif
     }
 
     INTEL_DECODE_HYBRID_VP9_DESTROY_THREADSPACE(pMdfDecodeEngine->pThreadSpaceInter);
@@ -1748,38 +1552,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Allocate(
     // Create surfaces of current frame
     if (dwFlags & VP9_HYBRID_DECODE_CURRENT_FRAME)
     {
-        // Residue surface - Luma (2D int16)
-        pMdfBuffer2D                    = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
-        pMdfBuffer2D->dwWidth           = dwAlignedWidth;
-        pMdfBuffer2D->dwHeight          = dwAlignedHeight;
-        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->GetSurface2DInfo(                           
-            pMdfBuffer2D->dwWidth,          
-            pMdfBuffer2D->dwHeight,         
-            VA_CM_FMT_V8U8,       
-            (UINT &)pMdfBuffer2D->dwPitch,  
-            (UINT &)pMdfBuffer2D->dwSize)); 
-        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateSurface2D(
-            pMdfBuffer2D->dwWidth, 
-            pMdfBuffer2D->dwHeight,
-            VA_CM_FMT_V8U8,
-            pMdfBuffer2D->pMdfSurface));
-
-        // Residue surface - Chroma (2D int16)
-        pMdfBuffer2D                    = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
-        pMdfBuffer2D->dwWidth           = dwAlignedWidth;
-        pMdfBuffer2D->dwHeight          = dwAlignedHeight >> 1;
-        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->GetSurface2DInfo(                           
-            pMdfBuffer2D->dwWidth,          
-            pMdfBuffer2D->dwHeight,         
-            VA_CM_FMT_V8U8,       
-            (UINT &)pMdfBuffer2D->dwPitch,  
-            (UINT &)pMdfBuffer2D->dwSize)); 
-        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateSurface2D(
-            pMdfBuffer2D->dwWidth, 
-            pMdfBuffer2D->dwHeight,
-            VA_CM_FMT_V8U8,
-            pMdfBuffer2D->pMdfSurface));
-
        // Thread info surface for intra prediction - Luma (2D uint32 per 16x16 or 8x8; scrach buffer for kernel)
        if (pMdfDecodeFrame->dwIntraPredKernelMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] <= INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16)
        {
@@ -1890,20 +1662,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Allocate(
             &pMdfDecodeBuffer->TransformType, 
             (dwAlignedWidth >> 2) * (dwAlignedHeight >> 2));
 
-        // skip flag (uint8 per 8x8; Packed in Z-order, shared Y, U & V)
-        INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
-            ctx,
-            pMdfDevice, 
-            &pMdfDecodeBuffer->SkipFlag, 
-            (dwAlignedWidth >> 3) * (dwAlignedHeight >> 3));
-
-        // segment index (uint8 per 8x8 Y or 4x4 U & V; Packed in Z-order, shared Y, U & V)
-        INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
-            ctx,
-            pMdfDevice, 
-            &pMdfDecodeBuffer->SegmentIndex, 
-            (dwAlignedWidth >> 3) * (dwAlignedHeight >> 3));
-
         // Tile Index (uint8 per 32-pixel width column + 2; shared Y, U & V)
         INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
             ctx,
@@ -1923,13 +1681,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Allocate(
             ctx,
             pMdfDevice, 
             &pMdfDecodeBuffer->PredictionMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV], 
-            (dwAlignedWidth >> 3) * (dwAlignedHeight >> 3));
-
-        // Inter/Intra flag (uint8 per 8x8; Packed in Z-order, shared Y, U & V)
-        INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
-            ctx,
-            pMdfDevice, 
-            &pMdfDecodeBuffer->InterIntraFlag, 
             (dwAlignedWidth >> 3) * (dwAlignedHeight >> 3));
 
         // Block size (uint8 per 8x8; Packed in Z-order, shared Y, U & V)
@@ -2045,12 +1796,58 @@ finish:
     return eStatus;
 }
 
+VAStatus Intel_HybridVp9Decode_MdfHost_AllocateResidue (
+    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine,
+    CmDevice                                *pMdfDevice,
+    DWORD                                   dwAlignedWidth,
+    DWORD                                   dwAlignedHeight)
+{
+    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
+    VAStatus                                 eStatus = VA_STATUS_SUCCESS;
+
+    // Residue surface - Luma (2D int16)
+    pMdfBuffer2D                    = &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
+    pMdfBuffer2D->dwWidth           = dwAlignedWidth;
+    pMdfBuffer2D->dwHeight          = dwAlignedHeight;
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->GetSurface2DInfo(
+        pMdfBuffer2D->dwWidth,
+        pMdfBuffer2D->dwHeight,
+        VA_CM_FMT_V8U8,
+        (UINT &)pMdfBuffer2D->dwPitch,
+        (UINT &)pMdfBuffer2D->dwSize));
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateSurface2D(
+        pMdfBuffer2D->dwWidth,
+        pMdfBuffer2D->dwHeight,
+        VA_CM_FMT_V8U8,
+        pMdfBuffer2D->pMdfSurface));
+
+    // Residue surface - Chroma (2D int16)
+    pMdfBuffer2D                    = &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
+    pMdfBuffer2D->dwWidth           = dwAlignedWidth;
+    pMdfBuffer2D->dwHeight          = dwAlignedHeight >> 1;
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->GetSurface2DInfo(
+        pMdfBuffer2D->dwWidth,
+        pMdfBuffer2D->dwHeight,
+        VA_CM_FMT_V8U8,
+        (UINT &)pMdfBuffer2D->dwPitch,
+        (UINT &)pMdfBuffer2D->dwSize));
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateSurface2D(
+        pMdfBuffer2D->dwWidth,
+        pMdfBuffer2D->dwHeight,
+        VA_CM_FMT_V8U8,
+        pMdfBuffer2D->pMdfSurface));
+
+finish:
+    return eStatus;
+}
+
 VAStatus Intel_HybridVp9Decode_MdfHost_Create (
     VADriverContextP ctx, 
     PINTEL_DECODE_HYBRID_VP9_STATE   pHybridVp9State)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine;
     CmDevice                                *pMdfDevice = NULL;
+    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
     unsigned int                                    i;
     VAStatus                              eStatus = VA_STATUS_SUCCESS;
     int				          cm_status; 
@@ -2059,7 +1856,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
     pMdfDecodeEngine    = &pHybridVp9State->MdfDecodeEngine;
 
     pMdfDecodeEngine->dwMdfBufferSize           = pHybridVp9State->dwMdfBufferSize;
-    pMdfDecodeEngine->pi8CombinedFilters        = pHybridVp9State->pi8CombinedFilters;
 
     pMdfDecodeEngine->dwIntraPredKernelMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y] =
 		INTEL_HYBRID_VP9_MDF_INTRAPRED_16x16;
@@ -2097,6 +1893,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
 
     if (eStatus != VA_STATUS_SUCCESS)
 	goto finish;
+
     // allocate INTEL_DECODE_HYBRID_VP9_MDF_FRAME array
     pMdfDecodeEngine->pMdfDecodeFrame = 
         (PINTEL_DECODE_HYBRID_VP9_MDF_FRAME) calloc(pMdfDecodeEngine->dwMdfBufferSize,
@@ -2107,6 +1904,10 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
     {
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateQueue(pMdfDecodeEngine->pMdfDecodeFrame[i].pMdfQueue));
     }
+
+    // Allocate and initialize combined filter coefficient buffer
+    INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(ctx, pMdfDevice, &pMdfDecodeEngine->CombinedFilters, VP9_HYBRID_DECODE_COMBINED_FILETER_SIZE);
+    Intel_HybridVp9Decode_ConstructCombinedFilters(pMdfDecodeEngine->CombinedFilters.pBuffer);
 
 finish:
     return eStatus;
@@ -2153,10 +1954,7 @@ void Intel_HybridVp9Decode_MdfHost_Release (
         INTEL_HYBRID_VP9_DESTROY_MDF_2DUP_BUFFER(pMdfDevice, &pMdfDecodeBuffer->DeblockOntheFlyThreadMask[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
         INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->ThreadInfo[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
         INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->ThreadInfo[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
-        INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->InterIntraFlag);
         INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->TransformType);
-        INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->SkipFlag);
-        INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->SegmentIndex);
         INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->TileIndex);
         INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->BlockSize);
         INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->ReferenceFrame);
@@ -2164,9 +1962,6 @@ void Intel_HybridVp9Decode_MdfHost_Release (
         INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->MotionVector);
         INTEL_HYBRID_VP9_DESTROY_MDF_2DUP_BUFFER(pMdfDevice, &pMdfDecodeBuffer->FilterLevel);
         INTEL_HYBRID_VP9_DESTROY_MDF_2DUP_BUFFER(pMdfDevice, &pMdfDecodeBuffer->Threshold);
-        // intermedia surfaces - residual
-        INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
-        INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
     }
 
     // release previous frame/motion_vector buffer
@@ -2179,11 +1974,24 @@ void Intel_HybridVp9Decode_MdfHost_Release (
     return;
 }
 
+VOID Intel_HybridVp9Decode_MdfHost_ReleaseResidue(
+    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE     pMdfDecodeEngine,
+    CmDevice                                *pMdfDevice)
+{
+    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
+
+    // intermedia surfaces - residual
+    INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
+    INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
+}
+
 void Intel_HybridVp9Decode_MdfHost_Destroy (
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame;
+    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
     CmDevice                                *pMdfDevice;
+    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE    pFrame;
     unsigned int                                    i;
 
     
@@ -2195,7 +2003,21 @@ void Intel_HybridVp9Decode_MdfHost_Destroy (
         Intel_HybridVp9Decode_MdfHost_Release(pMdfDecodeFrame, pMdfDevice, VP9_HYBRID_DECODE_ALL_FRAMES);
     }
 
+    Intel_HybridVp9Decode_MdfHost_ReleaseResidue(pMdfDecodeEngine, pMdfDevice);
+
     Intel_HybridVp9Decode_MdfHost_DestroyThreadSpaces(pMdfDecodeEngine, pMdfDevice);
+
+    INTEL_HYBRID_VP9_DESTROY_MDF_1D_BUFFER(pMdfDevice, &pMdfDecodeEngine->CombinedFilters);
+
+    for (i = 0; i < INTEL_NUM_UNCOMPRESSED_SURFACE_VP9; i++)
+    {
+        pFrame = &pMdfDecodeEngine->FrameList[i];
+        if (pFrame->Frame.pMdfSurface)
+        {
+            pMdfDecodeEngine->pMdfDevice->DestroySurface(pFrame->Frame.pMdfSurface);
+            pFrame->Frame.pMdfSurface = NULL;
+        }
+    }
 
     free(pMdfDecodeEngine->pMdfDecodeFrame);
     pMdfDecodeEngine->pMdfDecodeFrame = NULL;
@@ -2312,12 +2134,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Initialize (
             pMdfDecodeFrame->dwIntraPredKernelMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV] =
                 pMdfDecodeEngine->dwIntraPredKernelMode[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
 
-            Intel_HybridVp9Decode_MdfHost_PickDeblockKernel(pMdfDecodeEngine, pMdfDecodeFrame);
-
-            Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount(
-                pMdfDecodeEngine, pMdfDecodeFrame);
-            Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces(
-                pMdfDecodeEngine, pMdfDecodeFrame, pMdfDevice);
             Intel_HybridVp9Decode_MdfHost_Allocate(
 		pHybridVp9State,
                 pMdfDecodeFrame, pMdfDevice, VP9_HYBRID_DECODE_ALL_FRAMES);
@@ -2326,23 +2142,57 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Initialize (
             Intel_HybridVp9Decode_SetHostBuffers(pHybridVp9State, i);
         }
 
+        Intel_HybridVp9Decode_MdfHost_PickDeblockKernel(pMdfDecodeEngine, pMdfDecodeFrame);
+
+        Intel_HybridVp9Decode_MdfHost_SetKernelThreadCount(
+            pMdfDecodeEngine, pMdfDecodeFrame);
+        Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces(
+            pMdfDecodeEngine, pMdfDecodeFrame, pMdfDevice);
+
         pMdfDecodeEngine->bAllocated    = true;
-        pMdfDecodeEngine->dwPrevWidth   = dwWidth;
-        pMdfDecodeEngine->dwPrevHeight  = dwHeight;
     }
 
     sDestSurface = pHybridVp9State->sDestSurface; 
     pFrame = (PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE )sDestSurface->private_data;
 
-    // if resolution changed, we don't reuse render target since it may have been re-created.
+    pMdfDecodeEngine->bResolutionChanged =
+        ((pHybridVp9State->dwCropWidth  != pFrame->Frame.dwWidth) ||
+         (pHybridVp9State->dwCropHeight != pFrame->Frame.dwHeight));
+    pMdfDecodeEngine->bResolutionChanged &= ((pFrame->Frame.dwWidth > 0) && (pFrame->Frame.dwHeight > 0));
+
+finish:
+    return eStatus;
+}
+
+VAStatus Intel_HybridVp9Decode_MdfHost_UpdateResolution(
+    PINTEL_DECODE_HYBRID_VP9_STATE       pHybridVp9State,
+    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine,
+    struct object_surface                   *psDestSurface,
+    DWORD                                   dwCurrIndex,
+    DWORD                                   dwCropWidth,
+    DWORD                                   dwCropHeight)
+{
+    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE    pFrame;
+    VAStatus                                     eStatus = VA_STATUS_SUCCESS;
+    struct object_surface *sDestSurface;
+    VADriverContextP	ctx;
+    ctx = (VADriverContextP) (pHybridVp9State->driver_context);
+    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
+
+    struct object_surface *surface;
+    INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *pFrameSource;
+
+	surface = SURFACE(dwCurrIndex);
+	pFrame = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+
+    // if surface resolution changed, we don't reuse render target since it may have been re-created.
     if (pFrame->Frame.pMdfSurface)
     {
-        if ((pHybridVp9State->sDestSurface->width  != pFrame->dwWidth) ||
-            (pHybridVp9State->sDestSurface->height != pFrame->dwHeight))
+        if ((psDestSurface->width  != pFrame->dwWidth) ||
+            (psDestSurface->height != pFrame->dwHeight))
         {
-            pMdfDevice->DestroySurface(pFrame->Frame.pMdfSurface);
+            pMdfDecodeEngine->pMdfDevice->DestroySurface(pFrame->Frame.pMdfSurface);
             pFrame->Frame.pMdfSurface = NULL;
-            pMdfDecodeEngine->RenderTarget.pMdfSurface = NULL;
         }
     }
     
@@ -2352,42 +2202,26 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Initialize (
 	memset(&target_source, 0, sizeof(target_source));
 
 	target_source.format = VA_CM_FMT_NV12;
-	target_source.aligned_width = sDestSurface->width; 
-	target_source.pitch = sDestSurface->width; 
-	target_source.aligned_height = sDestSurface->height;
-	target_source.bo = sDestSurface->bo;
+	target_source.aligned_width = psDestSurface->width;
+	target_source.pitch = psDestSurface->width;
+	target_source.aligned_height = psDestSurface->height;
+	target_source.bo = psDestSurface->bo;
 	target_source.tile_type = I915_TILING_Y;
-	target_source.orig_width = sDestSurface->width; 
-	target_source.orig_height = sDestSurface->height;
+	target_source.orig_width = psDestSurface->width;
+	target_source.orig_height = psDestSurface->height;
         target_source.bo_flags = DRM_BO_HANDLE;
         // Create MDF surface for render target
-        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->CreateSurface2D(
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateSurface2D(
             &target_source,
             //&pHybridVp9State->sDestSurface.OsResource,
-            pMdfDecodeEngine->RenderTarget.pMdfSurface));
-        pMdfDecodeEngine->RenderTarget.pMdfSurface->SetSurfaceStateDimensions(
-            pHybridVp9State->dwWidth,
-            pHybridVp9State->dwHeight);
+            pFrame->Frame.pMdfSurface));
 
-        pFrame->Frame    = pMdfDecodeEngine->RenderTarget;
-        pFrame->dwWidth  = pHybridVp9State->sDestSurface->width;
-        pFrame->dwHeight = pHybridVp9State->sDestSurface->height;
-    }
-    else
-    {
-        pMdfDecodeEngine->RenderTarget = pFrame->Frame;
-
-        pMdfDecodeEngine->RenderTarget.pMdfSurface->SetSurfaceStateDimensions(
-            pHybridVp9State->dwWidth,
-            pHybridVp9State->dwHeight);
+        pFrame->dwWidth  = psDestSurface->width;
+        pFrame->dwHeight = psDestSurface->height;
     }
 
-    pFrame->bHasPadding    = false;
-    pFrame->Frame.dwWidth  = pHybridVp9State->dwCropWidth;
-    pFrame->Frame.dwHeight = pHybridVp9State->dwCropHeight;
-
-    pMdfDecodeEngine->dwPrevWidth  = pHybridVp9State->dwWidth;
-    pMdfDecodeEngine->dwPrevHeight = pHybridVp9State->dwHeight;
+    pFrame->Frame.dwWidth  = dwCropWidth;
+    pFrame->Frame.dwHeight = dwCropHeight;
 
 finish:
     return eStatus;
@@ -2583,7 +2417,6 @@ VOID Intel_HybridVp9Decode_MdfHost_SetScaleFactors(
     ScaleFactor[5] = (pAltRefFrame->dwHeight << VP9_HYBRID_DECODE_REF_SCALE_SHIFT) / pCurrFrame->dwHeight;
 }
 
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
 VAStatus Intel_HybridVp9Decode_MdfHost_ZeroFillThreadInfo(
     CmDevice        *pMdfDevice,
     CmKernel        *pKernel,
@@ -2614,7 +2447,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_ZeroFillThreadInfo(
 finish:
     return eStatus;
 }
-#endif
 
 VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
     VADriverContextP ctx, 
@@ -2669,7 +2501,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 
         if (i == INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y)
         {
-            pMdfBuffer->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
+            pMdfDecodeEngine->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
             pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexResiduals[i]);        
 
             if (!pMdfDecodeFrame->bLossless)
@@ -2686,7 +2518,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
             pMdfBuffer->TransformCoeff[i + 1].pMdfBuffer->GetIndex(pSurfaceIndexTransformCoeff[1]);
             pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexTransformCoeff[1]);        
 
-            pMdfBuffer->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
+            pMdfDecodeEngine->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
             pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexResiduals[i]);        
 
             if (!pMdfDecodeFrame->bLossless)
@@ -2770,10 +2602,10 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
         pMdfBuffer->CoeffStatus[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pMdfBuffer->GetIndex(pSurfaceIndexCoeffStatus[1]);
         pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexCoeffStatus[1]);
 
-        pMdfBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pMdfSurface->GetIndex(pSurfaceIndexResiduals[0]);
+        pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].pMdfSurface->GetIndex(pSurfaceIndexResiduals[0]);
         pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexResiduals[0]);
 
-        pMdfBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pMdfSurface->GetIndex(pSurfaceIndexResiduals[1]);
+        pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV].pMdfSurface->GetIndex(pSurfaceIndexResiduals[1]);
         pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexResiduals[1]);
 
 
@@ -2814,14 +2646,22 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 
         if (bScaling)
         {
+            SurfaceIndex *pSurfaceCombinedFilters = NULL;
             uint32_t ScaleFactor[6];
 
             Intel_HybridVp9Decode_MdfHost_SetScaleFactors(ctx,
                 pMdfDecodeFrame, pMdfDecodeEngine->FrameList, ScaleFactor);
             pKernel->SetKernelArg(uiArgIndex++, 6 * sizeof(UINT32), ScaleFactor);
+            pKernel->SetKernelArg(uiArgIndex++, sizeof(DWORD), &pMdfDecodeFrame->dwWidth);
+            pKernel->SetKernelArg(uiArgIndex++, sizeof(DWORD), &pMdfDecodeFrame->dwHeight);
+            pMdfDecodeEngine->CombinedFilters.pMdfBuffer->GetIndex(pSurfaceCombinedFilters);
+            pKernel->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceCombinedFilters);
         }
 
-        pKernel->SetKernelArg(uiArgIndex++, 512, pMdfDecodeEngine->pi8CombinedFilters);
+        else
+        {
+            pKernel->SetKernelArg(uiArgIndex++, VP9_HYBRID_DECODE_COMBINED_FILETER_SIZE, pMdfDecodeEngine->CombinedFilters.pu8Buffer);
+        }
 
         // Create MDF Tasks and add kernels
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateTask(pMdfDecodeEngine->pTaskInter));
@@ -2849,7 +2689,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
         pCurrFrame->pMdfSurface->GetIndex(pSurfaceIndexReconFrame);
         pMdfDecodeEngine->pKernelIntra[i]->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexReconFrame);        
 
-        pMdfBuffer->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
+        pMdfDecodeEngine->Residue[i].pMdfSurface->GetIndex(pSurfaceIndexResiduals[i]);
         pMdfDecodeEngine->pKernelIntra[i]->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexResiduals[i]);        
 
         pMdfBuffer->BlockSize.pMdfBuffer->GetIndex(pSurfaceIndexBlockSize);
@@ -2872,16 +2712,12 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
             CmEvent *pEvent = NULL;
             pMdfBuffer->ThreadInfo[i].pMdfSurface->GetIndex(pSurfaceIndexThreadInfo[i]);
 
-#if USE_KERNEL_ZERO_FILL_THREAD_INFO
             Intel_HybridVp9Decode_MdfHost_ZeroFillThreadInfo(
                 pMdfDecodeEngine->pMdfDevice, 
                 pMdfDecodeEngine->pKernelZeroFill[i], 
                 pMdfDecodeFrame->pMdfQueue, 
                 pMdfDecodeEngine->pThreadSpaceZeroFill[i],
                 pSurfaceIndexThreadInfo[i]);
-#else
-            pMdfDecodeFrame->pMdfQueue->EnqueueInitSurface2D(pMdfBuffer->ThreadInfo[i].pMdfSurface, 0, pEvent);
-#endif
 
             pMdfDecodeEngine->pKernelIntra[i]->SetKernelArg(uiArgIndex++, sizeof(SurfaceIndex), pSurfaceIndexThreadInfo[i]);        
         }
@@ -2907,46 +2743,44 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
     /////////////////// Loopfilter/Deblocking ///////////////////
     if (pMdfDecodeFrame->bNeedDeblock)
     {
+        DWORD dwRegion;
+
         for (i = INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y; i < INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER; i++)
         {
-            // Associate thread with mask
-            Intel_HybridVp9Decode_MdfHost_CalcOntheFlyMask(
-                pMdfBuffer->DeblockOntheFlyThreadMask[i].pu8Buffer,
-                &pMdfBuffer->VerticalEdgeMask[i],
-                &pMdfBuffer->HorizontalEdgeMask[i],
-                pMdfBuffer->DeblockOntheFlyThreadMask[i].dwPitch);
-            pMdfDecodeEngine->pfnAssociateDeblockThreadWithMask[i](
-                pMdfBuffer->DeblockOntheFlyThreadMask[i].pu8Buffer,
-                (pMdfDecodeFrame->dwWidthB8 + i) >> i,
-                (pMdfDecodeFrame->dwHeightB8 + i) >> i,
-                pMdfBuffer->DeblockOntheFlyThreadMask[i].dwPitch,
-                i == INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y ? 7 : 3);
 
             // set arguments
+            dwRegion = INTEL_HYBRID_VP9_MDF_DEBLOCK_LEFT_TOP;
+            pKernel  = pMdfDecodeEngine->pKernelDeblock[i][dwRegion];
+
 	    surface = SURFACE(pMdfDecodeFrame->ucCurrIndex);
 	    pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
 	    pCurrFrame = &(pFrameSource->Frame);
             pCurrFrame->pMdfSurface->GetIndex(pSurfaceIndexReconFrame);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndexReconFrame);
+            pKernel->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndexReconFrame);
 
             pMdfBuffer->FilterLevel.pMdfSurface->GetIndex(pSurfaceIndexFilterLevel);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(1, sizeof(SurfaceIndex), pSurfaceIndexFilterLevel);
+            pKernel->SetKernelArg(1, sizeof(SurfaceIndex), pSurfaceIndexFilterLevel);
 
             pMdfBuffer->VerticalEdgeMask[i].pMdfSurface->GetIndex(pSurfaceIndexVerticalEdgeMask);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(2, sizeof(SurfaceIndex), pSurfaceIndexVerticalEdgeMask);
+            pKernel->SetKernelArg(2, sizeof(SurfaceIndex), pSurfaceIndexVerticalEdgeMask);
 
             pMdfBuffer->HorizontalEdgeMask[i].pMdfSurface->GetIndex(pSurfaceIndexHorizontalEdgeMask);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(3, sizeof(SurfaceIndex), pSurfaceIndexHorizontalEdgeMask);
+            pKernel->SetKernelArg(3, sizeof(SurfaceIndex), pSurfaceIndexHorizontalEdgeMask);
 
             pMdfBuffer->Threshold.pMdfSurface->GetIndex(pSurfaceIndexThreshold);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(4, sizeof(SurfaceIndex), pSurfaceIndexThreshold);
+            pKernel->SetKernelArg(4, sizeof(SurfaceIndex), pSurfaceIndexThreshold);
 
             pMdfBuffer->DeblockOntheFlyThreadMask[i].pMdfSurface->GetIndex(pSurfaceThreadDependency);
-            pMdfDecodeEngine->pKernelDeblock[i]->SetKernelArg(5, sizeof(SurfaceIndex), pSurfaceThreadDependency);
+            pKernel->SetKernelArg(5, sizeof(SurfaceIndex), pSurfaceThreadDependency);
+
+            if (pKernel != pMdfDecodeEngine->pKernelDeblock8x8[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]) // if it's not 8x8 luma deblocking
+            {
+                pKernel->SetKernelArg(6, sizeof(DWORD), &dwRegion);
+            }
 
             // Create MDF Tasks and add kernels
             INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateTask(pMdfDecodeEngine->pTaskDeblock[i]));
-            INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pTaskDeblock[i]->AddKernel(pMdfDecodeEngine->pKernelDeblock[i]));
+            INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pTaskDeblock[i]->AddKernel(pKernel));
 
             if (((i + 1) == INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER))
 		last_task = 1;
@@ -2957,24 +2791,40 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 
             // destroy MDF tasks
             pMdfDecodeEngine->pMdfDevice->DestroyTask(pMdfDecodeEngine->pTaskDeblock[i]);
+
+            // Enqueue more deblocking tasks for blocks out of 4080x4088 bound
+            for (dwRegion = INTEL_HYBRID_VP9_MDF_DEBLOCK_RIGHT_TOP;
+                dwRegion < INTEL_HYBRID_VP9_MDF_DEBLOCK_REGIONS;
+                dwRegion++)
+            {
+                pKernel = pMdfDecodeEngine->pKernelDeblock[i][dwRegion];
+                if (pMdfDecodeEngine->pThreadSpaceDeblock[i][dwRegion])
+                {
+                    pKernel->SetKernelArg(0, sizeof(SurfaceIndex), pSurfaceIndexReconFrame);
+                    pKernel->SetKernelArg(1, sizeof(SurfaceIndex), pSurfaceIndexFilterLevel);
+                    pKernel->SetKernelArg(2, sizeof(SurfaceIndex), pSurfaceIndexVerticalEdgeMask);
+                    pKernel->SetKernelArg(3, sizeof(SurfaceIndex), pSurfaceIndexHorizontalEdgeMask);
+                    pKernel->SetKernelArg(4, sizeof(SurfaceIndex), pSurfaceIndexThreshold);
+                    pKernel->SetKernelArg(5, sizeof(SurfaceIndex), pSurfaceThreadDependency);
+                    pKernel->SetKernelArg(6, sizeof(DWORD), &dwRegion);
+
+                    // Create MDF Tasks and add kernels
+                    INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateTask(pMdfDecodeEngine->pTaskDeblock[i]));
+                    INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pTaskDeblock[i]->AddKernel(pKernel));
+
+                    // enqueue tasks
+                    INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
+                        pMdfDecodeEngine->pTaskDeblock[i],
+                        pMdfDecodeFrame->pMdfEvent));
+
+                    // destroy MDF tasks
+                    pMdfDecodeEngine->pMdfDevice->DestroyTask(pMdfDecodeEngine->pTaskDeblock[i]);
+                }
+            }
         }
     }
 
 finish:
-    return eStatus;
-}
-
-VAStatus Intel_HybridVp9Decode_MdfHost_PreDeblock (
-    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine, 
-    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame)
-{
-    PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER  pMdfBuffer;
-
-    VAStatus                              eStatus = VA_STATUS_SUCCESS;
-
-
-    pMdfBuffer = &pMdfDecodeFrame->MdfDecodeBuffer;
-
     return eStatus;
 }
 
@@ -3069,7 +2919,7 @@ int intel_hybrid_Vp9Decode_DebugDump (
     free(Buffer.pBuffer);
 
     // dump Luma residual
-    pMdfBuffer2D           = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
+    pMdfBuffer2D           = &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y];
     MdfBuffer1D.dwSize     = pMdfDecodeFrame->dwAlignedWidth * pMdfDecodeFrame->dwAlignedHeight;
     MdfBuffer1D.pu16Buffer = (PUINT16)intel_alloc_zero_aligned_memory(
 	MdfBuffer1D.dwSize * sizeof(UINT16),
@@ -3088,7 +2938,7 @@ int intel_hybrid_Vp9Decode_DebugDump (
     MdfBuffer1D.pBuffer = NULL;
 
     // dump Chroma residual
-    pMdfBuffer2D           = &pMdfDecodeBuffer->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
+    pMdfBuffer2D           = &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV];
     MdfBuffer1D.dwSize     = pMdfDecodeFrame->dwAlignedWidth * (pMdfDecodeFrame->dwAlignedHeight >> 1);
     MdfBuffer1D.pu16Buffer = (PUINT16)intel_alloc_zero_aligned_memory(
 	MdfBuffer1D.dwSize * sizeof(UINT16),
@@ -3179,27 +3029,9 @@ int intel_hybrid_Vp9Decode_DebugDump (
 	g_iCounter);
 
     intel_hybrid_Vp9Decode_WriteFileFromPtr(
-	"driver_dump\\SkipFlag_U8_Y.dat", 
-	pMdfDecodeBuffer->SkipFlag.pBuffer, 
-	pMdfDecodeBuffer->SkipFlag.dwSize, 
-	g_iCounter);
-
-    intel_hybrid_Vp9Decode_WriteFileFromPtr(
-	"driver_dump\\SegmentId_U8_Y.dat", 
-	pMdfDecodeBuffer->SegmentIndex.pBuffer, 
-	pMdfDecodeBuffer->SegmentIndex.dwSize, 
-	g_iCounter);
-
-    intel_hybrid_Vp9Decode_WriteFileFromPtr(
 	"driver_dump\\TileSliceInfo_U8.dat", 
 	pMdfDecodeBuffer->TileIndex.pBuffer, 
 	pMdfDecodeBuffer->TileIndex.dwSize, 
-	g_iCounter);
-
-    intel_hybrid_Vp9Decode_WriteFileFromPtr(
-	"driver_dump\\InterIntraFlag_U8_Y.dat", 
-	pMdfDecodeBuffer->InterIntraFlag.pBuffer, 
-	pMdfDecodeBuffer->InterIntraFlag.dwSize, 
 	g_iCounter);
 
     intel_hybrid_Vp9Decode_WriteFileFromPtr(
@@ -3332,29 +3164,6 @@ allocation_fail:
     return -ENOMEM;
 }
 
-
-VAStatus Intel_HybridVp9Decode_HostVldPreDeblockCb (
-    PVOID                               pvStandardState, 
-    UINT                                uiCurrIndex)
-{
-    PINTEL_DECODE_HYBRID_VP9_STATE       pHybridVp9State;
-    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine;
-    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame;
-    VAStatus                              eStatus = VA_STATUS_SUCCESS;
-
-
-    pHybridVp9State     = (PINTEL_DECODE_HYBRID_VP9_STATE)pvStandardState;
-
-    pMdfDecodeEngine    = &pHybridVp9State->MdfDecodeEngine;
-    pMdfDecodeFrame     = pMdfDecodeEngine->pMdfDecodeFrame + uiCurrIndex;
-
-    // Prepare Loop Filter
-    Intel_HybridVp9Decode_MdfHost_PreDeblock(
-        pMdfDecodeEngine, pMdfDecodeFrame);
-
-    return eStatus;
-}
-
 VAStatus Intel_HybridVp9Decode_HostVldRenderCb (
     void *      pvStandardState, 
     uint32_t        uiCurrIndex, 
@@ -3367,19 +3176,24 @@ VAStatus Intel_HybridVp9Decode_HostVldRenderCb (
     CmDevice                                *pMdfDevice;
     VAStatus                              eStatus = VA_STATUS_SUCCESS;
 
+    MEDIA_DRV_CONTEXT *drv_ctx;
+    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER pCurrFrame;
+    struct object_surface                *surface;
+    INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *pFrameSource;
+
     pHybridVp9State     = (PINTEL_DECODE_HYBRID_VP9_STATE)pvStandardState;
 
     ctx = (VADriverContextP) (pHybridVp9State->driver_context);
+    drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
 
     pMdfDecodeEngine    = &pHybridVp9State->MdfDecodeEngine;
     pMdfDecodeFrame     = pMdfDecodeEngine->pMdfDecodeFrame + uiCurrIndex;
     pMdfPreviousFrame   = pMdfDecodeEngine->pMdfDecodeFrame + uiPrevIndex;
     pMdfDevice          = pMdfDecodeEngine->pMdfDevice;
 
-
     // Swap to get previous frame motion vector buffer, reference frame index buffer and segment ID buffer
     // Previous frame must be displayable
-    if ((!pMdfDecodeFrame->bIntraOnly) && (pMdfPreviousFrame->bShowFrame))
+    if (pMdfDecodeFrame->bUseCollocatedMV)
     {
         PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER      pMdfDecodeBuffer, pMdfPreviousBuffer;
         INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER    sTempBuffer;
@@ -3407,6 +3221,24 @@ VAStatus Intel_HybridVp9Decode_HostVldRenderCb (
         Intel_HybridVp9Decode_MdfHost_DestroyThreadSpaces(pMdfDecodeEngine, pMdfDevice);
         Intel_HybridVp9Decode_MdfHost_CreateThreadSpaces(pMdfDecodeEngine, pMdfDecodeFrame, pMdfDevice);
     }
+
+    // Reallocate residual buffers if they are not big enough
+    if ((pMdfDecodeFrame->dwAlignedWidth  > pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwWidth) ||
+        (pMdfDecodeFrame->dwAlignedHeight > pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y].dwHeight))
+    {
+        Intel_HybridVp9Decode_MdfHost_ReleaseResidue(pMdfDecodeEngine, pMdfDevice);
+        Intel_HybridVp9Decode_MdfHost_AllocateResidue(
+            pMdfDecodeEngine, pMdfDevice, pMdfDecodeFrame->dwAlignedWidth, pMdfDecodeFrame->dwAlignedHeight);
+    }
+
+    // Reset padding flag of current frame and update surface dimension
+    surface = SURFACE(pMdfDecodeFrame->ucCurrIndex);
+    pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+    pCurrFrame = &(pFrameSource->Frame);
+    pFrameSource->bHasPadding = false;
+    pCurrFrame->pMdfSurface->SetSurfaceStateDimensions(
+        pMdfDecodeFrame->dwWidth,
+        pMdfDecodeFrame->dwHeight);
 
     if (g_intel_debug_option_flags & VA_INTEL_HYBRID_PRE_DUMP)
     {
@@ -3472,6 +3304,8 @@ VAStatus Intel_HybridVp9Decode_HostVldSyncResourceCb (
     pMdfDecodeFrame->dwInterpolationFilterType      = pVp9PicParams->PicFlags.fields.mcomp_filter_type;
     pMdfDecodeFrame->uiStatusReportFeedbackNumber   = pVp9PicParams->StatusReportFeedbackNumber;
 
+    pMdfDecodeFrame->bPrevShowFrame     = pMdfPreviousFrame->bShowFrame;
+
     if ((pMdfDecodeFrame->dwWidth  != dwWidth) ||
         (pMdfDecodeFrame->dwHeight != dwHeight))
     {
@@ -3531,8 +3365,13 @@ VAStatus Intel_HybridVp9Decode_HostVldSyncResourceCb (
         ((pMdfDecodeFrame->dwWidth != pMdfPreviousFrame->dwWidth) ||
         (pMdfDecodeFrame->dwHeight != pMdfPreviousFrame->dwHeight));
 
+    pMdfDecodeFrame->bUseCollocatedMV = !pMdfDecodeFrame->bResolutionChange &&
+                                          pMdfDecodeFrame->bPrevShowFrame   &&
+                                          !pMdfDecodeFrame->bIntraOnly      &&
+                                          !pVp9PicParams->PicFlags.fields.error_resilient_mode;
+
     // Swap to get previous frame motion vector buffer and reference frame index buffer
-    if ((!pMdfDecodeFrame->bIntraOnly) && (pMdfPreviousFrame->bShowFrame))
+    if ((pMdfDecodeFrame->bUseCollocatedMV))
     {
         PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER  pMdfDecodeBuffer, pMdfPreviousBuffer;
 
@@ -3568,15 +3407,8 @@ VAStatus Intel_HybridVp9Decode_AllocateResources (
     INTEL_HOSTVLD_VP9_CALLBACKS  HostVldCallbacks;
     VAStatus                      eStatus = VA_STATUS_SUCCESS;
 
-
-    // Allocate buffer for combined 3x8-tap filter coefficients (each filter is 16x8 bytes).
-    pHybridVp9State->pi8CombinedFilters = (int8_t *)memalign(INTEL_HYBRID_VP9_PAGE_SIZE, 1024);
-    memset(pHybridVp9State->pi8CombinedFilters, 0, 1024);
-    
-
     // Create HostVLD
     HostVldCallbacks.pvStandardState        = pHybridVp9State;
-    HostVldCallbacks.pfnHostVldDeblockCb    = Intel_HybridVp9Decode_HostVldPreDeblockCb;
     HostVldCallbacks.pfnHostVldRenderCb     = Intel_HybridVp9Decode_HostVldRenderCb;
     HostVldCallbacks.pfnHostVldSyncCb       = Intel_HybridVp9Decode_HostVldSyncResourceCb;
 
@@ -3609,8 +3441,6 @@ VAStatus Intel_HybridVp9Decode_AllocateResources (
         pHybridVp9State->hHostVld, 
         pHybridVp9State->pHostVldOutputBuf);
 
-     return eStatus;
-
 error_status:
     return eStatus;
 }
@@ -3631,16 +3461,23 @@ void Intel_HybridVp9Decode_Destroy(
         pHybridVp9State->hHostVld = NULL;
     }
 
+    free(pHybridVp9State->pHostVldOutputBuf);
+    pHybridVp9State->pHostVldOutputBuf = NULL;
+
     // destroy MDFHost
     Intel_HybridVp9Decode_MdfHost_Destroy(&pHybridVp9State->MdfDecodeEngine);
 
-    // destroy combined filter buffer
-    free(pHybridVp9State->pi8CombinedFilters);
-
     if (pHybridVp9State->pHostVldOutputBuf)
+    {
     	free(pHybridVp9State->pHostVldOutputBuf);
+        pHybridVp9State->pHostVldOutputBuf = NULL;
+    }
+
+    free(pHybridVp9State->pCopyDataBuffer);
+    pHybridVp9State->pCopyDataBuffer = NULL;
 
     free(hw_context);
+    hw_context = NULL;
     
     return;
 }
@@ -3706,6 +3543,8 @@ VAStatus Intel_HybridVp9_DecodeInitialize(
     pVp9SegmentParams   = (PINTEL_VP9_SEGMENT_PARAMS)&vp9_context->vp9_matrixbuffer;
 
     pHybridVp9State->sDestSurface       = vp9_context->sDestSurface;
+    pHybridVp9State->pVp9PicParams      = pVp9PicParams;
+    pHybridVp9State->dwDataSize         = 0;
     pHybridVp9State->dwCropWidth        = pVp9PicParams->FrameWidthMinus1 + 1;
     pHybridVp9State->dwCropHeight       = pVp9PicParams->FrameHeightMinus1 + 1;
     pHybridVp9State->dwWidth            = ALIGN(pHybridVp9State->dwCropWidth, INTEL_HYBRID_VP9_B8_SIZE);  // 8 aligned width
@@ -3722,6 +3561,7 @@ VAStatus Intel_HybridVp9_DecodeInitialize(
     pHostVldVideoBuffer->pVp9SegmentData    = pVp9SegmentParams;
     pHostVldVideoBuffer->dwBitsSize         = 0;
     pHostVldVideoBuffer->pRenderTarget      = pHybridVp9State->sDestSurface;
+    pHostVldVideoBuffer->bResolutionChanged = pHybridVp9State->MdfDecodeEngine.bResolutionChanged;
 
     slice_data_bo = decode_state->slice_datas[0]->bo;
 
@@ -3736,6 +3576,13 @@ VAStatus Intel_HybridVp9_DecodeInitialize(
         pHybridVp9State->hHostVld, 
         pHostVldVideoBuffer);
 
+    Intel_HybridVp9Decode_MdfHost_UpdateResolution(
+        pHybridVp9State,
+        &pHybridVp9State->MdfDecodeEngine,
+        pHybridVp9State->sDestSurface,
+        pHybridVp9State->ucCurrIndex,
+        pHybridVp9State->dwCropWidth,
+        pHybridVp9State->dwCropHeight);
 
     return eStatus;
 }
@@ -3996,8 +3843,6 @@ VAStatus Intel_HybridVp9Decode_Initialize(
 
     pHybridVp9State->dwThreadNumber = 1;
     eStatus = Intel_HybridVp9Decode_AllocateResources(ctx, pHybridVp9State);
-
-    Intel_HybridVp9Decode_ConstructCombinedFilters(pHybridVp9State);
 
     return eStatus;
 }

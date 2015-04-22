@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright © 2014 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -670,26 +670,6 @@ finish:
     return eStatus;
 }
 
-/******************************************************************/
-/*********************** PUBLIC FUNCTIONS *************************/
-/******************************************************************/
-
-VAStatus Intel_HostvldVp9_GetCurrFrameContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo)
-{
-    VAStatus  eStatus     = VA_STATUS_SUCCESS;
-
-
-    memcpy(
-        &pContext->CurrContext, 
-        &pContext->ContextTable[pFrameInfo->uiFrameContextIndex], 
-        sizeof(pContext->ContextTable[pFrameInfo->uiFrameContextIndex]));
-
-finish:
-    return eStatus;
-}
-
 VAStatus Intel_HostvldVp9_InitializeProbabilities(
     PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext)
 {
@@ -782,11 +762,45 @@ finish:
     return eStatus;
 }
 
+/******************************************************************/
+/*********************** PUBLIC FUNCTIONS *************************/
+/******************************************************************/
+
+VAStatus Intel_HostvldVp9_GetCurrFrameContext(
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo)
+{
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext;
+    VAStatus  eStatus     = VA_STATUS_SUCCESS;
+
+    if (pFrameInfo->uiFrameContextIndex >= 4)
+    {
+        eStatus = VA_STATUS_ERROR_INVALID_PARAMETER;
+        goto finish;
+    }
+    memcpy(
+        pFrameInfo->pContext,
+        pCtxTable + pFrameInfo->uiFrameContextIndex,
+        sizeof(*(pCtxTable + pFrameInfo->uiFrameContextIndex)));
+
+    //reset TxProbTables pointers.
+    pContext                                        = pFrameInfo->pContext;
+    pContext->TxProbTables[TX_8X8].pui8ProbTable    = &pContext->TxProbTableSet.Tx_8X8[0][0];
+    pContext->TxProbTables[TX_8X8].uiStride         = TX_8X8;
+    pContext->TxProbTables[TX_16X16].pui8ProbTable  = &pContext->TxProbTableSet.Tx_16X16[0][0];
+    pContext->TxProbTables[TX_16X16].uiStride       = TX_16X16;
+    pContext->TxProbTables[TX_32X32].pui8ProbTable  = &pContext->TxProbTableSet.Tx_32X32[0][0];
+    pContext->TxProbTables[TX_32X32].uiStride       = TX_32X32;
+
+finish:
+    return eStatus;
+}
 
 VAStatus Intel_HostvldVp9_ResetContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo)
 {
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext;
     BOOL       bResetAll, bResetSpecified;
     VAStatus eStatus = VA_STATUS_SUCCESS;
 
@@ -799,30 +813,64 @@ VAStatus Intel_HostvldVp9_ResetContext(
     bResetSpecified = (pFrameInfo->uiResetFrameContext == 2);
 
     pFrameInfo->bResetContext = (bResetAll || bResetSpecified);
-	pFrameInfo->uiFrameContextIndex = 0; 
 
-    if (pFrameInfo->bResetContext)
+    if (bResetAll)
     {
             Intel_HostvldVp9_InitializeProbabilities(
-            &pContext->CurrContext);
-
-        if (bResetAll)
+            pFrameInfo->pContext);
+        //all 4 context tables updating will be done in postparser thread
+    }
+    else if (bResetSpecified)
+    {
+        if (pFrameInfo->uiFrameContextIndex >= 4)
         {
-            INT i;
-            for (i = 0; i < 4; i++)
-            {
-                memcpy(
-                    pContext->ContextTable + i,
-                    &pContext->CurrContext,
-                    sizeof(pContext->CurrContext));
-            }
+            eStatus = VA_STATUS_ERROR_INVALID_PARAMETER;
+            goto finish;
         }
-        else if (bResetSpecified)
+            Intel_HostvldVp9_InitializeProbabilities(
+            pCtxTable + pFrameInfo->uiFrameContextIndex);
+
+        memcpy(
+            pFrameInfo->pContext,
+            pCtxTable,
+            sizeof(*pCtxTable));
+    }
+
+    //reset TxProbTables pointers.
+    pContext                                        = pFrameInfo->pContext;
+    pContext->TxProbTables[TX_8X8].pui8ProbTable    = &pContext->TxProbTableSet.Tx_8X8[0][0];
+    pContext->TxProbTables[TX_8X8].uiStride         = TX_8X8;
+    pContext->TxProbTables[TX_16X16].pui8ProbTable  = &pContext->TxProbTableSet.Tx_16X16[0][0];
+    pContext->TxProbTables[TX_16X16].uiStride       = TX_16X16;
+    pContext->TxProbTables[TX_32X32].pui8ProbTable  = &pContext->TxProbTableSet.Tx_32X32[0][0];
+    pContext->TxProbTables[TX_32X32].uiStride       = TX_32X32;
+
+    pFrameInfo->uiFrameContextIndex = 0;
+
+finish:
+    return eStatus;
+}
+
+VAStatus Intel_HostvldVp9_UpdateContextTables(
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo)
+{
+    VAStatus eStatus = VA_STATUS_SUCCESS;
+
+    if (pFrameInfo->bIsKeyFrame ||
+         pFrameInfo->bErrorResilientMode ||
+         (pFrameInfo->uiResetFrameContext == 3))
+    {
+        INT i;
+            Intel_HostvldVp9_InitializeProbabilities(
+            pCtxTable);
+
+        for (i = 1; i < 4; i++)
         {
             memcpy(
-                pContext->ContextTable + pFrameInfo->uiFrameContextIndex,
-                &pContext->CurrContext,
-                sizeof(pContext->CurrContext));
+                pCtxTable + i,
+                pCtxTable,
+                sizeof(*pCtxTable));
         }
     }
 
@@ -1129,17 +1177,17 @@ finish:
 }
 
 VAStatus Intel_HostvldVp9_AdaptProbabilities(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo)
+    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState)
 {
+    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo;
     PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pCurrContext, pPrevContext;
     PINTEL_HOSTVLD_VP9_COUNT         pCount;
     VAStatus                  eStatus     = VA_STATUS_SUCCESS;
 
-
-    pCurrContext    = &pContext->CurrContext;
-    pPrevContext    = &pContext->ContextTable[pFrameInfo->uiFrameContextIndex];
-    pCount          = pContext->pCurrCount;
+    pFrameInfo      = &pFrameState->FrameInfo;
+    pCurrContext    = pFrameInfo->pContext;
+    pPrevContext    = &(pFrameState->pVp9HostVld->ContextTable[pFrameInfo->uiFrameContextIndex]);
+    pCount          = &pFrameState->pTileStateBase->Count;
 
     if (!pFrameInfo->bErrorResilientMode && pFrameInfo->bFrameParallelDisabled)
     {
@@ -1160,18 +1208,23 @@ finish:
 }
 
 VAStatus Intel_HostvldVp9_RefreshFrameContext(
-    PINTEL_HOSTVLD_VP9_CONTEXT       pContext, 
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo)
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT  pCtxTable,
+    PINTEL_HOSTVLD_VP9_FRAME_INFO     pFrameInfo)
 {
     VAStatus                  eStatus     = VA_STATUS_SUCCESS;
 
 
     if (pFrameInfo->pPicParams->PicFlags.fields.refresh_frame_context)
     {
+        if (pFrameInfo->uiFrameContextIndex >= 4)
+        {
+            eStatus = VA_STATUS_ERROR_INVALID_PARAMETER;
+            goto finish;
+        }
         memcpy(
-            &pContext->ContextTable[pFrameInfo->uiFrameContextIndex], 
+            pCtxTable + pFrameInfo->uiFrameContextIndex,
             pFrameInfo->pContext, 
-            sizeof(pContext->ContextTable[pFrameInfo->uiFrameContextIndex])); 
+            sizeof(*pFrameInfo->pContext));
     }
 
 finish:

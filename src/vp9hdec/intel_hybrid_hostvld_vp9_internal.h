@@ -140,6 +140,10 @@
 
 #define VP9_MAX_LOOP_FILTER         63
 
+// bit offset of flags
+#define VP9_SKIP_FLAG               0
+#define VP9_IS_INTER_FLAG           1
+
 #define VP9_TKN_TREE_SZ(NUM_LEAFS) (2 * (NUM_LEAFS) - 1)
 
 #define INTEL_HOSTVLD_VP9_READ_BIT(Prob)    Intel_HostvldVp9_BacEngineReadBit(pBacEngine, Prob)
@@ -520,9 +524,87 @@ typedef struct _INTEL_HOSTVLD_VP9_LOOP_FILTER_MASK
   UINT16    LeftUv[TX_SIZES];
   UINT16    AboveUv[TX_SIZES];
   UINT16    Int4x4Uv;
-  UINT8     LfLevelY[64];
-  UINT8     LfLevelUv[16];
 } INTEL_HOSTVLD_VP9_LOOP_FILTER_MASK, *PINTEL_HOSTVLD_VP9_LOOP_FILTER_MASK;
+
+typedef struct _INTEL_HOSTVLD_VP9_MODE_INFO
+{
+    union
+    {
+        struct
+        {
+            UINT8 ui8BlockSize;
+            UINT8 ui8SegId;
+            UINT8 ui8TxSizeChroma;
+            UINT8 ui8PredModeChroma;
+        };
+        struct
+        {
+            DWORD dwValue;
+        };
+    } DW0;
+
+    union
+    {
+        struct
+        {
+            UINT8 ui8Flags;         // bit 0: NOT skipped; bit 1: is inter
+            UINT8 ui8FilterLevel;   // loop filter level
+            UINT8 ui8TxSizeLuma;
+            UINT8 ui8FilterType;
+        };
+        struct
+        {
+            DWORD dwValue;
+        };
+    } DW1;
+
+    // DW2
+    union
+    {
+        UINT8 PredModeLuma[2][2];
+        DWORD dwPredModeLuma;
+    };
+
+    // DW3
+    union
+    {
+        UINT8 TxTypeLuma[2][2];
+        DWORD dwTxTypeLuma;
+    };
+} INTEL_HOSTVLD_VP9_MODE_INFO, *PINTEL_HOSTVLD_VP9_MODE_INFO;
+
+typedef struct _INTEL_HOSTVLD_VP9_NEIGHBOR
+{
+    union
+    {
+        struct
+        {
+            UINT8 ui8SkipFlag;
+            UINT8 ui8IsInter;
+            UINT8 ui8TxSizeLuma;
+            UINT8 ui8FilterType;
+        };
+        struct
+        {
+            DWORD dwValue;
+        };
+    } DW0;
+
+    union
+    {
+        struct
+        {
+            UINT8 ui8PartitionCtx;
+            UINT8 ui8SegPredFlag;
+            UINT8 ui8Reserved1;
+            UINT8 ui8Reserved2;
+        };
+        struct
+        {
+            DWORD dwValue;
+        };
+    } DW1;
+} INTEL_HOSTVLD_VP9_NEIGHBOR, *PINTEL_HOSTVLD_VP9_NEIGHBOR;
 
 typedef struct _INTEL_HOSTVLD_VP9_TILE_INFO
 {
@@ -531,43 +613,39 @@ typedef struct _INTEL_HOSTVLD_VP9_TILE_INFO
     DWORD                           dwTileTop;        // tile top index in 8x8 block
     DWORD                           dwTileLeft;       // tile left index in 8x8 block
     INTEL_HOSTVLD_VP9_1D_BUFFER  BitsBuffer;
-
-    // Segment context for partition decode
-    UINT8                           SegContextLeft[8];
-
-    // Context for predicted segment id
-    UINT8                           PredSegIdContextLeft[8];
-
-    // Entropy context for coeff decode
-    UINT8                           pEntropyContextLeft[VP9_CODED_YUV_PLANES][16];
-    UINT8                           TokenCache[VP9_TOKEN_CACHE_SIZE];
 } INTEL_HOSTVLD_VP9_TILE_INFO, *PINTEL_HOSTVLD_VP9_TILE_INFO;
 
 // MB level info
 typedef struct _INTEL_HOSTVLD_VP9_MB_INFO
 {
-    INTEL_HOSTVLD_VP9_BLOCK_SIZE BlockSize; // MB block type
-
     // 8x8 token
-    PUINT8  pSegmentId;
     PUINT8  pLastSegmentId;
-    PUINT8  pSkipCoeff;
-    PUINT8  pIsInter;
-    PUINT8  pBlockSize;
-    PUINT8  pTxSizeLuma;
-    PUINT8  pTxSizeChroma;
-    PUINT8  pPredModeChroma;
     PUINT16 pReferenceFrame;
-    PUINT8  pFilterType;
     PUINT16 pPrevRefFrame;
-    PUINT32 pQPLuma;
-    PUINT32 pQPChroma;
 
     // 4x4 token
-    PUINT8                   pTxTypeLuma;
-    PUINT8                   pPredModeLuma;
     PINTEL_HOSTVLD_VP9_MV pMotionVector; // 2 MVs per 4x4 block
     PINTEL_HOSTVLD_VP9_MV pPrevMv;       // 2 MVs per 4x4 block
+
+    // context related
+    INTEL_HOSTVLD_VP9_NEIGHBOR   ContextLeft[VP9_B64_SIZE_IN_B8];    // Left context; above context is defined in FRAME_INFO structure
+    PINTEL_HOSTVLD_VP9_NEIGHBOR  pContextLeft;                       // Point to left context of current block
+    PINTEL_HOSTVLD_VP9_NEIGHBOR  pContextAbove;                      // Point to above context of current block
+    // Entropy context for coeff decode
+    UINT8                           EntropyContextLeft[VP9_CODED_YUV_PLANES][16];
+    UINT8                           TokenCache[VP9_TOKEN_CACHE_SIZE];
+
+    // Mode info cache for 64x64 super block
+    PINTEL_HOSTVLD_VP9_MODE_INFO pModeInfoCache;
+    INT8                            RefFrameIndexCache[VP9_B64_SIZE_IN_B8 * VP9_B64_SIZE_IN_B8 * 2];
+    INTEL_HOSTVLD_VP9_MV         MvCache[VP9_B64_SIZE_IN_B4 * VP9_B64_SIZE_IN_B4 * 2];
+
+    PINTEL_HOSTVLD_VP9_MODE_INFO pMode;
+    PINTEL_HOSTVLD_VP9_MODE_INFO pModeLeft;
+    PINTEL_HOSTVLD_VP9_MODE_INFO pModeAbove;
+    PINT8                           pRefFrameIndex;
+    PINTEL_HOSTVLD_VP9_MV        pMv;
+    DWORD                           dwOffsetInB64;  // offset of current block in 64x64 super block in scan order. in unit of 8x8 block.
 
     PINTEL_HOSTVLD_VP9_TILE_INFO   pCurrTile;
 
@@ -587,36 +665,36 @@ typedef struct _INTEL_HOSTVLD_VP9_MB_INFO
     INT iMbPosInB64Y;
 
     INT  iB4Number;
-    INT8 i8ZOrder;
     INT  iLCtxOffset;
     INT  iACtxOffset;
+    INT8 i8ZOrder;
+    INT8 i8SegReference;
+    UINT8 ui8PartitionCtxLeft;
+    UINT8 ui8PartitionCtxAbove;
     BOOL bAboveValid;
     BOOL bLeftValid;
-    BOOL bRightValid;
     BOOL bSegRefSkip;
     BOOL bSegRefEnabled;
-    INT8 i8SegReference;
-    BOOL bIsSkipped;
-    BOOL bIsInter;
 
-    INT8 ReferenceFrame[2];
-    
-    INTEL_HOSTVLD_VP9_MB_PRED_MODE ePredMode;
-    INTEL_HOSTVLD_VP9_MB_PRED_MODE ePredModeChroma;
-
-    INTEL_HOSTVLD_VP9_MV Mv[2];
     INTEL_HOSTVLD_VP9_MV BestMv[2];
     INTEL_HOSTVLD_VP9_MV NearestMv[2];
     INTEL_HOSTVLD_VP9_MV NearMv[2];
-
-    INTEL_HOSTVLD_VP9_INTERPOLATION_TYPE eInterpolationType;
 
     // Entropy context for Above and Left
     PUINT8 pAboveContext[VP9_CODED_YUV_PLANES]; // TOCHECK: when and how to initialize these entropy contexts?
     PUINT8 pLeftContext[VP9_CODED_YUV_PLANES];
 
     // Loop filter
-    PINTEL_HOSTVLD_VP9_LOOP_FILTER_MASK pLoopFilterMaskSB;
+    INTEL_HOSTVLD_VP9_LOOP_FILTER_MASK LoopFilterMaskSB;
+    PDWORD  pdwBlockSize;
+    PDWORD  pdwTxSizeLuma;
+    PDWORD  pdwTxSizeChroma;
+    PDWORD  pdwFilterType;
+    PDWORD  pdwPredModeChroma;
+    PDWORD  pdwQPLuma;
+    PDWORD  pdwQPChroma;
+    PDWORD  pdwPredModeLuma;
+    PDWORD  pdwTxTypeLuma;
 } INTEL_HOSTVLD_VP9_MB_INFO, *PINTEL_HOSTVLD_VP9_MB_INFO;
 
 // Frame level info
@@ -662,7 +740,7 @@ typedef struct _INTEL_HOSTVLD_VP9_FRAME_INFO
     BOOL  bResetContext;
     UINT  uiFrameContextIndex;
     UINT  uiResetFrameContext;
-    UINT32 SegQP[VP9_MAX_SEGMENTS][INTEL_HOSTVLD_VP9_YUV_PLANE_NUMBER];
+    UINT32 SegQP[INTEL_HOSTVLD_VP9_YUV_PLANE_NUMBER][VP9_MAX_SEGMENTS];
 
     INTEL_HOSTVLD_VP9_TX_MODE     TxMode;
     INTEL_HOSTVLD_VP9_FRAME_TYPE  LastFrameType;
@@ -670,17 +748,13 @@ typedef struct _INTEL_HOSTVLD_VP9_FRAME_INFO
     PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext;
 	INTEL_HOSTVLD_VP9_TILE_INFO      TileInfo[VP9_MAX_TILES];
 
-	// Number of elements for above context in 8x8 blocks
-	DWORD dwNumAboveCtx;
+    INTEL_HOSTVLD_VP9_1D_BUFFER      ModeInfo;
 
-    // Segment context for partition decode
-    PUINT8 pSegContextAbove;
-
-    // Context for predicted segment id
-    PUINT8 pPredSegIdContextAbove;
-
-    // Entropy context for coeff decode
-    PUINT8 pEntropyContextAbove[VP9_CODED_YUV_PLANES];
+	// Above context related
+	DWORD  dwNumAboveCtx;           // Number of elements for above context in 8x8 blocks
+    PINTEL_HOSTVLD_VP9_NEIGHBOR  pContextAbove;         // Above context; left context is defined in MB_INFO structure
+    INTEL_HOSTVLD_VP9_1D_BUFFER  EntropyContextAbove;
+    PUINT8 pEntropyContextAbove[VP9_CODED_YUV_PLANES]; // Entropy context for coeff decode
 
     // Inter
     BOOL    bIsSwitchableInterpolation;
@@ -724,6 +798,10 @@ typedef struct _INTEL_HOSTVLD_VP9_TASK_USERDATA
     
     DWORD                               dwCurrIndex;
     DWORD                               dwPrevIndex;
+
+    INTEL_HOSTVLD_VP9_FRAME_TYPE     LastFrameType;
+    PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pCurrContext;
+    PINTEL_HOSTVLD_VP9_1D_BUFFER     pLastSegIdBuf;
 } INTEL_HOSTVLD_VP9_TASK_USERDATA, *PINTEL_HOSTVLD_VP9_TASK_USERDATA;
 
 struct _INTEL_HOSTVLD_VP9_TILE_STATE
@@ -733,8 +811,6 @@ struct _INTEL_HOSTVLD_VP9_TILE_STATE
     INTEL_HOSTVLD_VP9_MB_INFO        MbInfo;
     INTEL_HOSTVLD_VP9_COUNT          Count;
     DWORD                               dwCurrColIndex;
-    DWORD                               dwTileStateNumber;
-    DWORD                               dwTileColumns;
 };
 
 struct _INTEL_HOSTVLD_VP9_FRAME_STATE
@@ -755,7 +831,14 @@ struct _INTEL_HOSTVLD_VP9_FRAME_STATE
     DWORD                               dwPrevIndex;
 
     DWORD                               dwLastTaskID;
+    INTEL_HOSTVLD_VP9_FRAME_TYPE        LastFrameType;
 };
+
+typedef struct _INTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER
+{
+    INTEL_HOSTVLD_VP9_1D_BUFFER      LastSegId;
+    INTEL_HOSTVLD_VP9_FRAME_CONTEXT  CurrContext;
+}INTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER, *PINTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER;
 
 // Hostvld state
 struct _INTEL_HOSTVLD_VP9_STATE
@@ -771,13 +854,12 @@ struct _INTEL_HOSTVLD_VP9_STATE
     DWORD                               dwDDIBufNumber;
     DWORD                               dwCurrDDIBufIndex;
     DWORD                               dwPrevDDIBufIndex;
-    INTEL_HOSTVLD_VP9_CONTEXT        Context;
+    INTEL_HOSTVLD_VP9_FRAME_CONTEXT  ContextTable[4];
 
     INTEL_HOSTVLD_VP9_FRAME_TYPE     LastFrameType;
     DWORD                               dwCurrIndex;
     DWORD                               dwTaskUserDataIndex;
 
-    PFNINTEL_HOSTVLD_VP9_DEBLOCKCB   pfnDeblockCb;
     PFNINTEL_HOSTVLD_VP9_RENDERCB    pfnRenderCb;
     PFNINTEL_HOSTVLD_VP9_SYNCCB      pfnSyncCb;
 
@@ -791,9 +873,14 @@ struct _INTEL_HOSTVLD_VP9_STATE
     DWORD                               dwPendingTaskNum;
     BOOL                                bIsDestroyCall;
     PMOS_SEMAPHORE                      *ppEnqueueSem;
+    PMOS_SEMAPHORE                      *ppUnrefedSem;
     PMOS_MUTEX                          *ppResourceMutex;
+    PMOS_MUTEX                          pMutexRefCount;
 
-    INTEL_HOSTVLD_VP9_1D_BUFFER      LastSegmentIndex;   // For segment id prediction for inter frame
+    PINTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER  pEarlyDecBufferBase;      //memory base for buffers used for early decoding
+    UINT8                                   ui8BufNumEarlyDec;        //number of buffer set for early decoding
+    PUINT                                   pLastParserTaskID;        //parser task id of the last frame using same early dec buffer
+    UINT8                                   ui8BufIdxEarlyDec;        //buffer index to pEarlyDecBufferBase
 
     PVOID pvStandardState;
 
