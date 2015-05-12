@@ -2541,6 +2541,12 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateTask(pMdfDecodeEngine->pTaskIqIt[i]));
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pTaskIqIt[i]->AddKernel(pKernel));
 
+        /* Enqueue will reset pCmNoEvent to NULL. Set to CM_NO_EVENT here in each Enqueue iteration,
+         * otherwise new CmEvent will be allocated for each iteration leading to large number of
+         * CmEvent references in the global CmQueue, which causes mem leak and performance slow down.
+         */
+        pCmNoEvent = CM_NO_EVENT;
+
         // enqueue tasks
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
             pMdfDecodeEngine->pTaskIqIt[i],
@@ -2667,6 +2673,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateTask(pMdfDecodeEngine->pTaskInter));
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pTaskInter->AddKernel(pKernel));
 
+        // Enqueue will reset pCmNoEvent to NULL. Set to CM_NO_EVENT here in each Enqueue iteration.
+        pCmNoEvent = CM_NO_EVENT;
+
         // enqueue tasks
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
             pMdfDecodeEngine->pTaskInter,
@@ -2732,6 +2741,10 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
         // enqueue tasks
         if (((i + 1) == INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER) && !pMdfDecodeFrame->bNeedDeblock)
             last_task = 1;
+
+        // Enqueue will reset pCmNoEvent to NULL. Set to CM_NO_EVENT here in each Enqueue iteration.
+        pCmNoEvent = CM_NO_EVENT;
+
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
             pMdfDecodeEngine->pTaskIntra[i],
             (last_task ? pMdfDecodeFrame->pMdfEvent : pCmNoEvent)));
@@ -2784,6 +2797,10 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 
             if (((i + 1) == INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER))
 		last_task = 1;
+
+            // Enqueue will reset pCmNoEvent to NULL. Set to CM_NO_EVENT here in each Enqueue iteration.
+            pCmNoEvent = CM_NO_EVENT;
+
             // enqueue tasks
             INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeFrame->pMdfQueue->Enqueue(
                 pMdfDecodeEngine->pTaskDeblock[i],
