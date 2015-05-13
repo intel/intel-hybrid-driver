@@ -489,6 +489,16 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_2DUP_BUFFER_UINT8(
 
         drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
+
+    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
+     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
+     * Because drm:i915 "i915_gem_fault", the page fault handler for GTT map pages,
+     * checks it as incoherent for accessing snoopable pages through the GTT on GPU without LLC.
+     */
+    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
+        drm_intel_bo_disable_reuse(pMdfBuffer2D->bo);
+    }
+
     memset(&target_resource, 0, sizeof(target_resource));
 
     GetCmOsResourceFor2DBuffer(&target_resource, pMdfBuffer2D, pMdfBuffer2D->bo, VA_CM_FMT_A8);
@@ -560,6 +570,14 @@ VAStatus INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
 
         drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
+
+    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
+     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
+     */
+    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
+        drm_intel_bo_disable_reuse(pMdfBuffer1D->bo);
+    }
+
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu8Buffer = NULL;
@@ -611,6 +629,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
 
         drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
+
+    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
+     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
+     */
+    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
+        drm_intel_bo_disable_reuse(pMdfBuffer1D->bo);
+    }
+
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu16Buffer = NULL;
@@ -665,6 +691,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
 
         drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
+
+    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
+     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
+     */
+    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
+        drm_intel_bo_disable_reuse(pMdfBuffer1D->bo);
+    }
+
     pMdfBuffer1D->bo_mapped = 0;
 
     
@@ -718,6 +752,14 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
 
         drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
     }
+
+    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
+     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
+     */
+    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
+        drm_intel_bo_disable_reuse(pMdfBuffer1D->bo);
+    }
+
     pMdfBuffer1D->bo_mapped = 0;
     
     pMdfBuffer1D->pu64Buffer = NULL;
