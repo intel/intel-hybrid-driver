@@ -513,6 +513,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_2DUP_BUFFER_UINT8(
 	goto allocation_fail;
     }
     dri_bo_map(pMdfBuffer2D->bo, 1);
+    memset(pMdfBuffer2D->bo->virt, 0, buf_size);
     pMdfBuffer2D->pBuffer = pMdfBuffer2D->bo->virt;
     pMdfBuffer2D->bo_mapped = 1;
 
@@ -594,6 +595,7 @@ VAStatus INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT8(
     }
   
     dri_bo_map(pMdfBuffer1D->bo, 1);
+    memset(pMdfBuffer1D->bo->virt, 0, buf_size);
     pMdfBuffer1D->pu8Buffer = (UINT8 *)pMdfBuffer1D->bo->virt;
     pMdfBuffer1D->bo_mapped = 1;
     
@@ -654,6 +656,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
     }
   
     dri_bo_map(pMdfBuffer1D->bo, 1);
+    memset(pMdfBuffer1D->bo->virt, 0, buf_size);
     pMdfBuffer1D->pu16Buffer = (UINT16 *) pMdfBuffer1D->bo->virt;
     pMdfBuffer1D->bo_mapped = 1;
 
@@ -716,6 +719,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
     }
   
     dri_bo_map(pMdfBuffer1D->bo, 1);
+    memset(pMdfBuffer1D->bo->virt, 0, buf_size);
     pMdfBuffer1D->pu32Buffer = (UINT32 *)pMdfBuffer1D->bo->virt;
     pMdfBuffer1D->bo_mapped = 1;
 
@@ -776,6 +780,7 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
     }
   
     dri_bo_map(pMdfBuffer1D->bo, 1);
+    memset(pMdfBuffer1D->bo->virt, 0, buf_size);
     pMdfBuffer1D->pu64Buffer = (UINT64 *)pMdfBuffer1D->bo->virt;
     pMdfBuffer1D->bo_mapped = 1;
 
