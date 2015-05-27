@@ -160,6 +160,16 @@ extern uint32_t Vp9InterPred_g8lp[];
 extern uint32_t Vp9InterPredScaling_g8lp[];
 extern uint32_t Vp9IntraPred_g8lp[];
 
+extern uint32_t Vp9Deblock_g9_size;
+extern uint32_t Vp9Transform_g9_size;
+extern uint32_t Vp9InterPred_g9_size;
+extern uint32_t Vp9InterPredScaling_g9_size;
+extern uint32_t Vp9IntraPred_g9_size;
+extern uint32_t Vp9Deblock_g9[];
+extern uint32_t Vp9Transform_g9[];
+extern uint32_t Vp9InterPred_g9[];
+extern uint32_t Vp9InterPredScaling_g9[];
+extern uint32_t Vp9IntraPred_g9[];
 
 int16_t g_Filters8Tap[16][8] = 
 {
@@ -1194,7 +1204,13 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
     {
 	INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
             &Vp9Transform_g8lp, Vp9Transform_g8lp_size, pProgram, "-nojitter"));
-    } else
+    }
+    else if (IS_SKYLAKE(drv_ctx->drv_data.device_id))
+    {
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
+            &Vp9Transform_g9, Vp9Transform_g9_size, pProgram, "-nojitter"));
+    }
+    else
     {
         return VA_STATUS_ERROR_INVALID_PARAMETER;
     }
@@ -1227,6 +1243,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
     {
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
             &Vp9IntraPred_g8lp, Vp9IntraPred_g8lp_size, pProgram, "-nojitter"));
+    }
+    else if (IS_SKYLAKE(drv_ctx->drv_data.device_id))
+    {
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
+            &Vp9IntraPred_g9, Vp9IntraPred_g9_size, pProgram, "-nojitter"));
     }
     else
     {
@@ -1262,6 +1283,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
             &Vp9InterPred_g8lp, Vp9InterPred_g8lp_size, pProgram, "-nojitter"));
     }
+    else if (IS_SKYLAKE(drv_ctx->drv_data.device_id))
+    {
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
+            &Vp9InterPred_g9, Vp9InterPred_g9_size, pProgram, "-nojitter"));
+    }
     else
     {
         return VA_STATUS_ERROR_INVALID_PARAMETER;
@@ -1295,6 +1321,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
             &Vp9InterPredScaling_g8lp, Vp9InterPredScaling_g8lp_size, pProgram, "-nojitter"));
     }
+    else if (IS_SKYLAKE(drv_ctx->drv_data.device_id))
+    {
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
+            &Vp9InterPredScaling_g9, Vp9InterPredScaling_g9_size, pProgram, "-nojitter"));
+    }
     else
     {
         return VA_STATUS_ERROR_INVALID_PARAMETER;
@@ -1319,6 +1350,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_CreateKernels (
     {
         INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
             &Vp9Deblock_g8lp, Vp9Deblock_g8lp_size, pProgram, "-nojitter"));
+    }
+    else if (IS_SKYLAKE(drv_ctx->drv_data.device_id))
+    {
+        INTEL_DECODE_CHK_MDF_STATUS(pMdfDevice->LoadProgram(
+            &Vp9Deblock_g9, Vp9Deblock_g9_size, pProgram, "-nojitter"));
     }
     else
     {
