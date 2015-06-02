@@ -1,5 +1,5 @@
 /*
- * Copyright © 2009 Intel Corporation
+ * Copyright ©  2014 Intel Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -26,28 +26,13 @@
  *
  */
 
-#include "media_drv_init.h"
-#include "media_drv_driver.h"
-#include "media_drv_hw_g75.h"
-#include "media_drv_hw_g7.h"
-#include "media_drv_hw_g8.h"
+#ifndef _MEDIA__DRIVER_HW_G9_H
+#define _MEDIA__DRIVER_HW_G9_H
+#include "media_drv_hw.h"
+
+extern struct hw_codec_info gen9_hw_codec_info;
 
 VOID
-media_hw_context_init(VADriverContextP ctx)
-{
-  MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  MEDIA_HW_CONTEXT *hw_ctx = &drv_ctx->hw_context;
+media_hw_context_init_g9(VADriverContextP ctx, MEDIA_HW_CONTEXT *hw_ctx);
 
-  if (IS_HASWELL (drv_ctx->drv_data.device_id)) {
-    media_hw_context_init_g75(ctx, hw_ctx);
-  } else if (IS_GEN7 (drv_ctx->drv_data.device_id)) {
-    media_hw_context_init_g7(ctx, hw_ctx);
-  } else if (IS_GEN8 (drv_ctx->drv_data.device_id)) {
-    media_hw_context_init_g8(ctx, hw_ctx);
-  } else if (IS_GEN9 (drv_ctx->drv_data.device_id)) {
-    media_hw_context_init_g9(ctx, hw_ctx);
-  } else {
-    printf ("Platform not supported");
-    MEDIA_DRV_ASSERT (0);
-  }
-}
+#endif
