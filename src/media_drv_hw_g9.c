@@ -34,6 +34,7 @@ struct hw_codec_info gen9_hw_codec_info = {
   .max_width = 4096,
   .max_height = 4096,
   .tiled_surface = 1,
+  .vp9_dec_hybrid_support = 1,
   .render_init = media_drv_gen9_render_init,
  };
 

@@ -59,6 +59,7 @@ driver_files = \
 	intel_hybrid_hostvld_vp9_context.cpp	\
 	intel_hybrid_vp9_kernel_g75.cpp	\
 	intel_hybrid_vp9_kernel_g8.cpp	\
+	intel_hybrid_vp9_kernel_g9.cpp	\
 	intel_hybrid_vp9_kernel_g8lp.cpp	\
 	intel_hybrid_debug_dump.cpp	\
 	$(NULL)
