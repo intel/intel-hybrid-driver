@@ -1799,6 +1799,7 @@ media_drv_gen9_render_init(VADriverContextP ctx)
     render_state->render_put_surface = gen9_render_put_surface;
     render_state->render_put_subpicture = gen9_render_put_subpicture;
     render_state->render_terminate = gen9_render_terminate;
+    render_state->max_wm_threads = 64;
 
     memcpy(render_state->render_kernels, render_kernels_gen9,
 			sizeof(render_state->render_kernels));
