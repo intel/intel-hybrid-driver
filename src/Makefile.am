@@ -65,6 +65,7 @@ driver_files = \
         media_drv_hw.c	\
         media_drv_hwcmds.c  \
         media_drv_hwcmds_g8.c \
+        media_drv_hw_g9.c  \
         media_drv_hw_g8.c  \
         media_drv_hw_g75.c  \
         media_drv_hw_g7.c  \
@@ -76,6 +77,7 @@ driver_files = \
         media_drv_decoder.c  \
         media_drv_gen75_render.c   \
         media_drv_gen8_render.c   \
+        media_drv_gen9_render.c   \
         media_drv_hybrid_vp9_common.cpp   \
         va_wrapper.c \
         $(NULL)
@@ -103,6 +105,7 @@ driver_headers = \
         media_drv_encoder_vp8_g7.h \
         media_drv_hwcmds.h  \
         media_drv_hwcmds_g8.h \
+        media_drv_hw_g9.h  \
         media_drv_hw_g8.h  \
         media_drv_hw_g75.h  \
         media_drv_hw_g7.h  \

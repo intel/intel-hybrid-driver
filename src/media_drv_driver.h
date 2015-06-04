@@ -118,6 +118,33 @@
 #define PCI_CHIP_HASWELL_CRW_E_GT2              0x0D1E
 #define PCI_CHIP_HASWELL_CRW_E_GT3              0x0D2E
 
+#define PCI_CHIP_SKYLAKE_GT1_DESK               0x0901
+#define PCI_CHIP_SKYLAKE_GT2_DESK               0x0902
+#define PCI_CHIP_SKYLAKE_GT4_DT                 0x1932
+#define PCI_CHIP_SKYLAKE_GT2_DT                 0x1912
+#define PCI_CHIP_SKYLAKE_GT1_5_DT               0x1917
+#define PCI_CHIP_SKYLAKE_GT1_DT                 0x1902
+#define PCI_CHIP_SKYLAKE_GT3_DESK               0x0903
+#define PCI_CHIP_SKYLAKE_GT4_DESK               0x0904
+#define PCI_CHIP_SKYLAKE_GT2_ULT                0x1916
+#define PCI_CHIP_SKYLAKE_GT2F_ULT               0x1921
+#define PCI_CHIP_SKYLAKE_GT2_ULX                0x191E
+#define PCI_CHIP_SKYLAKE_GT1_ULT                0x1906
+#define PCI_CHIP_SKYLAKE_GT1_ULX                0x190E
+#define PCI_CHIP_SKYLAKE_GT1_5_ULT              0x1913
+#define PCI_CHIP_SKYLAKE_GT1_5_ULX              0x1915
+#define PCI_CHIP_SKYLAKE_GT3_ULT                0x1926
+#define PCI_CHIP_SKYLAKE_GT1_HALO_MOBL          0x190B
+#define PCI_CHIP_SKYLAKE_GT2_HALO_MOBL          0x191B
+#define PCI_CHIP_SKYLAKE_GT3_HALO_MOBL          0x192B
+#define PCI_CHIP_SKYLAKE_GT4_HALO_MOBL          0x193B
+#define PCI_CHIP_SKYLAKE_GT1_SERV               0x190A
+#define PCI_CHIP_SKYLAKE_GT2_SERV               0x191A
+#define PCI_CHIP_SKYLAKE_GT3_SERV               0x192A
+#define PCI_CHIP_SKYLAKE_GT4_SERV               0x193A
+#define PCI_CHIP_SKYLAKE_GT2_WRK                0x191D
+#define PCI_CHIP_SKYLAKE_GT4_WRK                0x193D
+
 #define IS_BAYTRAIL_M1(devid)    (devid == PCI_CHIP_BAYTRAIL_M_1)
 #define IS_BAYTRAIL_M2(devid)    (devid == PCI_CHIP_BAYTRAIL_M_2)
 #define IS_BAYTRAIL_M3(devid)    (devid == PCI_CHIP_BAYTRAIL_M_3)
@@ -245,6 +272,47 @@
 				devid == PCI_CHIP_CHV_1 || \
 				devid == PCI_CHIP_CHV_2 || \
 				devid == PCI_CHIP_CHV_3)
+
+#define IS_SKL_GT1(devid)       (devid == PCI_CHIP_SKYLAKE_GT1_DESK       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_DT         || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_ULT        || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_ULX        || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_HALO_MOBL  || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_SERV)
+
+#define IS_SKL_GT1_5(devid)     (devid == PCI_CHIP_SKYLAKE_GT1_5_DT       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_5_ULT      || \
+                                 devid == PCI_CHIP_SKYLAKE_GT1_5_ULX)
+
+#define IS_SKL_GT2(devid)       (devid == PCI_CHIP_SKYLAKE_GT2_DESK       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_DT         || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_ULT        || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2F_ULT       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_ULX        || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_HALO_MOBL  || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_SERV       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT2_WRK)
+
+#define IS_SKL_GT3(devid)       (devid == PCI_CHIP_SKYLAKE_GT3_DESK       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT3_ULT        || \
+                                 devid == PCI_CHIP_SKYLAKE_GT3_HALO_MOBL  || \
+                                 devid == PCI_CHIP_SKYLAKE_GT3_SERV)
+
+#define IS_SKL_GT4(devid)       (devid == PCI_CHIP_SKYLAKE_GT4_DT         || \
+                                 devid == PCI_CHIP_SKYLAKE_GT4_DESK       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT4_HALO_MOBL  || \
+                                 devid == PCI_CHIP_SKYLAKE_GT4_SERV       || \
+                                 devid == PCI_CHIP_SKYLAKE_GT4_WRK)
+
+
+#define IS_SKYLAKE(devid)       (IS_SKL_GT1(devid)   || \
+                                 IS_SKL_GT1_5(devid) || \
+                                 IS_SKL_GT2(devid)   || \
+                                 IS_SKL_GT3(devid)   || \
+                                 IS_SKL_GT4(devid))
+
+#define IS_GEN9(devid)  (IS_SKYLAKE(devid))
+
 struct region
 {
   INT x;

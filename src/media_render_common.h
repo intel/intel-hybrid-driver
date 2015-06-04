@@ -952,7 +952,8 @@ struct gen7_sampler_8x8
 
 enum
 {
-    PS_KERNEL = 0,
+    SF_KERNEL = 0,
+    PS_KERNEL,
     PS_SUBPIC_KERNEL
 };
 

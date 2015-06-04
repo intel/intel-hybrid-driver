@@ -33,6 +33,7 @@
 #include "media_drv_gpe_utils.h"
 #include "media_drv_util.h"
 #include "media_drv_hw.h"
+#include "media_drv_hw_g9.h"
 #include "media_drv_hw_g8.h"
 #include "media_drv_hw_g75.h"
 #include "media_drv_hw_g7.h"
@@ -180,6 +181,8 @@ media_driver_data_init (VADriverContextP ctx)
     drv_ctx->codec_info = &gen8_hw_codec_info;
   else if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id))
     drv_ctx->codec_info = &chv_hw_codec_info;
+  else if (IS_GEN9(drv_ctx->drv_data.device_id))
+    drv_ctx->codec_info = &gen9_hw_codec_info;
   else
     return false;
 
