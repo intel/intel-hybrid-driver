@@ -587,6 +587,8 @@ CHECK:
         driver_dir = strtok_r(NULL, ":", &saveptr);
   }
 
+  free(search_path);
+
   return ctx;
 }
 
