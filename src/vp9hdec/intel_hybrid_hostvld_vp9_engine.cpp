@@ -83,23 +83,51 @@ const UCHAR g_Vp9NormTable[BAC_ENG_MAX_RANGE+1] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+VOID Intel_HostvldVp9_BacEngineFill(
+    PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine)
+{
+    INTEL_HOSTVLD_VP9_BAC_VALUE iRegOp;
+    INT iShift = BAC_ENG_VALUE_BITS - BAC_ENG_VALUE_TAIL_RSRV - pBacEngine->iCount;
+    register INT iBitsLeft = (INT)(pBacEngine->pBufEnd - pBacEngine->pBuf) * BYTE_BITS;
+    INT iMargin   = iShift + BAC_ENG_VALUE_TAIL_RSRV - iBitsLeft;
+    INT iLoopEnd  = 0;
+    uint8_t *buffer;
+    register INTEL_HOSTVLD_VP9_BAC_VALUE BacValue;
+
+    if (iMargin >= 0)
+    {
+        pBacEngine->iCount += BAC_ENG_MASSIVE_BITS;
+        iLoopEnd = iMargin;
+    }
+
+    buffer = pBacEngine->pBuf;
+    BacValue = pBacEngine->BacValue;
+    if (iMargin < 0 || iBitsLeft)
+    {
+
+        while (iShift >= iLoopEnd) {
+            pBacEngine->iCount += BYTE_BITS;
+            iRegOp = *buffer++;
+            BacValue |= (iRegOp << iShift);
+            iShift -= BYTE_BITS;
+        }
+        pBacEngine->BacValue = BacValue;
+        pBacEngine->pBuf = buffer;
+    }
+}
+
 INT Intel_HostvldVp9_BacEngineInit(
     PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine,
     PUCHAR                           pBuf,
     DWORD                            dwBufSize)
 {
-    register UINT32 ui32RegOp = *((PUINT32)pBuf);
-
     pBacEngine->pBuf     = pBuf;
     pBacEngine->pBufEnd  = pBuf + dwBufSize;
+    pBacEngine->BacValue = 0;
+    pBacEngine->iCount   = 0;
     pBacEngine->uiRange  = BAC_ENG_MAX_RANGE;
 
-    pBacEngine->BacValue =
-        (ui32RegOp << (BYTE_BITS * 3)) | ((ui32RegOp & 0xFF00) << BYTE_BITS) |
-        ((ui32RegOp & 0xFF0000) >> BYTE_BITS) | (ui32RegOp >> (BYTE_BITS * 3));
-    pBacEngine->pBuf += 4;
-    pBacEngine->iCount = (BYTE_BITS << 2);
-
+    Intel_HostvldVp9_BacEngineFill(pBacEngine);
     return Intel_HostvldVp9_BacEngineReadSingleBit(pBacEngine);
 }
 
@@ -107,34 +135,37 @@ INT Intel_HostvldVp9_BacEngineReadBit(
     PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine,
     INT                              iProb)
 {
-    INTEL_HOSTVLD_VP9_BAC_VALUE BacValue = pBacEngine->BacValue;
-    INT  iCount  = pBacEngine->iCount;
-    UINT uiRange = pBacEngine->uiRange;
-    UINT uiShift = g_Vp9NormTable[uiRange];
-    UINT uiSplit;
-    INT  iBit;
-    INTEL_HOSTVLD_VP9_BAC_VALUE BacSplitValue;
+    INTEL_HOSTVLD_VP9_BAC_VALUE BacValue;
+    INT  iCount;
+    INT  iBit = 0;
+    UINT uiSplit = ( (pBacEngine->uiRange * iProb) + (BAC_ENG_PROB_RANGE - iProb) ) >> BAC_ENG_PROB_BITS;
+    register UINT uiRange = uiSplit;
+    INTEL_HOSTVLD_VP9_BAC_VALUE BacSplitValue = (INTEL_HOSTVLD_VP9_BAC_VALUE)uiSplit << (BAC_ENG_VALUE_BITS - BAC_ENG_PROB_BITS);
 
-    uiRange  <<= uiShift;
-    BacValue <<= uiShift;
-    iCount    -= uiShift;
-
-    uiSplit       = ((uiRange * iProb) + (BAC_ENG_PROB_RANGE - iProb)) >> BAC_ENG_PROB_BITS;
-    BacSplitValue = (INTEL_HOSTVLD_VP9_BAC_VALUE)uiSplit << (BAC_ENG_VALUE_BITS - BAC_ENG_PROB_BITS);
-
-    if (iCount < BAC_ENG_VALUE_HEAD_RSRV)
+    if (pBacEngine->iCount < BAC_ENG_VALUE_HEAD_RSRV)
     {
-        register UINT16 ui16RegOp = *((PUINT16)(pBacEngine->pBuf));
-        BacValue |= (ui16RegOp & 0xFF) << (BAC_ENG_VALUE_BITS - BYTE_BITS - iCount);
-        BacValue |= (ui16RegOp & 0xFF00) << (BYTE_BITS - iCount);
-        pBacEngine->pBuf += 2;
-        iCount += (BYTE_BITS << 1);
+        Intel_HostvldVp9_BacEngineFill(pBacEngine);
+    }
+    BacValue = pBacEngine->BacValue;
+    iCount   = pBacEngine->iCount;
+
+    if (BacValue >= BacSplitValue)
+    {
+        uiRange  = pBacEngine->uiRange - uiSplit;
+        BacValue = BacValue - BacSplitValue;
+        iBit     = 1;
     }
 
-    iBit = (BacValue >= BacSplitValue);
-    pBacEngine->uiRange  = iBit ? (uiRange - uiSplit) : uiSplit;
-    pBacEngine->BacValue = iBit ? (BacValue - BacSplitValue) : BacValue;
+    {
+        register UINT uiShift = g_Vp9NormTable[uiRange];
+        uiRange  <<= uiShift;
+        BacValue <<= uiShift;
+        iCount -= uiShift;
+    }
+
+    pBacEngine->BacValue = BacValue;
     pBacEngine->iCount   = iCount;
+    pBacEngine->uiRange  = uiRange;
 
     return iBit;
 }

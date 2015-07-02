@@ -83,6 +83,9 @@ INT Intel_HostvldVp9_BacEngineInit(
     PUCHAR                           pBuf,
     DWORD                            dwBufSize);
 
+VOID Intel_HostvldVp9_BacEngineFill(
+    PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine);
+
 INT Intel_HostvldVp9_BacEngineReadBit(
     PINTEL_HOSTVLD_VP9_BAC_ENGINE pBacEngine,
     INT                              iProb);
