@@ -89,17 +89,26 @@ INT Intel_HostvldVp9_BacEngineInit(
     DWORD                            dwBufSize)
 {
     register UINT32 ui32RegOp = *((PUINT32)pBuf);
+    INTEL_HOSTVLD_VP9_BAC_VALUE BacValue = 0;
+    INT iCount  = 0;
 
     pBacEngine->pBuf     = pBuf;
     pBacEngine->pBufEnd  = pBuf + dwBufSize;
     pBacEngine->uiRange  = BAC_ENG_MAX_RANGE;
 
-    pBacEngine->BacValue =
-        (ui32RegOp << (BYTE_BITS * 3)) | ((ui32RegOp & 0xFF00) << BYTE_BITS) |
-        ((ui32RegOp & 0xFF0000) >> BYTE_BITS) | (ui32RegOp >> (BYTE_BITS * 3));
-    pBacEngine->pBuf += 4;
-    pBacEngine->iCount = (BYTE_BITS << 2);
+    if (dwBufSize >= 4) {
+	pBacEngine->BacValue =
+		(ui32RegOp << (BYTE_BITS * 3)) | ((ui32RegOp & 0xFF00) << BYTE_BITS) |
+		((ui32RegOp & 0xFF0000) >> BYTE_BITS) | (ui32RegOp >> (BYTE_BITS * 3));
+	pBacEngine->pBuf += 4;
+	pBacEngine->iCount = (BYTE_BITS << 2);
+    } else {
+	// 16-bit fill or 8-bit fill for the last even byte to avoid segfault
+	INTEL_HOSTVLD_VP9_BACENGINE_FILL();
 
+	pBacEngine->iCount = iCount;
+	pBacEngine->BacValue = BacValue;
+    }
     return Intel_HostvldVp9_BacEngineReadSingleBit(pBacEngine);
 }
 
@@ -122,14 +131,7 @@ INT Intel_HostvldVp9_BacEngineReadBit(
     uiSplit       = ((uiRange * iProb) + (BAC_ENG_PROB_RANGE - iProb)) >> BAC_ENG_PROB_BITS;
     BacSplitValue = (INTEL_HOSTVLD_VP9_BAC_VALUE)uiSplit << (BAC_ENG_VALUE_BITS - BAC_ENG_PROB_BITS);
 
-    if (iCount < BAC_ENG_VALUE_HEAD_RSRV)
-    {
-        register UINT16 ui16RegOp = *((PUINT16)(pBacEngine->pBuf));
-        BacValue |= (ui16RegOp & 0xFF) << (BAC_ENG_VALUE_BITS - BYTE_BITS - iCount);
-        BacValue |= (ui16RegOp & 0xFF00) << (BYTE_BITS - iCount);
-        pBacEngine->pBuf += 2;
-        iCount += (BYTE_BITS << 1);
-    }
+    INTEL_HOSTVLD_VP9_BACENGINE_FILL();
 
     iBit = (BacValue >= BacSplitValue);
     pBacEngine->uiRange  = iBit ? (uiRange - uiSplit) : uiSplit;
