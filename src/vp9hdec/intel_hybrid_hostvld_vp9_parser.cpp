@@ -95,20 +95,6 @@
 #define VP9_GET_TX_TYPE(TxSize, IsLossLess, PredModeLuma) \
     (((TxSize) == TX_4X4 && (IsLossLess))? TX_DCT : g_Vp9Mode2TxTypeMap[(PredModeLuma)])
 
-// Read 16-bit and fill BAC engine
-#define INTEL_HOSTVLD_VP9_BACENGINE_FILL()           \
-do                                                      \
-{                                                       \
-    if (iCount < 8)                                     \
-    {                                                   \
-        register UINT16 ui16RegOp = *((PUINT16)(pBacEngine->pBuf));                     \
-        BacValue |= (ui16RegOp & 0xFF) << (BAC_ENG_VALUE_BITS - BYTE_BITS - iCount);    \
-        BacValue |= (ui16RegOp & 0xFF00) << (BYTE_BITS - iCount);                       \
-        pBacEngine->pBuf += 2;                          \
-        iCount += (BYTE_BITS << 1);                     \
-    }                                                   \
-} while (0)
-
 // Shift BAC engine
 #define INTEL_HOSTVLD_VP9_BACENGINE_SHIFT()          \
 do                                                      \

@@ -76,6 +76,27 @@
 #define BAC_ENG_PROB_RANGE      ( 1 << BAC_ENG_PROB_BITS )
 #define BAC_ENG_PROB_HALF       ( 1 << (BAC_ENG_PROB_BITS-1) )
 
+// Read 16-bit or Read 8-bit for the last even byte to fill BAC engine
+#define INTEL_HOSTVLD_VP9_BACENGINE_FILL()           \
+do                                                      \
+{ \
+    if (iCount < BAC_ENG_VALUE_HEAD_RSRV)                                     \
+    {                                                   \
+	if ((pBacEngine->pBufEnd - pBacEngine->pBuf) >= 2 ) { \
+		register UINT16 ui16RegOp = *((PUINT16)(pBacEngine->pBuf));                     \
+		BacValue |= (ui16RegOp & 0xFF) << (BAC_ENG_VALUE_BITS - BYTE_BITS - iCount);    \
+		BacValue |= (ui16RegOp & 0xFF00) << (BYTE_BITS - iCount);                       \
+		pBacEngine->pBuf += 2;                          \
+		iCount += (BYTE_BITS << 1);                     \
+	} else { \
+		register UINT8 ui8RegOp = *((PUINT8)(pBacEngine->pBuf));                     \
+		BacValue |= (ui8RegOp & 0xFF) << (BAC_ENG_VALUE_BITS - BYTE_BITS - iCount);    \
+		pBacEngine->pBuf += 1;                          \
+		iCount += BAC_ENG_MASSIVE_BITS;                     \
+	} \
+    }                                                   \
+} while (0)
+
 extern const UCHAR g_Vp9NormTable[BAC_ENG_MAX_RANGE+1];
 
 INT Intel_HostvldVp9_BacEngineInit(
