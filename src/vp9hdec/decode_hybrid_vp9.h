@@ -33,6 +33,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "stdint.h"
+#include <x86intrin.h>
 
 #include "cmrt_api.h"
 #include "intel_hybrid_hostvld_vp9.h"
@@ -118,6 +119,9 @@ typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE
     bool                                        bHasPadding;
     int32_t                                       dwWidth;    // Surface width
     int32_t                                       dwHeight;   // Surface height
+
+    CmDevice                                    *pMdfDevice;
+    uint64_t                                    iMdfDeviceTsc;
 } INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE, *PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE;
 
 
@@ -219,6 +223,7 @@ typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_ENGINE
     CmTask          *pTaskDeblock[INTEL_HYBRID_VP9_MDF_YUV_PLANE_NUMBER];
 
     CmDevice        *pMdfDevice;
+    uint64_t        iMdfDeviceTsc;
 
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME       pMdfDecodeFrame;
     INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE FrameList[INTEL_NUM_UNCOMPRESSED_SURFACE_VP9];
