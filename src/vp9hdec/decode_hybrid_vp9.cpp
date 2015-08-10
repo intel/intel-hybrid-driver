@@ -1969,7 +1969,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
 
 	cm_version = CM_4_0;
         cm_status = CreateCmDevice(pMdfDevice, cm_version, &driver_context, CM_DEVICE_CREATE_OPTION_FOR_VP9);
+
         pMdfDecodeEngine->pMdfDevice = pMdfDevice;
+        pMdfDecodeEngine->iMdfDeviceTsc = __rdtsc();
     }
 
     eStatus = Intel_HybridVp9Decode_MdfHost_CreateKernels(ctx, pMdfDecodeEngine);
@@ -2109,6 +2111,7 @@ void Intel_HybridVp9Decode_MdfHost_Destroy (
     {
         DestroyCmDevice(pMdfDecodeEngine->pMdfDevice);
 	pMdfDecodeEngine->pMdfDevice = NULL;
+	pMdfDecodeEngine->iMdfDeviceTsc = 0;
     }
 
     return;
@@ -2247,6 +2250,37 @@ finish:
     return eStatus;
 }
 
+VAStatus Intel_HybridVp9Decode_MdfHost_RecreateRefCmSurface(
+    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine,
+    struct object_surface                   *pRefSurface,
+    INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *pFrameSource)
+{
+    VAStatus eStatus = VA_STATUS_SUCCESS;
+    pFrameSource->Frame.pMdfSurface = NULL;
+    CmOsResource target_source;
+    memset(&target_source, 0, sizeof(target_source));
+
+    target_source.format = VA_CM_FMT_NV12;
+    target_source.aligned_width = pFrameSource->dwWidth;
+    target_source.pitch =  pFrameSource->dwWidth;
+    target_source.aligned_height = pFrameSource->dwHeight;
+    target_source.bo = pRefSurface->bo;
+    target_source.tile_type = I915_TILING_Y;
+    target_source.orig_width = pFrameSource->dwWidth;
+    target_source.orig_height = pFrameSource->dwHeight;
+    target_source.bo_flags = DRM_BO_HANDLE;
+
+    INTEL_DECODE_CHK_MDF_STATUS(pMdfDecodeEngine->pMdfDevice->CreateSurface2D(
+        &target_source,
+        pFrameSource->Frame.pMdfSurface));
+
+    pFrameSource->pMdfDevice = pMdfDecodeEngine->pMdfDevice;
+    pFrameSource->iMdfDeviceTsc = pMdfDecodeEngine->iMdfDeviceTsc;
+
+finish:
+    return eStatus;
+}
+
 VAStatus Intel_HybridVp9Decode_MdfHost_UpdateResolution(
     PINTEL_DECODE_HYBRID_VP9_STATE       pHybridVp9State,
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine,
@@ -2267,6 +2301,13 @@ VAStatus Intel_HybridVp9Decode_MdfHost_UpdateResolution(
 
 	surface = SURFACE(dwCurrIndex);
 	pFrame = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
+
+    if ( pFrame->pMdfDevice && pFrame->iMdfDeviceTsc &&
+        ((pFrame->pMdfDevice != pMdfDecodeEngine->pMdfDevice) ||
+        (pFrame->iMdfDeviceTsc != pMdfDecodeEngine->iMdfDeviceTsc)))
+    {
+        pFrame->Frame.pMdfSurface = NULL;
+    }
 
     // if surface resolution changed, we don't reuse render target since it may have been re-created.
     if (pFrame->Frame.pMdfSurface)
@@ -2301,6 +2342,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_UpdateResolution(
 
         pFrame->dwWidth  = psDestSurface->width;
         pFrame->dwHeight = psDestSurface->height;
+
+       pFrame->pMdfDevice = pMdfDecodeEngine->pMdfDevice;
+       pFrame->iMdfDeviceTsc = pMdfDecodeEngine->iMdfDeviceTsc;
     }
 
     pFrame->Frame.dwWidth  = dwCropWidth;
@@ -2349,6 +2393,19 @@ VAStatus Intel_HybridVp9Decode_MdfHost_PadFrame (
     pFrameResource  = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
     dwWidth         = pFrameResource->Frame.dwWidth;
     dwHeight        = pFrameResource->Frame.dwHeight;
+
+    if ((pFrameResource->pMdfDevice != pMdfDecodeEngine->pMdfDevice) ||
+        (pFrameResource->iMdfDeviceTsc != pMdfDecodeEngine->iMdfDeviceTsc))
+    {
+        // Top decoder may call vaDestroy/CreateContext to recreate media ctx and MdfDevice
+        // if target frame size becomes larger.
+        // CmSurface2D of each reference frame will be reclaimed sequentially.
+        // Detect this change with CmDevice's TSC and pointer and reallocate them.
+        Intel_HybridVp9Decode_MdfHost_RecreateRefCmSurface(
+                             pMdfDecodeEngine,
+                             surface,
+                             pFrameResource);
+    }
 
     if (!pFrameResource->bHasPadding && (dwWidth & 3))
     {
@@ -2702,7 +2759,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 	surface = SURFACE(pMdfDecodeFrame->ucLastRefIndex);
 	pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
 	pLastRefFrame = &(pFrameSource->Frame);
-
         pLastRefFrame->pMdfSurface->GetIndex(pSurfaceIndexFrame);
         SurfaceIndexFrame[0] = pSurfaceIndexFrame->get_data();
 
@@ -2710,11 +2766,10 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 	surface = SURFACE(pMdfDecodeFrame->ucGoldenRefIndex);
 	pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
 	pGoldenRefFrame = &(pFrameSource->Frame);
-
         pGoldenRefFrame->pMdfSurface->GetIndex(pSurfaceIndexFrame);
-
         SurfaceIndexFrame[1] = pSurfaceIndexFrame->get_data();
 
+        /* Alt Ref */
 	surface = SURFACE(pMdfDecodeFrame->ucAltRefIndex);
 	pFrameSource = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
 	pAltRefFrame = &(pFrameSource->Frame);
