@@ -25,7 +25,6 @@
 #ifndef __VA_PRIVATE_H__
 #define __VA_PRIVATE_H__
 
-#define VAEntrypointHybridEncSlice      -1
 #define VAEncMiscParameterTypePrivate   -2
 #define VAEncMbDataBufferType	        -4
 #define VAEncMiscParameterTypeVP8HybridFrameUpdate      -3
