@@ -247,7 +247,7 @@ media_CreateSurfaces2 (VADriverContextP ctx,
 	      break;
 	    case VASurfaceAttribExternalBufferDescriptor:
 	      MEDIA_DRV_ASSERT (attrib_list[i].value.type ==
-				VAGenericValueTypeInteger);
+				VAGenericValueTypePointer);
 	      MEDIA_DRV_ASSERT (attrib_list[i].value.value.p);
 	      memory_attibute =
 		(VASurfaceAttribExternalBuffers *) attrib_list[i].value.
