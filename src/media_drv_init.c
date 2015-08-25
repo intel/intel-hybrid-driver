@@ -49,13 +49,13 @@
 MEDIA_DRV_MUTEX mutex_global = PTHREAD_MUTEX_INITIALIZER;
 
 config_attr_list config_attributes_list[MEDIA_GEN_MAX_CONFIG_ATTRIBUTES] = {
-  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
+  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointEncSlice,
    VA_RC_CQP, 1}
   ,
-  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
+  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointEncSlice,
    VA_RC_CBR, 1}
   ,
-  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointHybridEncSlice,
+  {VAProfileVP8Version0_3, (VAEntrypoint) VAEntrypointEncSlice,
    VA_RC_VBR, 1}
 };
 
@@ -1409,7 +1409,7 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
   if (obj_context->codec_type == CODEC_ENC)
     {
 
-      MEDIA_DRV_ASSERT (VAEntrypointHybridEncSlice == obj_config->entrypoint);
+      MEDIA_DRV_ASSERT (VAEntrypointEncSlice == obj_config->entrypoint);
 
       if (!(obj_context->codec_state.encode.pic_param ||
 	    obj_context->codec_state.encode.pic_param_ext))
@@ -1818,7 +1818,7 @@ media_RenderPicture (VADriverContextP ctx,
   obj_config = obj_context->obj_config;
   MEDIA_DRV_ASSERT (obj_config);
 
-  if (VAEntrypointHybridEncSlice == obj_config->entrypoint)
+  if (VAEntrypointEncSlice == obj_config->entrypoint)
     {
       vaStatus =
 	media_encoder_render_picture (ctx, context, buffers, num_buffers);
@@ -2135,7 +2135,7 @@ media_CreateContext (VADriverContextP ctx, VAConfigID config_id, INT picture_wid
   if (VA_STATUS_SUCCESS == status)
     {
 
-      if (VAEntrypointHybridEncSlice == obj_config->entrypoint)
+      if (VAEntrypointEncSlice == obj_config->entrypoint)
 	{			/*encode routin only */
 
 	  obj_context->codec_type = CODEC_ENC;
@@ -2299,7 +2299,7 @@ media_validate_config(VADriverContextP ctx, VAProfile profile,
   /* Validate profile & entrypoint */
   switch (profile) {
   case VAProfileVP8Version0_3:
-    if ((entrypoint == VAEntrypointHybridEncSlice) &&
+    if ((entrypoint == VAEntrypointEncSlice) &&
         drv_ctx->codec_info->vp8_enc_hybrid_support) {
       va_status = VA_STATUS_SUCCESS;
     } else {
@@ -2484,7 +2484,7 @@ media_QueryConfigEntrypoints (VADriverContextP ctx, VAProfile profile, VAEntrypo
     {
     case VAProfileVP8Version0_3:
       if (drv_ctx->codec_info->vp8_enc_hybrid_support) {
-        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointHybridEncSlice;
+        entrypoint_list[index++] = (VAEntrypoint) VAEntrypointEncSlice;
       }
       break;
     case VAProfileVP9Profile0:
