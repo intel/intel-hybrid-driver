@@ -79,7 +79,6 @@ driver_files = \
         media_drv_gen8_render.c   \
         media_drv_gen9_render.c   \
         media_drv_hybrid_vp9_common.cpp   \
-        va_wrapper.c \
         $(NULL)
 
 if USE_X11
