@@ -632,22 +632,22 @@ typedef struct _INTEL_HOSTVLD_VP9_MB_INFO
     PINTEL_HOSTVLD_VP9_NEIGHBOR  pContextLeft;                       // Point to left context of current block
     PINTEL_HOSTVLD_VP9_NEIGHBOR  pContextAbove;                      // Point to above context of current block
     // Entropy context for coeff decode
-    UINT8                           EntropyContextLeft[VP9_CODED_YUV_PLANES][16];
-    UINT8                           TokenCache[VP9_TOKEN_CACHE_SIZE];
+    UINT8                        EntropyContextLeft[VP9_CODED_YUV_PLANES][16];
+    UINT8                        TokenCache[VP9_TOKEN_CACHE_SIZE];
 
     // Mode info cache for 64x64 super block
     PINTEL_HOSTVLD_VP9_MODE_INFO pModeInfoCache;
-    INT8                            RefFrameIndexCache[VP9_B64_SIZE_IN_B8 * VP9_B64_SIZE_IN_B8 * 2];
+    INT8                         RefFrameIndexCache[VP9_B64_SIZE_IN_B8 * VP9_B64_SIZE_IN_B8 * 2];
     INTEL_HOSTVLD_VP9_MV         MvCache[VP9_B64_SIZE_IN_B4 * VP9_B64_SIZE_IN_B4 * 2];
 
     PINTEL_HOSTVLD_VP9_MODE_INFO pMode;
     PINTEL_HOSTVLD_VP9_MODE_INFO pModeLeft;
     PINTEL_HOSTVLD_VP9_MODE_INFO pModeAbove;
-    PINT8                           pRefFrameIndex;
+    PINT8                        pRefFrameIndex;
     PINTEL_HOSTVLD_VP9_MV        pMv;
-    DWORD                           dwOffsetInB64;  // offset of current block in 64x64 super block in scan order. in unit of 8x8 block.
+    DWORD                        dwOffsetInB64;  // offset of current block in 64x64 super block in scan order. in unit of 8x8 block.
 
-    PINTEL_HOSTVLD_VP9_TILE_INFO   pCurrTile;
+    PINTEL_HOSTVLD_VP9_TILE_INFO pCurrTile;
 
     // 1D offset for current MB in zigzag order in unit of 8x8 block
     DWORD dwMbOffset;

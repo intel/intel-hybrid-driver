@@ -142,7 +142,6 @@ static VAStatus Intel_HostvldVp9_FillIntraFrameRefFrame(
         *(pi8Buffer++) = VP9_REF_FRAME_INTRA;
     }
 
-finish:
     return eStatus;
 }
 
@@ -153,12 +152,8 @@ VAStatus Intel_HostvldVp9_Create (
     PINTEL_HOSTVLD_VP9_STATE         pVp9HostVld = NULL;
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState;
     PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState;
-    PINTEL_HOSTVLD_VP9_VIDEO_BUFFER  pVideoBuffer, pVideoBufferData;
     PINTEL_HOSTVLD_VP9_FRAME_CONTEXT pContext;
     uint32_t                               dwThreadNumber;
-    uint32_t                               dwBufferNumber;
-    uint32_t                               dwDDIBufNumber;
-    uint32_t                               dwBufNumEarlyDec;
     uint32_t                                i           = 0;
     uint32_t                                uiTileIndex = 0;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
@@ -222,7 +217,6 @@ VAStatus Intel_HostvldVp9_Create (
         pContext->TxProbTables[TX_32X32].uiStride       = TX_32X32;
     }
 
-finish:
     return eStatus;
 }
 
@@ -240,7 +234,6 @@ VAStatus Intel_HostvldVp9_QueryBufferSize (
         *pdwBufferSize = pVp9HostVld->dwBufferNumber;
     }
 
-finish:
     return eStatus;
 }
 
@@ -576,7 +569,6 @@ VAStatus Intel_HostvldVp9_Parser (PVOID pVp9FrameState)
        eStatus = Intel_HostvldVp9_PostParser(pVp9FrameState);
     }
 
-finish:
     return eStatus;
 }
 
@@ -620,7 +612,7 @@ VAStatus Intel_HostvldVp9_LoopfilterFrame(PVOID pVp9FrameState)
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState = NULL;
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo  = NULL;
     PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState  = NULL;
-    DWORD                               dwTileIndex,dwTileX;
+    DWORD                               dwTileX;
     VAStatus                            eStatus     = VA_STATUS_SUCCESS;
 
     pFrameState = (PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState;
@@ -644,23 +636,11 @@ VAStatus Intel_HostvldVp9_Render (PVOID pVp9FrameState)
 {
     PINTEL_HOSTVLD_VP9_STATE         pVp9HostVld = NULL;
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState = NULL;
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo  = NULL;
-    VASurfaceID                      ucLastRefIdx, ucGoldenRefIdx, ucAltRefIdx;
-    PINTEL_HOSTVLD_VP9_VIDEO_BUFFER  pVideoBuffer= NULL;
-    PINTEL_VP9_PIC_PARAMS            pPicParams  = NULL;
     VAStatus                          eStatus     = VA_STATUS_SUCCESS;
-
 
     pFrameState     = (PINTEL_HOSTVLD_VP9_FRAME_STATE)pVp9FrameState;
     pVp9HostVld     = pFrameState->pVp9HostVld;
-    pFrameInfo      = &pFrameState->FrameInfo;
-    pVideoBuffer    = pFrameState->pVideoBuffer;
-    pPicParams      = pVideoBuffer->pVp9PicParams;
 
-    ucLastRefIdx    = pPicParams->RefFrameList[pPicParams->PicFlags.fields.LastRefIdx];
-    ucGoldenRefIdx  = pPicParams->RefFrameList[pPicParams->PicFlags.fields.GoldenRefIdx];
-    ucAltRefIdx     = pPicParams->RefFrameList[pPicParams->PicFlags.fields.AltRefIdx];
-   
     if (pVp9HostVld->pfnRenderCb)
     {
         pVp9HostVld->pfnRenderCb(
@@ -749,7 +729,6 @@ VAStatus Intel_HostvldVp9_Destroy (
 
     if (pVp9HostVld)
     {
-        PINTEL_HOSTVLD_VP9_VIDEO_BUFFER  pVideoBuffer;
         PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState;
         PINTEL_HOSTVLD_VP9_EARLY_DEC_BUFFER pEarlyDecBufferBase;
 
@@ -785,6 +764,5 @@ VAStatus Intel_HostvldVp9_Destroy (
         free(pVp9HostVld);
     }
 
-finish:
     return eStatus;
 }

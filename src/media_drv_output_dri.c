@@ -160,7 +160,7 @@ media_put_surface_dri(
   unsigned int pp_flag = 0;
   bool new_region = false;
   uint32_t name;
-  int i, ret;
+  int i;
   unsigned int color_flag = 0;
 
   /* Currently don't support DRI1 */
@@ -203,7 +203,7 @@ media_put_surface_dri(
 
     dest_region->bo = intel_bo_gem_create_from_name(drv_ctx->drv_data.bufmgr, "rendering buffer", buffer->dri2.name);
 
-    ret = dri_bo_get_tiling(dest_region->bo, &(dest_region->tiling), &(dest_region->swizzle));
+    dri_bo_get_tiling(dest_region->bo, &(dest_region->tiling), &(dest_region->swizzle));
   }
 
   color_flag = flags & VA_SRC_COLOR_MASK;

@@ -347,7 +347,7 @@ static const UINT8 g_Vp9ModelCoefProbsPareto8[VP9_COEFPROB_MODELS][VP9_MODEL_NOD
 };
 
 // Probability Tables for categories
-static UINT8 g_Vp9Cat1Prob[2] = { 159, 0};
+//static UINT8 g_Vp9Cat1Prob[2] = { 159, 0};
 static UINT8 g_Vp9Cat2Prob[3] = { 165, 145, 0};
 static UINT8 g_Vp9Cat3Prob[4] = { 173, 148, 140, 0};
 static UINT8 g_Vp9Cat4Prob[5] = { 176, 155, 140, 135, 0};
@@ -358,6 +358,7 @@ static UINT8 g_Vp9Cat6Prob[15] =
 };
 
 static const UINT8 g_Vp9BlockSizeB4Log2[BLOCK_SIZES][2] = {
+
     0, 0,//BLOCK_4X4
     1, 1,//BLOCK_8X8
     2, 2,//BLOCK_16X16
@@ -1162,23 +1163,6 @@ static const UINT8 g_Vp9SB_ZOrder8X8[8][8] =
     {42, 43, 46, 47, 58, 59, 62, 63},
 };
 
-// Loop Filter Tables
-static UINT8 g_Vp9ModeLoopFilterLut[MB_MODE_COUNT] = {
-    0,//PRED_MD_DC,
-    0,//PRED_MD_V,
-    0,//PRED_MD_H,
-    0,//PRED_MD_D45,
-    0,//PRED_MD_D135,
-    0,//PRED_MD_D117,
-    0,//PRED_MD_D153,
-    0,//PRED_MD_D207,
-    0,//PRED_MD_D63,
-    0,//PRED_MD_TM,
-    1,//PRED_MD_NEARESTMV,
-    1,//PRED_MD_NEARMV,
-    0,//PRED_MD_ZEROMV,
-    1,//PRED_MD_NEWMV
-};
 static const UINT64 g_Vp9LeftPredictionMask[BLOCK_SIZES] =
 {
     0x0000000000000001,  // BLOCK_4X4,

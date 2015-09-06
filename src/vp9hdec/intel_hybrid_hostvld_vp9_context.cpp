@@ -453,7 +453,6 @@ static VAStatus Intel_HostvldVp9_AdaptCoeffProbs(
         }
     }
 
-finish:
     return eStatus;
 }
 
@@ -596,7 +595,6 @@ static VAStatus Intel_HostvldVp9_AdaptModeProbs(
             pCount->MbSkipCounts[i]);
     }
 
-finish:
     return eStatus;
 }
 
@@ -666,7 +664,6 @@ static VAStatus Intel_HostvldVp9_AdaptMvProbs(
         }
     }
 
-finish:
     return eStatus;
 }
 
@@ -758,7 +755,6 @@ VAStatus Intel_HostvldVp9_InitializeProbabilities(
         g_Vp9DefaultCoeffProbs,
         Size);
 
-finish:
     return eStatus;
 }
 
@@ -905,7 +901,6 @@ VAStatus Intel_HostvldVp9_SetupSegmentationProbs(
         pSegPredProb,
         Size);
 
-finish:
     return eStatus;
 }
 
@@ -914,14 +909,11 @@ VAStatus Intel_HostvldVp9_ReadProbabilitiesInter(
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo, 
     PINTEL_HOSTVLD_VP9_BAC_ENGINE    pBacEngine)
 {
-    PINTEL_VP9_PIC_PARAMS    pPicParams;
     INT                         i, j;
     PBOOL                       pbRefFrameSignBias;
     DWORD                       dwPredictionMode;
     VAStatus                  eStatus     = VA_STATUS_SUCCESS;
 
-
-    pPicParams          = pFrameInfo->pPicParams;
     pbRefFrameSignBias  = pFrameInfo->RefFrameSignBias;
 
     // inter mode probs
@@ -1083,7 +1075,6 @@ VAStatus Intel_HostvldVp9_ReadProbabilitiesInter(
         }
     }
 
-finish:
     return eStatus;
 }
 
@@ -1092,12 +1083,8 @@ VAStatus Intel_HostvldVp9_ReadProbabilities(
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo, 
     PINTEL_HOSTVLD_VP9_BAC_ENGINE    pBacEngine)
 {
-    PINTEL_VP9_PIC_PARAMS    pPicParams;
     INT                         i, j, k, l, m, n;
     VAStatus                  eStatus     = VA_STATUS_SUCCESS;
-
-
-    pPicParams  = pFrameInfo->pPicParams;
 
     // Read probabilities
     if (pFrameInfo->TxMode == TX_MODE_SELECT)
@@ -1172,7 +1159,6 @@ VAStatus Intel_HostvldVp9_ReadProbabilities(
             pContext, pFrameInfo, pBacEngine);
     }
 
-finish:
     return eStatus;
 }
 
@@ -1203,7 +1189,6 @@ VAStatus Intel_HostvldVp9_AdaptProbabilities(
         }
     }
 
-finish:
     return eStatus;
 }
 

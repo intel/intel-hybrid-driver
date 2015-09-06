@@ -31,6 +31,7 @@
 #include "media_drv_hw_g75.h"
 #include "media_drv_hw_g7.h"
 #include "media_drv_hw_g8.h"
+#include "media_drv_hw_g9.h"
 
 VOID
 media_hw_context_init(VADriverContextP ctx)
