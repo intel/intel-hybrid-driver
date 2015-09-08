@@ -83,11 +83,11 @@ struct object_surface
   struct object_subpic *obj_subpic[MEDIA_GEN_MAX_SUBPIC];
   UINT subpic_render_idx;
 
-  INT width;			/* the pitch of plane 0 in bytes in horizontal direction */
-  INT height;			/* the pitch of plane 0 in bytes in vertical direction */
-  INT size;
-  INT orig_width;		/* the width of plane 0 in pixels */
-  INT orig_height;		/* the height of plane 0 in pixels */
+  UINT width;			/* the pitch of plane 0 in bytes in horizontal direction */
+  UINT height;			/* the pitch of plane 0 in bytes in vertical direction */
+  UINT size;
+  UINT orig_width;		/* the width of plane 0 in pixels */
+  UINT orig_height;		/* the height of plane 0 in pixels */
   INT flags;
   UINT fourcc;
   dri_bo *bo;

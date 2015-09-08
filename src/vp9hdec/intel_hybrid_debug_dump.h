@@ -37,12 +37,12 @@ extern "C" {
 #endif
 
 extern int intel_hybrid_writefilefromptr(
-    char                  *pFilename,
+    const char             *pFilename,
     void                   *lpBuffer,
     uint32_t                  writeSize);
 
 extern int intel_hybrid_appendfilefromptr(
-    char                   *pFilename,
+    const char              *pFilename,
     void                    *pData,
     uint32_t                    dwSize);
 

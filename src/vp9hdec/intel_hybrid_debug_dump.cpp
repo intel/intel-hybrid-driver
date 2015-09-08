@@ -38,7 +38,7 @@
 
 static int intel_hybrid_createfile(
     int		*fd,
-    char           *lpFileName,
+    const char           *lpFileName,
     uint32_t                iOpenFlag)
 {
     int               iFileDescriptor;
@@ -72,7 +72,7 @@ static int intel_hybrid_writefile(
     size_t    nNumBytesToWrite;
     ssize_t   nNumBytesWritten;
 
-    if((fd == NULL) || (lpBuffer == NULL) || (pbytesWritten == NULL))
+    if((!fd) || (lpBuffer == NULL) || (pbytesWritten == NULL))
     {
         return -EINVAL;
     }
@@ -93,7 +93,7 @@ static int intel_hybrid_writefile(
 }
 
 int intel_hybrid_writefilefromptr(
-    char                  *pFilename,
+    const char                  *pFilename,
     void                   *lpBuffer,
     uint32_t                  writeSize)
 {
@@ -123,7 +123,7 @@ int intel_hybrid_writefilefromptr(
 
 
 int intel_hybrid_appendfilefromptr(
-    char                     *pFilename,
+    const char              *pFilename,
     void                    *pData,
     uint32_t                    dwSize)
 {
@@ -166,7 +166,7 @@ char *intel_alloc_zero_aligned_memory(uint32_t size, unsigned int alignment)
      size_t tmp_size;
 
      tmp_size = ALIGN(size, alignment);
-     ptr = memalign(alignment, tmp_size);
+     ptr = (char *)memalign(alignment, tmp_size);
 
      if (ptr) {
          memset(ptr, 0, tmp_size);

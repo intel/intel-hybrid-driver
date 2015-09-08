@@ -345,28 +345,6 @@ INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT16(
 }
 
 static VAStatus
-INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
-	VADriverContextP ctx,
-	CmDevice    *pMdfDevice,
-	INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER *pMdfBuffer1D,
-	int dwBufferSize)
-{
-    int buf_size, cm_status;
-
-    buf_size = ALIGN((dwBufferSize) * sizeof(uint32_t), INTEL_HYBRID_VP9_PAGE_SIZE);
-
-    pMdfBuffer1D->dwSize    = (dwBufferSize);
-    pMdfBuffer1D->pu8Buffer = memalign(INTEL_HYBRID_VP9_PAGE_SIZE, buf_size);
-    memset(pMdfBuffer1D->pu32Buffer, 0, buf_size);
-    cm_status = pMdfDevice->CreateBufferUP(buf_size, pMdfBuffer1D->pu32Buffer,pMdfBuffer1D->pMdfBuffer);
-
-    if (cm_status == CM_SUCCESS)
-	return VA_STATUS_SUCCESS;
-    else
-        return VA_STATUS_ERROR_ALLOCATION_FAILED;
-}
-
-static VAStatus
 INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
 	VADriverContextP ctx,
 	CmDevice    *pMdfDevice,
@@ -446,7 +424,7 @@ void GetCmOsResourceFor2DBuffer(
 	int format)
 {
         /* Use the linear format */
-	target_source->format = format;
+	target_source->format = (VA_CM_FORMAT)format;
 	target_source->aligned_width = pMdfBuffer2D->dwWidth; 
 	target_source->pitch = pMdfBuffer2D->dwPitch; 
 	target_source->aligned_height = pMdfBuffer2D->dwHeight;
@@ -678,68 +656,6 @@ allocation_fail:
 }
 
 static VAStatus
-INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT32(
-	VADriverContextP ctx,
-	CmDevice    *pMdfDevice,
-	INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER *pMdfBuffer1D,
-	int dwBufferSize)
-{
-    MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-    int buf_size, cm_status;
-    CmOsResource target_resource;
-
-    buf_size = ALIGN((dwBufferSize) * sizeof(uint32_t), INTEL_HYBRID_VP9_PAGE_SIZE);
-
-    pMdfBuffer1D->dwSize    = (dwBufferSize);
-
-    pMdfBuffer1D->bo  = dri_bo_alloc(drv_ctx->drv_data.bufmgr, 
-                                        "Buffer", 
-                                        buf_size, 64);
-    {
-        struct drm_i915_gem_caching bo_cache;
-
-        memset(&bo_cache, 0, sizeof(bo_cache));
-        bo_cache.handle = pMdfBuffer1D->bo->handle;
-        bo_cache.caching = I915_CACHING_CACHED;
-
-        drmIoctl(drv_ctx->drv_data.fd, DRM_IOCTL_I915_GEM_SET_CACHING, &bo_cache);
-    }
-
-    /* Disable reuse this bo which set I915_CACHING_CACHED on CHV/BSW without LLC.
-     * Otherwise if it was reused and GTT mapped later, SIGBUS when access the GTT virtual addr.
-     */
-    if (IS_CHERRYVIEW(drv_ctx->drv_data.device_id)) {
-        drm_intel_bo_disable_reuse(pMdfBuffer1D->bo);
-    }
-
-    pMdfBuffer1D->bo_mapped = 0;
-
-    
-    pMdfBuffer1D->pu32Buffer = NULL;
-
-    memset(&target_resource, 0, sizeof(target_resource));
-    GetCmOsResourceFor1DBuffer(&target_resource, pMdfBuffer1D, pMdfBuffer1D->bo, 4);
-
-    cm_status = pMdfDevice->CreateBuffer(&target_resource,pMdfBuffer1D->pMdfBuffer);
-
-    if (cm_status != CM_SUCCESS) {
-	dri_bo_unreference(pMdfBuffer1D->bo);
-	pMdfBuffer1D->bo = NULL;
-	goto allocation_fail;
-    }
-  
-    dri_bo_map(pMdfBuffer1D->bo, 1);
-    memset(pMdfBuffer1D->bo->virt, 0, buf_size);
-    pMdfBuffer1D->pu32Buffer = (UINT32 *)pMdfBuffer1D->bo->virt;
-    pMdfBuffer1D->bo_mapped = 1;
-
-    return VA_STATUS_SUCCESS;
-
-allocation_fail:
-    return VA_STATUS_ERROR_ALLOCATION_FAILED;
-}
-
-static VAStatus
 INTEL_HYBRID_VP9_ALLOCATE_MDF_1D_BUFFER_UINT64(
 	VADriverContextP ctx,
 	CmDevice    *pMdfDevice,
@@ -866,7 +782,7 @@ void Intel_HybridVp9Decode_ConstructCombinedFilters(PVOID pCombinedFilters)
 
     // 8 Tap Filters
     pi16Filters = (int16_t *)&g_Filters8Tap;
-    pi8CombinedFilters = (PINT8)pCombinedFilters;
+    pi8CombinedFilters = (int8_t *)pCombinedFilters;
     for (i = 0; i < 8 * 16; i++)
     {
         pi8CombinedFilters[i] = (int8_t)((*pi16Filters++) - 1);
@@ -1617,7 +1533,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Allocate(
     uint32_t                                   dwFlags)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER      pMdfDecodeBuffer;
-    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
     PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
     DWORD                                       dwAlignedWidth;     // SB64 aligned Width
     DWORD                                       dwAlignedHeight;    // SB64 aligned Height
@@ -1930,11 +1845,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine;
     CmDevice                                *pMdfDevice = NULL;
-    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
     unsigned int                                    i;
     VAStatus                              eStatus = VA_STATUS_SUCCESS;
-    int				          cm_status; 
-    
+    int				          cm_status;
 
     pMdfDecodeEngine    = &pHybridVp9State->MdfDecodeEngine;
 
@@ -1969,6 +1882,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Create (
 
 	cm_version = CM_4_0;
         cm_status = CreateCmDevice(pMdfDevice, cm_version, &driver_context, CM_DEVICE_CREATE_OPTION_FOR_VP9);
+        if (cm_status != CM_SUCCESS) {
+                return VA_STATUS_ERROR_ALLOCATION_FAILED;
+        }
 
         pMdfDecodeEngine->pMdfDevice = pMdfDevice;
         pMdfDecodeEngine->iMdfDeviceTsc = __rdtsc();
@@ -2004,9 +1920,6 @@ void Intel_HybridVp9Decode_MdfHost_Release (
     uint32_t                                   dwFlags)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_BUFFER      pMdfDecodeBuffer;
-    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
-    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
-
 
     pMdfDecodeBuffer = &pMdfDecodeFrame->MdfDecodeBuffer;
 
@@ -2063,8 +1976,6 @@ VOID Intel_HybridVp9Decode_MdfHost_ReleaseResidue(
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE     pMdfDecodeEngine,
     CmDevice                                *pMdfDevice)
 {
-    PINTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER   pMdfBuffer2D;
-
     // intermedia surfaces - residual
     INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_Y]);
     INTEL_HYBRID_VP9_DESTROY_MDF_2D_BUFFER(pMdfDevice, &pMdfDecodeEngine->Residue[INTEL_HYBRID_VP9_MDF_YUV_PLANE_UV]);
@@ -2074,7 +1985,6 @@ void Intel_HybridVp9Decode_MdfHost_Destroy (
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME   pMdfDecodeFrame;
-    PINTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER   pMdfBuffer1D;
     CmDevice                                *pMdfDevice;
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE    pFrame;
     unsigned int                                    i;
@@ -2176,7 +2086,7 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Initialize (
     PINTEL_DECODE_HYBRID_VP9_STATE   pHybridVp9State)
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE          pMdfDecodeEngine;
-    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME           pMdfDecodeFrame;
+    PINTEL_DECODE_HYBRID_VP9_MDF_FRAME           pMdfDecodeFrame = NULL;
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE    pFrame;
     CmDevice                                        *pMdfDevice;
     VAStatus                                      eStatus = VA_STATUS_SUCCESS;
@@ -2246,7 +2156,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Initialize (
          (pHybridVp9State->dwCropHeight != pFrame->Frame.dwHeight));
     pMdfDecodeEngine->bResolutionChanged &= ((pFrame->Frame.dwWidth > 0) && (pFrame->Frame.dwHeight > 0));
 
-finish:
     return eStatus;
 }
 
@@ -2291,13 +2200,11 @@ VAStatus Intel_HybridVp9Decode_MdfHost_UpdateResolution(
 {
     PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE    pFrame;
     VAStatus                                     eStatus = VA_STATUS_SUCCESS;
-    struct object_surface *sDestSurface;
     VADriverContextP	ctx;
     ctx = (VADriverContextP) (pHybridVp9State->driver_context);
     MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
 
     struct object_surface *surface;
-    INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *pFrameSource;
 
 	surface = SURFACE(dwCurrIndex);
 	pFrame = (INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE *)(surface->private_data);
@@ -2413,10 +2320,9 @@ VAStatus Intel_HybridVp9Decode_MdfHost_PadFrame (
         CmTask          *pTask;
         CmThreadSpace   *pThreadSpace;
         SurfaceIndex    *pSurfaceIndex = NULL;
-        uint32_t           dwOffset, dwThreadCount;
+        uint32_t           dwThreadCount;
         uint32_t           dwLastDwOffset, dwWidthMod4Minus1;
 
-        dwOffset            = dwWidth & 0xFFFFFFFC;
         dwThreadCount       = (dwHeight + 7) >> 3;
         dwLastDwOffset      = dwWidth & ~3;
         dwWidthMod4Minus1   = (dwWidth & 3) - 1;
@@ -2856,7 +2762,6 @@ VAStatus Intel_HybridVp9Decode_MdfHost_Execute (
 
         if (pMdfBuffer->ThreadInfo[i].pMdfSurface)
         {            
-            CmEvent *pEvent = NULL;
             pMdfBuffer->ThreadInfo[i].pMdfSurface->GetIndex(pSurfaceIndexThreadInfo[i]);
 
             Intel_HybridVp9Decode_MdfHost_ZeroFillThreadInfo(
@@ -2983,10 +2888,10 @@ finish:
     return eStatus;
 }
 
-static INT g_iCounter = 0, g_iInterCounter = 0, g_iDeblockCounter = 0;
+static INT g_iCounter = 0, g_iInterCounter = 0;
 
 int intel_hybrid_Vp9Decode_WriteFileFromPtr(
-    char          *pFilename,
+    const char     *pFilename,
     void           *pData,
     DWORD           dwSize, 
     INT             iCounter)
@@ -3015,7 +2920,6 @@ int intel_hybrid_Vp9Decode_DebugDump (
     INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER    MdfBuffer1D;
     PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE      pMdfDecodeEngine;
     INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER    Buffer;
-    UINT                                        uiWidth, uiHeight, uiSizePerPixel;
     MEDIA_DRV_CONTEXT *drv_ctx;
 
     ctx = (VADriverContextP) (pHybridVp9State->driver_context);
@@ -3236,10 +3140,7 @@ int intel_hybrid_Vp9Decode_DebugDump (
 
     if (!pMdfDecodeFrame->bIntraOnly)
     {
-	PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE   pMdfDecodeEngine;
 	INTEL_DECODE_HYBRID_VP9_MDF_1D_BUFFER tmp_Buffer;
-
-	pMdfDecodeEngine = &pHybridVp9State->MdfDecodeEngine;
 
         /* dump Last Ref frame */
         surface = SURFACE(pMdfDecodeFrame->ucLastRefIndex);
@@ -3669,7 +3570,7 @@ static VAStatus codechal_allocate_frame_source(struct object_surface *surface)
         surface->free_private_data = NULL; 
     }
     
-    pFrameSource = calloc(1, sizeof(*pFrameSource));
+    pFrameSource = (PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE)calloc(1, sizeof(*pFrameSource));
     if (pFrameSource == NULL) {
         eStatus = VA_STATUS_ERROR_ALLOCATION_FAILED;
 	return eStatus;
@@ -3723,7 +3624,7 @@ VAStatus Intel_HybridVp9_DecodeInitialize(
     if (slice_data_bo) {
 	dri_bo_map(slice_data_bo, 0);
 	pHostVldVideoBuffer->slice_data_bo = slice_data_bo;
-	pHostVldVideoBuffer->pbBitsData = slice_data_bo->virt;
+	pHostVldVideoBuffer->pbBitsData = (uint8_t *)slice_data_bo->virt;
 	pHostVldVideoBuffer->dwBitsSize = pVp9PicParams->BSBytesInBuffer;
     }
 
@@ -3753,12 +3654,7 @@ VAStatus Intel_HybridVp9_DecodeSliceLevel(
     PINTEL_DECODE_HYBRID_VP9_STATE       pHybridVp9State,
     void *hw_context)
 {
-    PINTEL_DECODE_HYBRID_VP9_MDF_ENGINE  pMdfDecodeEngine;
-    PINTEL_VP9_PIC_PARAMS                pVp9PicParams;
     VAStatus                              eStatus = VA_STATUS_SUCCESS;
-
-    pMdfDecodeEngine    = &pHybridVp9State->MdfDecodeEngine;
-    pVp9PicParams       = pHybridVp9State->HostVldVideoBuf.pVp9PicParams;
 
     // execute HostVLD to parse bitstream and prepare MDF resources for kernels
     Intel_HostvldVp9_Execute(pHybridVp9State->hHostVld);
@@ -3798,7 +3694,7 @@ intel_hybrid_vp9_convert_picture(VADriverContextP ctx,
     hybrid_vp9_hw_context *vp9_context = (hybrid_vp9_hw_context *) hw_context;
     struct decode_state *decode_state = &codec_state->decode;
     PINTEL_VP9_PIC_PARAMS                    pVp9PicParams;
-    int                          i,j,k;
+    int                          i;
     VADecPictureParameterBufferVP9 *pPP;
 
     pVp9PicParams       = (PINTEL_VP9_PIC_PARAMS)&vp9_context->vp9_pic_params;
@@ -3935,7 +3831,6 @@ intel_hybrid_decode_picture(VADriverContextP ctx,
     PINTEL_DECODE_HYBRID_VP9_STATE  pHybridVp9State;
     VAStatus                             eStatus = VA_STATUS_SUCCESS;
     hybrid_vp9_hw_context *vp9_context = (hybrid_vp9_hw_context *) hw_context;
-    struct object_surface *obj_surface;
     
     pHybridVp9State = &vp9_context->vp9_state;
 

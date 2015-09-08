@@ -34,6 +34,7 @@ AM_CPPFLAGS = \
 
 driver_cflags = \
 	-Wall			\
+	-Wno-unused-variable      \
 	-fvisibility=hidden	\
 	$(NULL)
 

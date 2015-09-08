@@ -280,10 +280,8 @@ VAStatus Intel_HostvldVp9_LoopfilterLevelAndMaskInSingleBlock(
 {
     VAStatus  eStatus;
     PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState;
-    PINTEL_HOSTVLD_VP9_FRAME_INFO pFrameInfo;
     PINTEL_HOSTVLD_VP9_MB_INFO    pMbInfo;
     PINTEL_HOSTVLD_VP9_MODE_INFO  pMode;
-    PINTEL_VP9_SEGMENT_PARAMS   pSegmentData;
     PINTEL_HOSTVLD_VP9_LOOP_FILTER_MASK pLoopFilterMaskSB;
     INT iWidth8x8, iHeight8x8, RowOffset8B;
     UCHAR FilterLevel;
@@ -291,16 +289,14 @@ VAStatus Intel_HostvldVp9_LoopfilterLevelAndMaskInSingleBlock(
     PUINT16 pMaskLeftUv, pMaskAboveUv, pMaskInt4x4Uv;
     DWORD nFilterLevelStride;
     PUINT8 pLoopFilterLevel;
-    INT OffsetXInB8, OffsetYInB8, ShiftY, ShiftUv, YMaskOnlyFlag, i, Index;
+    INT OffsetXInB8, OffsetYInB8, ShiftY, ShiftUv, YMaskOnlyFlag;
 
     eStatus = VA_STATUS_SUCCESS;
 
     pFrameState = pTileState->pFrameState;
-    pFrameInfo = &pFrameState->FrameInfo;
     pMbInfo    = &pTileState->MbInfo;
     pMode      = pMbInfo->pMode;
 
-    pSegmentData = pFrameInfo->pSegmentData;
     pLoopFilterMaskSB = &(pMbInfo->LoopFilterMaskSB);
 
     if ((pMode->DW1.ui8TxSizeLuma >= TX_SIZES) || (pMode->DW0.ui8TxSizeChroma >= TX_SIZES))
@@ -674,7 +670,6 @@ VAStatus Intel_HostvldVp9_LoopfilterCalcMaskInSuperBlock(
         }
     }
 
-finish:
     return eStatus;
 }
 
@@ -720,31 +715,22 @@ VAStatus Intel_HostvldVp9_LoopfilterCalcThreshold(
         pLoopFilterThresholdAddr[Level * nFilterThresholdStride + 2]    = Level >> 4;                               //Byte2: Hev_threshold
     }
 
-finish:
     return eStatus;
 }
 
 VAStatus Intel_HostvldVp9_LoopfilterBlock(
     PINTEL_HOSTVLD_VP9_TILE_STATE    pTileState)
 {
-    PINTEL_HOSTVLD_VP9_FRAME_STATE   pFrameState;
-    PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo;
-    PINTEL_HOSTVLD_VP9_TILE_INFO     pTileInfo;
     PINTEL_HOSTVLD_VP9_MB_INFO       pMbInfo;
     VAStatus                          eStatus = VA_STATUS_SUCCESS;
 
-    pFrameState = pTileState->pFrameState;
-    pFrameInfo  = &pFrameState->FrameInfo;
     pMbInfo    = &pTileState->MbInfo;
-    pTileInfo   = pMbInfo->pCurrTile;
 
     //Update pMbInfo->i8ZOrder per block location
     pMbInfo->i8ZOrder   = (INT8)g_Vp9TxBlockIndex2ZOrderIndexMapSquare64[(pMbInfo->dwMbPosX % 8) + ((pMbInfo->dwMbPosY % 8) << 3)];
     Intel_HostvldVp9_LoopfilterLevelAndMaskInSingleBlock(pTileState);
 
-finish:
     return eStatus;
-
 }
 
 VAStatus Intel_HostvldVp9_LoopfilterSuperBlock(
@@ -852,7 +838,7 @@ VAStatus Intel_HostvldVp9_LoopfilterSuperBlock(
         pMbInfo->iB4Number = g_Vp9B4NumberLookup[TargetBlockSize];
         Intel_HostvldVp9_LoopfilterBlock(pTileState);
         pMbInfo->dwMbPosY    += dwSplitBlockSize;
-        if (pMbInfo->dwMbPosY < (INT)pFrameInfo->dwB8Rows)
+        if (pMbInfo->dwMbPosY < pFrameInfo->dwB8Rows)
         {
             pMbInfo->pMode += dwSplitBlockSize << VP9_LOG2_B64_SIZE_IN_B8;
             Intel_HostvldVp9_LoopfilterBlock(pTileState);
@@ -884,7 +870,7 @@ VAStatus Intel_HostvldVp9_LoopfilterSuperBlock(
         pMbInfo->iB4Number = g_Vp9B4NumberLookup[TargetBlockSize];
         Intel_HostvldVp9_LoopfilterBlock(pTileState);
         pMbInfo->dwMbPosX    += dwSplitBlockSize;
-        if (pMbInfo->dwMbPosX < (INT)pFrameInfo->dwB8Columns)
+        if (pMbInfo->dwMbPosX < pFrameInfo->dwB8Columns)
         {
             pMbInfo->pMode += dwSplitBlockSize;
             Intel_HostvldVp9_LoopfilterBlock(pTileState);
@@ -1081,7 +1067,6 @@ VAStatus Intel_HostvldVp9_LoopfilterOneTile(
         pMbInfo->pModeInfoCache += dwLineDist;
     }
 
-finish:
     return eStatus;
 }
 
@@ -1110,7 +1095,6 @@ VAStatus Intel_HostvldVp9_LoopfilterTileColumn(
         Intel_HostvldVp9_LoopfilterOneTile(pTileState, pTileInfo);
     }
 
-finish:
     return eStatus;
 }
 

@@ -36,10 +36,8 @@
 BOOL
 media_render_init (VADriverContextP ctx)
 {
-  INT i;
   MEDIA_DRV_CONTEXT *drv_ctx = ctx->pDriverData;
   MEDIA_DRV_ASSERT (ctx);
-  struct media_render_state *render_state = &drv_ctx->render_state;
 
   if (drv_ctx->codec_info && drv_ctx->codec_info->render_init)
     drv_ctx->codec_info->render_init(ctx);
@@ -50,7 +48,6 @@ media_render_init (VADriverContextP ctx)
 VOID
 media_render_terminate (VADriverContextP ctx)
 {
-  INT i;
   MEDIA_DRV_CONTEXT *drv_ctx = ctx->pDriverData;
   MEDIA_DRV_ASSERT (ctx);
   struct media_render_state *render_state = &drv_ctx->render_state;

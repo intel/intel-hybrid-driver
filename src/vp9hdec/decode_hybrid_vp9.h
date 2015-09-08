@@ -116,12 +116,12 @@ typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER
 typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE
 {
     INTEL_DECODE_HYBRID_VP9_MDF_2D_BUFFER    Frame;
-    bool                                        bHasPadding;
-    int32_t                                       dwWidth;    // Surface width
-    int32_t                                       dwHeight;   // Surface height
+    bool                                     bHasPadding;
+    uint32_t                                 dwWidth;    // Surface width
+    uint32_t                                 dwHeight;   // Surface height
 
-    CmDevice                                    *pMdfDevice;
-    uint64_t                                    iMdfDeviceTsc;
+    CmDevice                                 *pMdfDevice;
+    uint64_t                                 iMdfDeviceTsc;
 } INTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE, *PINTEL_DECODE_HYBRID_VP9_MDF_FRAME_SOURCE;
 
 
@@ -159,26 +159,26 @@ typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_FRAME
     CmQueue         *pMdfQueue;
     CmEvent         *pMdfEvent; // Check if the kernel is executed before next round write surface
 
-    int32_t           dwWidth;
-    int32_t           dwHeight;
-    uint32_t           dwMaxWidth;
-    uint32_t           dwMaxHeight;
-    uint32_t           dwAlignedWidth;     // SB64 aligned Width
-    uint32_t           dwAlignedHeight;    // SB64 aligned Height
-    uint32_t           dwWidthB8;
-    uint32_t           dwHeightB8;
-    uint32_t           dwWidthB16;
-    uint32_t           dwHeightB16;
-    uint32_t           dwWidthB32;
-    uint32_t           dwHeightB32;
-    uint32_t           dwWidthB64;
-    uint32_t           dwHeightB64;
+    uint32_t        dwWidth;
+    uint32_t        dwHeight;
+    uint32_t        dwMaxWidth;
+    uint32_t        dwMaxHeight;
+    uint32_t        dwAlignedWidth;     // SB64 aligned Width
+    uint32_t        dwAlignedHeight;    // SB64 aligned Height
+    uint32_t        dwWidthB8;
+    uint32_t        dwHeightB8;
+    uint32_t        dwWidthB16;
+    uint32_t        dwHeightB16;
+    uint32_t        dwWidthB32;
+    uint32_t        dwHeightB32;
+    uint32_t        dwWidthB64;
+    uint32_t        dwHeightB64;
 
-	VASurfaceID	CurrPic;
-	VASurfaceID	ucCurrIndex;
-	VASurfaceID	ucLastRefIndex;
-	VASurfaceID	ucGoldenRefIndex;
-	VASurfaceID	ucAltRefIndex;
+    VASurfaceID	    CurrPic;
+    VASurfaceID	    ucCurrIndex;
+    VASurfaceID	    ucLastRefIndex;
+    VASurfaceID	    ucGoldenRefIndex;
+    VASurfaceID	    ucAltRefIndex;
     bool            bShowFrame;
     bool            bIntraOnly;
     bool            bSwitchableFilterType;
@@ -186,8 +186,8 @@ typedef struct _INTEL_DECODE_HYBRID_VP9_MDF_FRAME
     bool            bLossless;
     bool            bResolutionChange;
     bool            bUseCollocatedMV;
-    uint32_t           dwInterpolationFilterType;
-    uint32_t            uiStatusReportFeedbackNumber;         
+    uint32_t        dwInterpolationFilterType;
+    uint32_t        uiStatusReportFeedbackNumber;
 
     // previous frame information
     bool            bPrevShowFrame;

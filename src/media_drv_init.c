@@ -26,6 +26,7 @@
  * Xiang Haihao <haihao.xiang@intel.com> 
  */
 
+#include <unistd.h>
 #include "sysdeps.h"
 #include "media_drv_util.h"
 #include "media_drv_defines.h"
@@ -701,7 +702,7 @@ media_CreateImage (VADriverContextP ctx, VAImageFormat * format, INT width, INT 
   struct object_image *obj_image;
   VAStatus va_status = VA_STATUS_ERROR_OPERATION_FAILED;
   VAImageID image_id;
-  unsigned int size, awidth, aheight;
+  unsigned int awidth, aheight;
 
   out_image->image_id = VA_INVALID_ID;
   out_image->buf      = VA_INVALID_ID;
@@ -724,7 +725,6 @@ media_CreateImage (VADriverContextP ctx, VAImageFormat * format, INT width, INT 
   awidth = ALIGN(width, 16);
 
   aheight = ALIGN(height, 16);
-  size    = awidth * aheight;
 
   image->num_palette_entries = 0;
   image->entry_bytes         = 0;
@@ -1116,7 +1116,7 @@ media_drv_release_buffer_handle(struct object_buffer *obj_buffer)
 
     switch (buf_info->mem_type) {
     case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: {
-      close((intptr_t)buf_info->handle);
+      close((int)buf_info->handle);
       break;
       }
     }
@@ -1494,8 +1494,8 @@ media_EndPicture (VADriverContextP ctx, VAContextID context)
 // MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC(sequence_parameter, seq_param)    
 // MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC(picture_parameter, pic_param)
 // MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC(picture_control, pic_control)
+// MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (iqmatrix, iq_matrix)
 MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (qmatrix, q_matrix)
-MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (iqmatrix, iq_matrix)
 MEDIA_DEF_RENDER_ENCODE_SINGLE_BUFFER_FUNC (frame_update, frame_update_param)
 
 /* extended buffer */
@@ -2450,7 +2450,6 @@ media_QueryConfigProfiles (VADriverContextP ctx, VAProfile * profile_list,	/* ou
 			   INT * num_profiles)	/* out */
 {
   MEDIA_DRV_CONTEXT *drv_ctx = (MEDIA_DRV_CONTEXT *) (ctx->pDriverData);
-  BOOL retval = true;
   MEDIA_DRV_ASSERT (profile_list);
   MEDIA_DRV_ASSERT (num_profiles);
   int i = 0;
