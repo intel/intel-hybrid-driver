@@ -2363,6 +2363,40 @@ media_ensure_config_attribute(struct object_config *obj_config,
   return media_append_config_attribute(obj_config, new_attrib);
 }
 
+static bool
+media_ensure_vendor_string(MEDIA_DRV_CONTEXT *media)
+{
+    int ret, len;
+
+    if (media->va_vendor[0] != '\0')
+        return true;
+
+    len = 0;
+    ret = snprintf(media->va_vendor, sizeof(media->va_vendor),
+        "%s %s driver - %d.%d.%d",
+        INTEL_STR_DRIVER_VENDOR, INTEL_STR_DRIVER_NAME,
+        INTEL_DRIVER_MAJOR_VERSION, INTEL_DRIVER_MINOR_VERSION,
+        INTEL_DRIVER_MICRO_VERSION);
+    if (ret < 0 || ret >= sizeof(media->va_vendor))
+        goto error;
+    len = ret;
+
+    if (INTEL_DRIVER_PRE_VERSION > 0) {
+        ret = snprintf(&media->va_vendor[len], sizeof(media->va_vendor) - len,
+            ".pre%d", INTEL_DRIVER_PRE_VERSION);
+        if (ret < 0 || ret >= sizeof(media->va_vendor))
+            goto error;
+        len += ret;
+    }
+    return true;
+
+error:
+    media->va_vendor[0] = '\0';
+    MEDIA_DRV_ASSERT (ret > 0 && len < sizeof(media->va_vendor));
+    return false;
+}
+
+
 VAStatus
 media_CreateConfig (VADriverContextP ctx, VAProfile profile, VAEntrypoint entrypoint, VAConfigAttrib * attrib_list, INT num_attribs, VAConfigID * config_id)	/* out */
 {
@@ -2609,14 +2643,11 @@ media_drv_init (VADriverContextP ctx)
     goto dri_init_error;
 #endif
 
-  sprintf (drv_ctx->drv_version, "%s %s driver - %d.%d.%d.pre%d",
-	   INTEL_STR_DRIVER_VENDOR,
-	   INTEL_STR_DRIVER_NAME,
-	   INTEL_DRIVER_MAJOR_VERSION,
-	   INTEL_DRIVER_MINOR_VERSION,
-	   INTEL_DRIVER_MICRO_VERSION, INTEL_DRIVER_PRE_VERSION);
+  if (!media_ensure_vendor_string(drv_ctx))
+    return VA_STATUS_ERROR_ALLOCATION_FAILED;
+
   drv_ctx->current_context_id = VA_INVALID_ID;
-  ctx->str_vendor = drv_ctx->drv_version;
+  ctx->str_vendor = drv_ctx->va_vendor;
 
   return VA_STATUS_SUCCESS;
 
@@ -2661,12 +2692,12 @@ media_Terminate (VADriverContextP ctx)
   return VA_STATUS_SUCCESS;
 }
 
-
 VAStatus
 va_driver_init (VADriverContextP ctx)
 {
   VAStatus ret = VA_STATUS_ERROR_UNKNOWN;
   struct VADriverVTable *const vtable = ctx->vtable;
+
   ctx->version_major = VA_MAJOR_VERSION;
   ctx->version_minor = VA_MINOR_VERSION;
   ctx->max_profiles = MEDIA_GEN_MAX_PROFILES;
@@ -2727,7 +2758,9 @@ va_driver_init (VADriverContextP ctx)
   vtable->vaAcquireBufferHandle = media_drv_AcquireBufferHandle;
   vtable->vaReleaseBufferHandle = media_drv_ReleaseBufferHandle;
 #endif
+
   ret = media_drv_init (ctx);
+
   return ret;
 }
 
