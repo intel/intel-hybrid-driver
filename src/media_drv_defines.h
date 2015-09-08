@@ -88,15 +88,6 @@
 #define INTEL_STR_DRIVER_VENDOR                 "Intel"
 #define INTEL_STR_DRIVER_NAME                   "hybrid"
 
-/* Major version of the driver */
-#define INTEL_DRIVER_MAJOR_VERSION 0
-/* Micro version of the driver */
-#define INTEL_DRIVER_MICRO_VERSION 1
-/* Minor version of the driver */
-#define INTEL_DRIVER_MINOR_VERSION 0
-/* Preversion of the driver */
-#define INTEL_DRIVER_PRE_VERSION 0
-
 typedef double DOUBLE;
 typedef float FLOAT;
 typedef unsigned long ULONG;

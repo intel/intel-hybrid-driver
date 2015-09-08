@@ -1,8 +1,8 @@
 # intel-hybrid-driver package version number
-m4_define([intel_driver_major_version], [0])
+m4_define([intel_driver_major_version], [1])
 m4_define([intel_driver_minor_version], [0])
 m4_define([intel_driver_micro_version], [1])
-m4_define([intel_driver_pre_version],   [0])
+m4_define([intel_driver_pre_version],   [1])
 m4_define([intel_driver_version],
           [intel_driver_major_version.intel_driver_minor_version.intel_driver_micro_version])
 m4_if(intel_driver_pre_version, [0], [], [
@@ -10,17 +10,17 @@ m4_append([intel_driver_version], intel_driver_pre_version, [.pre])
 ])
 
 # libva minimum version requirement
-m4_define([va_api_version], [0.34])
-m4_define([libva_package_version], [1.2.0])
+m4_define([va_api_version], [0.38])
+m4_define([libva_package_version], [1.6.0])
 
 # libdrm minimum version requirement
-m4_define([libdrm_version], [2.4.23])
+m4_define([libdrm_version], [2.4.45])
 
 # cmrt minimum version requirement
-m4_define([cmrt_version], [0.0.1])
+m4_define([cmrt_version], [0.10.0])
 
 AC_PREREQ([2.57])
-AC_INIT([intel_driver], [intel_driver_version], [libva@lists.freedesktop.org],
+AC_INIT([intel_driver], [intel_driver_version], [haihao.xiang@intel.com],
         [libva-intel-driver])
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_INIT_AUTOMAKE([1.9 tar-ustar])
@@ -85,9 +85,10 @@ PKG_CHECK_MODULES([CMRT], [cmrt >= $CMRT_VERSION])
 AC_SUBST(CMRT_VERSION)
 
 dnl Check for gen4asm
-PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.3], [gen4asm=yes], [gen4asm=no])
-AM_CONDITIONAL(HAVE_GEN4ASM, test x$gen4asm = xyes)
+PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.9], [gen4asm=yes], [gen4asm=no])
 AC_PATH_PROG([GEN4ASM], [intel-gen4asm])
+AS_IF([test "x$GEN4ASM" = "x" ], [AM_CONDITIONAL(HAVE_GEN4ASM, false)],
+    [AM_CONDITIONAL(HAVE_GEN4ASM, [test x$gen4asm = xyes])])
 
 dnl Check for VA-API
 PKG_CHECK_MODULES(LIBVA_DEPS,     [libva >= va_api_version])
@@ -136,7 +137,7 @@ dnl Check for VA-API drivers path
 AC_MSG_CHECKING([for VA drivers path])
 LIBVA_DRIVERS_PATH=`$PKG_CONFIG libva --variable driverdir`
 if test -z "$LIBVA_DRIVERS_PATH"; then
-    LIBVA_DRIVERS_PATH="/usr/lib/xorg/modules/drivers"
+    LIBVA_DRIVERS_PATH="${libdir}/xorg/modules/drivers"
 fi
 AC_MSG_RESULT([$LIBVA_DRIVERS_PATH])
 AC_SUBST(LIBVA_DRIVERS_PATH)
@@ -171,7 +172,7 @@ fi
 AM_CONDITIONAL(USE_WAYLAND, test "$USE_WAYLAND" = "yes")
 
 m4_ifdef([WAYLAND_SCANNER_RULES],
-    [WAYLAND_SCANNER_RULES(['$(top_srcdir)/src/wayland'])],
+    [WAYLAND_SCANNER_RULES(['$(top_builddir)/src/wayland'])],
     [wayland_scanner_rules=""; AC_SUBST(wayland_scanner_rules)])
 
 AC_OUTPUT([
@@ -185,12 +186,11 @@ dnl Print summary
 BACKENDS=""
 AS_IF([test "$USE_DRM" = "yes"], [BACKENDS="$BACKENDS drm"])
 AS_IF([test "$USE_X11" = "yes"], [BACKENDS="$BACKENDS x11"])
-# AS_IF([test "$USE_WAYLAND" = "yes"], [BACKENDS="$BACKENDS wayland"])
+AS_IF([test "$USE_WAYLAND" = "yes"], [BACKENDS="$BACKENDS wayland"])
 
 echo
 echo $PACKAGE configuration summary:
 echo
-#echo Installation prefix ...............: $prefix
 echo VA-API version ................... : $VA_VERSION_STR
 echo VA-API drivers path .............. : $LIBVA_DRIVERS_PATH
 echo Windowing systems ................ : $BACKENDS
