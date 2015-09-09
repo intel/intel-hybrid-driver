@@ -1,5 +1,9 @@
-libva-intel-hybrid-driver NEWS -- summary of changes.  2014-06-27
-Copyright (C) 2009-2015 Intel Corporation
+intel-hybrid-driver NEWS -- summary of changes.  2015-09-09
+Copyright (C) 2015 Intel Corporation
 
+Version 1.0.1 - 2015-09-09
+* Fix the CMRT name to libcmrt.so
+* Clean compiler warnings
 
-
+Version 1.0.0 - 2015-09-02
+* Initial release supporting CrOS
