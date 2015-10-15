@@ -81,7 +81,7 @@ AC_SUBST(LIBDRM_VERSION)
 
 dnl Check for recent enough CMRT
 CMRT_VERSION=cmrt_version
-PKG_CHECK_MODULES([CMRT], [cmrt >= $CMRT_VERSION])
+PKG_CHECK_MODULES([CMRT], [libcmrt >= $CMRT_VERSION])
 AC_SUBST(CMRT_VERSION)
 
 dnl Check for gen4asm

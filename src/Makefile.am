@@ -47,7 +47,7 @@ driver_ldflags = \
 driver_libs = \
 	-lpthread -lm -ldl	\
 	$(DRM_LIBS) -ldrm_intel	\
-	$(CMRT_LIBS) -llibcmrt \
+	$(CMRT_LIBS)		\
 	$(LIBVA_DEPS_LIBS)	\
 	$(NULL)
 
@@ -129,7 +129,7 @@ hybrid_drv_video_ladir= $(LIBVA_DRIVERS_PATH)
 hybrid_drv_video_la_CFLAGS	= $(driver_cflags)
 hybrid_drv_video_la_CXXFLAGS	= -fpermissive $(driver_cflags)
 hybrid_drv_video_la_LDFLAGS= $(driver_ldflags)
-hybrid_drv_video_la_LIBADD	= $(driver_files) vp9hdec/vp9hdec.la -l:libcmrt.so
+hybrid_drv_video_la_LIBADD	= $(driver_libs) vp9hdec/vp9hdec.la
 hybrid_drv_video_la_SOURCES= $(driver_files)
 noinst_HEADERS = $(driver_headers)
 
