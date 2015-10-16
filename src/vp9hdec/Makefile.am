@@ -27,6 +27,7 @@ AM_CPPFLAGS = \
 	$(DRM_CFLAGS)		\
 	$(DRM_INTEL_CFLAGS)	\
 	$(LIBVA_DEPS_CFLAGS)	\
+	-I$(top_srcdir)/src	\
 	-I$(top_srcdir)/src/cmrt	\
 	-D__linux__		\
 	-DLINUX		\
