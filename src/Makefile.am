@@ -27,6 +27,7 @@ AM_CPPFLAGS = \
 	-DPTHREADS		\
         -DVA_DRIVERS_PATH="\"$(LIBVA_DRIVERS_PATH)\"" \
 	$(DRM_CFLAGS)		\
+	$(DRM_INTEL_CFLAGS)	\
 	$(CMRT_CFLAGS)		\
 	$(LIBVA_DEPS_CFLAGS)	\
 	-I$(top_srcdir)/src/cmrt	\
@@ -46,7 +47,8 @@ driver_ldflags = \
 
 driver_libs = \
 	-lpthread -lm -ldl	\
-	$(DRM_LIBS) -ldrm_intel	\
+	$(DRM_LIBS)		\
+	$(DRM_INTEL_LIBS)	\
 	$(CMRT_LIBS)		\
 	$(LIBVA_DEPS_LIBS)	\
 	$(NULL)

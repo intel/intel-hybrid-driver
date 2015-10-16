@@ -77,6 +77,7 @@ AC_SUBST(LIBVA_PACKAGE_VERSION)
 dnl Check for recent enough DRM
 LIBDRM_VERSION=libdrm_version
 PKG_CHECK_MODULES([DRM], [libdrm >= $LIBDRM_VERSION])
+PKG_CHECK_MODULES([DRM_INTEL], [libdrm_intel >= $LIBDRM_VERSION])
 AC_SUBST(LIBDRM_VERSION)
 
 dnl Check for recent enough CMRT
