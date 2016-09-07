@@ -1,5 +1,10 @@
-intel-hybrid-driver NEWS -- summary of changes.  2015-09-09
-Copyright (C) 2015 Intel Corporation
+intel-hybrid-driver NEWS -- summary of changes.  2016-08-10
+Copyright (C) 2016 Intel Corporation
+
+Version 1.0.2 - 2016-08-10
+* Remove hard coded libdrm_intel dep
+* Fix libcmrt library checking and linkage
+* Fix out-of-tree builds
 
 Version 1.0.1 - 2015-09-09
 * Fix the CMRT name to libcmrt.so
