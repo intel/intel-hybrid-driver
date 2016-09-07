@@ -27,6 +27,7 @@ AM_CPPFLAGS = \
 	$(DRM_CFLAGS)		\
 	$(DRM_INTEL_CFLAGS)	\
 	$(LIBVA_DEPS_CFLAGS)	\
+	$(CMRT_CFLAGS)		\
 	-I$(top_srcdir)/src	\
 	-I$(top_srcdir)/src/cmrt	\
 	-D__linux__		\
@@ -52,6 +53,7 @@ driver_libs = \
 	$(DRM_LIBS)		\
 	$(DRM_INTEL_LIBS)	\
 	$(LIBVA_DEPS_LIBS)	\
+	$(CMRT_LIBS)		\
 	$(NULL)
 
 driver_files = \

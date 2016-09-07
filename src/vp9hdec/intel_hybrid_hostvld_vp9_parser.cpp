@@ -1456,7 +1456,7 @@ static VAStatus Intel_HostvldVp9_ParseInterpolationType(
     return eStatus;
 }
 
-#define ABS	abs
+#define ABS(x)	abs((int)x)
 
 static VAStatus Intel_HostvldVp9_FindNearestMv(
     PINTEL_HOSTVLD_VP9_FRAME_INFO    pFrameInfo,
