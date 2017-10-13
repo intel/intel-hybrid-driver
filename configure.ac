@@ -10,8 +10,7 @@ m4_append([intel_driver_version], intel_driver_pre_version, [.pre])
 ])
 
 # libva minimum version requirement
-m4_define([va_api_version], [0.38])
-m4_define([libva_package_version], [1.6.0])
+m4_define([va_api_version], [1.0.0])
 
 # libdrm minimum version requirement
 m4_define([libdrm_version], [2.4.45])
@@ -70,9 +69,6 @@ AC_HEADER_STDC
 AC_SYS_LARGEFILE
 AC_CHECK_LIB([m], [sin])
 AC_CHECK_FUNCS([log2f])
-
-LIBVA_PACKAGE_VERSION=libva_package_version
-AC_SUBST(LIBVA_PACKAGE_VERSION)
 
 dnl Check for recent enough DRM
 LIBDRM_VERSION=libdrm_version

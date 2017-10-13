@@ -45,4 +45,12 @@
 # define VA_DRM_AUTH_CUSTOM     VA_DUMMY
 #endif
 
+#if VA_CHECK_VERSION(1,0,0)
+
+# define VAEncPackedHeaderMiscMask      0x80000000
+# define VAEncPackedHeaderH264_SEI      (VAEncPackedHeaderMiscMask | 1)
+# define VAEncPackedHeaderHEVC_SEI      (VAEncPackedHeaderMiscMask | 1)
+
+#endif
+
 #endif /* VA_BACKEND_COMPAT_H */
