@@ -3325,7 +3325,7 @@ media_set_curbe_vp8_me (VP8_ME_CURBE_PARAMS * params)
   MEDIA_CURBE_DATA_ME *cmd = (MEDIA_CURBE_DATA_ME *) params->curbe_cmd_buff;
 
   media_drv_memcpy (cmd, sizeof (MEDIA_CURBE_DATA_ME), ME_CURBE_INIT_DATA,
-		    sizeof (MEDIA_CURBE_DATA_ME));
+		    sizeof (ME_CURBE_INIT_DATA));
   me_mode =
     params->
     me_16x_enabled ? (params->me_16x ? ME16x_BEFORE_ME4x : ME4x_AFTER_ME16x) :
