@@ -30,7 +30,7 @@
 #define _MEDIA__DRIVER_OUT_DRI_H
 #include <stdbool.h>
 #include "media_drv_defines.h"
-#define LIBVA_X11_NAME "libva-x11.so.1"
+#define LIBVA_X11_NAME "libva-x11.so"
 VOID media_output_dri_terminate (VADriverContextP ctx);
 BOOL media_output_dri_init (VADriverContextP ctx);
 
