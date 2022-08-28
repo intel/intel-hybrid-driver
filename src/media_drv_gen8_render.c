@@ -1741,7 +1741,7 @@ media_drv_gen8_render_init(VADriverContextP ctx)
     render_state->max_wm_threads = 64;
 
     memcpy(render_state->render_kernels, render_kernels_gen8,
-           sizeof(render_state->render_kernels));
+           sizeof(render_kernels_gen8));
 
     kernel_size = 4096;
 
